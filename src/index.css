@@ -1,3 +1,123 @@
+:root {
+  --primary: #1d1d1f;
+  --secondary: #f5f5f7;
+  --accent: #D1060F;
+  --accent-hover: #a80000;
+  --accent-light: #e8f0fe;
+  --surface: #ffffff;
+  --surface-alt: #f5f5f7;
+  --text-primary: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --text-tertiary: #86868b;
+  --border: #d2d2d7;
+  --border-light: #e8e8ed;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 24px 64px rgba(0, 0, 0, 0.12);
+  --transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --radius-sm: 10px;
+  --radius-md: 18px;
+  --radius-lg: 24px;
+}
+
 html {
   scroll-behavior: smooth;
 }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+    "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  margin: 0;
+  padding: 0;
+  background: var(--surface);
+  color: var(--text-primary);
+  line-height: 1.6;
+  letter-spacing: -0.011em;
+  font-size: 17px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.section-title {
+  font-size: 3.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 1.25rem;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+}
+
+.section-subtitle {
+  font-size: 1.15rem;
+  color: var(--text-secondary);
+  margin-bottom: 3rem;
+  font-weight: 400;
+  line-height: 1.7;
+  max-width: 650px;
+}
+
+/* ── Apple-style utility classes ── */
+
+/* Fade-up animation used by framer-motion sections */
+@keyframes apple-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive section title scaling */
+@media (max-width: 768px) {
+  .section-title {
+    font-size: 2.2rem;
+  }
+
+  .section-subtitle {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .section-title {
+    font-size: 1.85rem;
+  }
+}
+
+/* Links default */
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* Smooth image rendering */
+img {
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
+/* Focus ring — Apple-style */
+:focus-visible {
+  outline: 3px solid rgba(0, 113, 227, 0.5);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Selection color */
+::selection {
+  background: rgba(0, 113, 227, 0.2);
+  color: var(--text-primary);
+}
+

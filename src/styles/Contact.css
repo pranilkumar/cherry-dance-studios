@@ -1,0 +1,230 @@
+.contact-section {
+  padding: 120px 0;
+  background: #f5f5f7;
+  position: relative;
+}
+
+.contact-section::before {
+  display: none;
+}
+
+.contact-card {
+  background: white;
+  padding: 32px;
+  border-radius: 20px;
+  text-align: center;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.3s ease;
+  height: 100%;
+  border: none;
+}
+
+.contact-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.1);
+}
+
+.contact-icon {
+  font-size: 2.2rem;
+  margin-bottom: 15px;
+  display: flex;
+  justify-content: center;
+  color: #D1060F;
+}
+
+.contact-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1d1d1f;
+  margin-bottom: 10px;
+  letter-spacing: -0.015em;
+}
+
+.contact-details p {
+  margin-bottom: 8px;
+  color: #6e6e73;
+  font-size: 0.88rem;
+  line-height: 1.6;
+}
+
+.contact-details p:last-child {
+  margin-bottom: 0;
+}
+
+.contact-details a {
+  text-decoration: none;
+  font-weight: 600;
+  transition: opacity 0.3s ease;
+}
+
+.contact-details a:hover {
+  opacity: 0.8;
+}
+
+.map-container {
+  margin-top: 60px;
+  margin-bottom: 60px;
+}
+
+.map-container h3 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #2d3436;
+}
+
+.map-wrapper {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.social-section {
+  background: #1d1d1f;
+  padding: 50px 40px;
+  border-radius: 24px;
+  color: #f5f5f7;
+  box-shadow: none;
+}
+
+.social-section h3 {
+  font-size: 1.6rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.social-links {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.social-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 15px 30px;
+  border-radius: 50px;
+  color: white;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 1.1rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.social-link:hover {
+  color: white;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.social-link svg {
+  font-size: 1.5rem;
+}
+
+.social-name {
+  font-weight: 600;
+}
+
+/* WhatsApp Floating Button */
+.whatsapp-float {
+  position: fixed;
+  width: 60px;
+  height: 60px;
+  bottom: 30px;
+  right: 30px;
+  background-color: #25D366;
+  color: white;
+  border-radius: 50%;
+  text-align: center;
+  font-size: 30px;
+  box-shadow: 0 4px 20px rgba(37, 211, 102, 0.5);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.whatsapp-float:hover {
+  color: white;
+  box-shadow: 0 6px 25px rgba(37, 211, 102, 0.7);
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .contact-section {
+    padding: 60px 0;
+  }
+
+  .contact-card {
+    padding: 30px 20px;
+    margin-bottom: 20px;
+  }
+
+  .contact-icon {
+    font-size: 2.5rem;
+    margin-bottom: 15px;
+  }
+
+  .contact-title {
+    font-size: 1.2rem;
+  }
+
+  .contact-details p {
+    font-size: 0.9rem;
+  }
+
+  .map-container {
+    margin-top: 40px;
+    margin-bottom: 40px;
+  }
+
+  .map-container h3 {
+    font-size: 1.5rem;
+  }
+
+  .map-wrapper iframe {
+    height: 300px;
+  }
+
+  .social-section {
+    padding: 35px 25px;
+  }
+
+  .social-section h3 {
+    font-size: 1.5rem;
+  }
+
+  .social-links {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .social-link {
+    padding: 12px 25px;
+    font-size: 1rem;
+    width: 80%;
+    max-width: 250px;
+    justify-content: center;
+  }
+
+  .whatsapp-float {
+    width: 55px;
+    height: 55px;
+    bottom: 20px;
+    right: 20px;
+    font-size: 26px;
+  }
+}
+
+/* Tablet */
+@media (min-width: 769px) and (max-width: 991px) {
+  .contact-card {
+    height: 100%;
+  }
+
+  .map-wrapper iframe {
+    height: 350px;
+  }
+}

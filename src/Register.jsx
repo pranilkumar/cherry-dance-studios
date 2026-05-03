@@ -3,6 +3,7 @@ import { Container, Row, Col, Alert, Spinner } from 'react-bootstrap';
 import PhoneInput from 'react-phone-input-2';
 import 'react-phone-input-2/lib/style.css';
 import './Register.css';
+import { supabase } from './lib/supabaseClient';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -11,6 +12,9 @@ const Register = () => {
     user_mobile: '',
     gender: '',
     dob: '',
+    preferred_class: '',
+    preferred_time: '',
+    experience_level: 'Beginner',
   });
 
   const [submissionStatus, setSubmissionStatus] = useState(null);
@@ -58,33 +62,46 @@ const Register = () => {
 
     setSubmissionStatus('submitting');
 
-    const encode = (data) => {
-      return Object.keys(data)
-        .map((key) => encodeURIComponent(key) + '=' + encodeURIComponent(data[key]))
-        .join('&');
-    };
-
     try {
-      const response = await fetch('/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: encode({ 'form-name': 'register', ...formData }),
-      });
+      // Save to Supabase database
+      const { data, error } = await supabase
+        .from('students')
+        .insert([
+          {
+            parent_name: formData.user_name,
+            student_name: formData.user_name,
+            email: formData.user_email,
+            phone: formData.user_mobile,
+            date_of_birth: formData.dob,
+            gender: formData.gender,
+            preferred_class: formData.preferred_class,
+            preferred_time_slot: formData.preferred_time,
+            experience_level: formData.experience_level,
+            status: 'pending',
+            enrollment_date: new Date().toISOString()
+          }
+        ]);
 
-      if (response.ok) {
-        setSubmissionStatus('success');
-        setFormData({
-          user_name: '',
-          user_email: '',
-          user_mobile: '',
-          gender: '',
-          dob: '',
-        });
-        setValidationErrors({});
-      } else {
+      if (error) {
+        console.error('Supabase error:', error);
         setSubmissionStatus('error');
+        return;
       }
+
+      setSubmissionStatus('success');
+      setFormData({
+        user_name: '',
+        user_email: '',
+        user_mobile: '',
+        gender: '',
+        dob: '',
+        preferred_class: '',
+        preferred_time: '',
+        experience_level: 'Beginner',
+      });
+      setValidationErrors({});
     } catch (error) {
+      console.error('Error submitting form:', error);
       setSubmissionStatus('error');
     }
   };
@@ -216,6 +233,56 @@ const Register = () => {
                       required
                     />
                     {validationErrors.dob && <div className="invalid-feedback">{validationErrors.dob}</div>}
+                  </div>
+
+                  <div className="mb-3">
+                    <label htmlFor="preferredClass" className="form-label">Preferred Dance Style</label>
+                    <select
+                      id="preferredClass"
+                      name="preferred_class"
+                      className="form-select"
+                      value={formData.preferred_class}
+                      onChange={handleChange}
+                    >
+                      <option value="">Select a dance style...</option>
+                      <option value="Bollywood">Bollywood Dance</option>
+                      <option value="Hip-Hop">Hip-Hop</option>
+                      <option value="Contemporary">Contemporary</option>
+                      <option value="Freestyle">Freestyle & Choreo</option>
+                    </select>
+                  </div>
+
+                  <div className="mb-3">
+                    <label htmlFor="preferredTime" className="form-label">Preferred Time Slot</label>
+                    <select
+                      id="preferredTime"
+                      name="preferred_time"
+                      className="form-select"
+                      value={formData.preferred_time}
+                      onChange={handleChange}
+                    >
+                      <option value="">Select time slot...</option>
+                      <option value="Morning">Morning (10 AM - 12 PM)</option>
+                      <option value="Afternoon">Afternoon (3 PM - 5 PM)</option>
+                      <option value="Evening">Evening (6 PM - 8 PM)</option>
+                      <option value="Night">Night (8 PM - 10 PM)</option>
+                      <option value="Weekend">Weekend Only</option>
+                    </select>
+                  </div>
+
+                  <div className="mb-3">
+                    <label htmlFor="experienceLevel" className="form-label">Dance Experience Level</label>
+                    <select
+                      id="experienceLevel"
+                      name="experience_level"
+                      className="form-select"
+                      value={formData.experience_level}
+                      onChange={handleChange}
+                    >
+                      <option value="Beginner">Beginner - New to dance</option>
+                      <option value="Intermediate">Intermediate - Some experience</option>
+                      <option value="Advanced">Advanced - Experienced dancer</option>
+                    </select>
                   </div>
 
                   <button type="submit" className="btn custom-register-btn w-100" disabled={submissionStatus === 'submitting'}>

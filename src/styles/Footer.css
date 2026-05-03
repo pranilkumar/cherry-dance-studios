@@ -1,0 +1,51 @@
+.footer-section {
+  background: #1d1d1f;
+  color: #86868b;
+}
+
+.footer-section h5 {
+  font-weight: 500;
+  margin-bottom: 14px;
+  color: #f5f5f7;
+  font-size: 0.85rem;
+  text-transform: none;
+  letter-spacing: -0.005em;
+}
+
+.social-icons {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  font-size: 1.4rem;
+  margin-top: 10px;
+}
+
+.social-icons a {
+  color: #86868b;
+  transition: color 0.2s ease;
+  text-decoration: none;
+}
+
+.social-icons a:hover {
+  color: #f5f5f7;
+}
+
+
+.social-icons a[href*="instagram"]:hover {
+  color: #D1060F;
+}
+
+.social-icons a[href*="facebook"]:hover {
+  color: #1877f2;
+}
+
+.social-icons a[href*="youtube"]:hover {
+  color: #D1060F;
+}
+
+
+@media (min-width: 768px) {
+    .footer-section .col-md-6:last-child .social-icons {
+        justify-content: flex-end; 
+    }
+}

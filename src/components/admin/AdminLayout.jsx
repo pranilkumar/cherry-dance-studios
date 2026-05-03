@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { Container, Nav, Navbar, Button } from 'react-bootstrap';
-import { FaHome, FaUsers, FaDollarSign, FaStar, FaSignOutAlt, FaBars, FaTimes, FaClipboardList, FaChartLine, FaQrcode } from 'react-icons/fa';
+import { FaHome, FaUsers, FaDollarSign, FaStar, FaSignOutAlt, FaBars, FaTimes, FaClipboardList, FaChartLine, FaQrcode, FaHeart } from 'react-icons/fa';
 import '../../styles/AdminModern.css';
 
 const AdminLayout = () => {
@@ -55,6 +55,13 @@ const AdminLayout = () => {
           >
             <FaClipboardList className="me-2" />
             Registrations
+          </Link>
+          <Link
+            to="/admin/workshop"
+            className={`nav-link ${isActive('/admin/workshop') ? 'active' : ''}`}
+          >
+            <FaHeart className="me-2" />
+            MnM Workshop
           </Link>
           <Link
             to="/admin/students"

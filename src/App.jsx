@@ -49,6 +49,7 @@ import RegistrationManagement from './components/admin/RegistrationManagement';
 import AnalyticsDashboard from './components/admin/AnalyticsDashboard';
 import AttendanceSystem from './components/admin/AttendanceSystem';
 import ProtectedRoute from './components/admin/ProtectedRoute';
+import WorkshopRegistrations from './components/admin/WorkshopRegistrations';
 
 import 'bootstrap/dist/css/bootstrap.min.css';
 
@@ -191,6 +192,7 @@ function App() {
           <Route path="analytics" element={<AnalyticsDashboard />} />
           <Route path="attendance" element={<AttendanceSystem />} />
           <Route path="registrations" element={<RegistrationManagement />} />
+          <Route path="workshop" element={<WorkshopRegistrations />} />
           <Route path="students" element={<StudentManagement />} />
           <Route path="fees" element={<FeeManagement />} />
         </Route>

@@ -3,7 +3,7 @@ import { Container, Row, Col, Card } from 'react-bootstrap';
 import '../styles/Instructors.css';
 
 // Import images directly
-import instructor1 from '../assets/images/pranil.png';
+import instructor1 from '../assets/images/Pranil.png';
 import instructor2 from '../assets/images/Shivangi.JPG';
 
 const instructors = [

@@ -27,7 +27,7 @@ const AdminLayout = () => {
           <span className="text-muted">Admin Portal</span>
         </div>
 
-        <Nav className="flex-column sidebar-nav">
+        <Nav className="flex-column sidebar-nav" onClick={() => { if (window.innerWidth < 768) setSidebarOpen(false); }}>
           <Link
             to="/admin/dashboard"
             className={`nav-link ${isActive('/admin/dashboard') ? 'active' : ''}`}
@@ -93,6 +93,12 @@ const AdminLayout = () => {
           </Button>
         </div>
       </div>
+
+      {/* Sidebar overlay (mobile) */}
+      <div
+        className={`sidebar-overlay${sidebarOpen ? ' visible' : ''}`}
+        onClick={() => setSidebarOpen(false)}
+      />
 
       {/* Main Content */}
       <div className={`admin-content ${sidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>

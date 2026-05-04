@@ -635,55 +635,132 @@
    RESPONSIVE DESIGN
    ============================================ */
 
+/* ── Content header (used in WorkshopRegistrations etc.) ── */
+.content-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 24px 24px 0;
+  margin-bottom: 20px;
+}
+.content-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #1e293b;
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+.content-subtitle {
+  color: #64748b;
+  font-size: 0.9rem;
+  margin: 2px 0 0;
+  font-weight: 500;
+}
+
+/* ── Generic modern buttons ── */
+.btn-modern {
+  padding: 9px 18px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+}
+.btn-modern.btn-secondary {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1.5px solid #e2e8f0;
+}
+.btn-modern.btn-secondary:hover { background: #e2e8f0; }
+
+/* ── Alert ── */
+.alert-modern {
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  margin: 0 24px 16px;
+}
+.alert-error {
+  background: #fff5f5;
+  border: 1px solid #fca5a5;
+  color: #b91c1c;
+}
+
+/* ── Table scroll wrapper (add to data-card or use directly) ── */
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── Sidebar mobile overlay ── */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 999;
+}
+.sidebar-overlay.visible { display: block; }
+
 @media (max-width: 1200px) {
   .stat-card {
     padding: 1.5rem;
   }
-  
   .stat-value {
     font-size: 2rem;
   }
 }
 
 @media (max-width: 768px) {
+  /* Sidebar slides off by default on mobile */
   .admin-sidebar {
     transform: translateX(-280px);
   }
-
   .admin-sidebar.open {
     transform: translateX(0);
   }
-
   .admin-content {
-    margin-left: 0;
+    margin-left: 0 !important;
   }
 
+  /* Content padding */
   .dashboard-container,
   .management-container {
     padding: 1rem;
   }
-
-  .dashboard-title {
-    font-size: 2rem;
+  .content-header {
+    padding: 16px 16px 0;
+  }
+  .alert-modern {
+    margin: 0 16px 12px;
   }
 
-  .page-title {
-    font-size: 1.5rem;
-  }
+  .dashboard-title { font-size: 2rem; }
+  .page-title      { font-size: 1.5rem; }
+  .content-title   { font-size: 1.3rem; }
 
+  /* Tables: horizontal scroll */
+  .data-card,
+  .table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
   .data-table {
-    font-size: 0.875rem;
+    font-size: 0.8rem;
+    min-width: 560px;
   }
-
   .data-table th,
   .data-table td {
-    padding: 1rem;
+    padding: 0.75rem 1rem;
+    white-space: nowrap;
   }
 
   .action-buttons {
     flex-direction: column;
   }
-
   .btn-action {
     width: 100%;
     justify-content: center;
@@ -691,29 +768,19 @@
 }
 
 @media (max-width: 576px) {
-  .stat-icon {
-    width: 48px;
-    height: 48px;
-    font-size: 1.5rem;
-  }
-
-  .stat-value {
-    font-size: 1.75rem;
-  }
-
-  .controls-bar {
-    padding: 1rem;
-  }
+  .stat-icon   { width: 48px; height: 48px; font-size: 1.5rem; }
+  .stat-value  { font-size: 1.75rem; }
+  .controls-bar { padding: 1rem; }
 
   .search-box input,
   .filter-select {
     padding: 0.75rem 1rem 0.75rem 2.5rem;
     font-size: 0.875rem;
   }
+  .page-header { padding: 1.5rem; }
 
-  .page-header {
-    padding: 1.5rem;
-  }
+  /* Admin navbar text overflow */
+  .admin-navbar .text-muted { display: none; }
 }
 
 /* ============================================
@@ -730,7 +797,6 @@
   }
 }
 
-/* Focus styles for keyboard navigation */
 .btn-action:focus-visible,
 .form-control-modern:focus-visible,
 .search-box input:focus-visible,

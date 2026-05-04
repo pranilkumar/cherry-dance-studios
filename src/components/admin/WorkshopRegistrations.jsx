@@ -86,7 +86,7 @@ const WorkshopRegistrations = () => {
       {error && <div className="alert-modern alert-error">{error}</div>}
 
       {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 16, marginBottom: 24, padding: '0 0' }}>
         {[
           { label: 'Total',   value: stats.total,   color: '#1d1d1f' },
           { label: 'Pending', value: stats.pending,  color: '#b45309' },
@@ -128,7 +128,8 @@ const WorkshopRegistrations = () => {
         <div style={{ textAlign: 'center', padding: 60, color: '#888' }}>No registrations found.</div>
       ) : (
         <div style={{ background: '#fff', borderRadius: 16, overflow: 'hidden', boxShadow: '0 1px 6px rgba(0,0,0,0.07)', border: '1px solid #f0f0f0' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+          <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14, minWidth: 600 }}>
             <thead>
               <tr style={{ background: '#fafafa', borderBottom: '2px solid #f0f0f0' }}>
                 {['Mom', 'Children', 'Package', 'Phone', 'Payment', 'Date', 'Actions'].map(h => (
@@ -169,6 +170,7 @@ const WorkshopRegistrations = () => {
               })}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 

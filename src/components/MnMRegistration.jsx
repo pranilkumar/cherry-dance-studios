@@ -222,7 +222,7 @@ const MnMRegistration = () => {
           </div>
           <div className="mnm-pills">
             <span className="mnm-pill">Sat, May 9 · 2026</span>
-            <span className="mnm-pill">6:00 – 8:00 PM</span>
+            <span className="mnm-pill">5:00 – 7:00 PM</span>
 
           </div>
           <div className="mnm-perks-row">

@@ -187,7 +187,7 @@ const MnMRegistration = () => {
             </p>
             <div className="mnm-success-details">
               <div className="mnm-success-row"><span>Date</span><strong>Saturday, May 9, 2026</strong></div>
-              <div className="mnm-success-row"><span>Time</span><strong>6:00 PM – 8:00 PM</strong></div>
+              <div className="mnm-success-row"><span>Time</span><strong>5:00 PM – 7:00 PM</strong></div>
               <div className="mnm-success-row"><span>Package</span><strong>{selectedPkg?.label} — {selectedPkg?.price}</strong></div>
               <div className="mnm-success-row"><span>Payment</span><strong>E-transfer</strong></div>
               <div className="mnm-success-etransfer">

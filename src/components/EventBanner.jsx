@@ -46,7 +46,7 @@ const EventBanner = () => {
                 <FaClock className="event-detail-icon" />
                 <div>
                   <div className="event-detail-label">Time</div>
-                  <div className="event-detail-value">6:00 PM – 8:00 PM</div>
+                  <div className="event-detail-value">5:00 PM – 7:00 PM</div>
                 </div>
               </div>
             </Col>

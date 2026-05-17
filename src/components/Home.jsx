@@ -126,8 +126,6 @@ export default function Home() {
           </div>
           <div className="text-[0.65rem] md:text-sm">
             Barrhaven, Ottawa
-            <span className="mx-3 text-[#d1060f]">●</span>
-            Ages 4+
           </div>
         </motion.div>
 

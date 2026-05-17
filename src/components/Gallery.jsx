@@ -139,7 +139,6 @@ export default function Gallery() {
                 <img
                   src={image.src}
                   alt={image.alt}
-                  loading="lazy"
                   className="block w-full transition duration-700 ease-out group-hover:scale-[1.03]"
                 />
                 <div className="pointer-events-none absolute inset-0 bg-[#0a0a0f]/0 transition group-hover:bg-[#0a0a0f]/15" />

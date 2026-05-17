@@ -5,17 +5,38 @@ import { FaArrowRight } from 'react-icons/fa';
 import logo from '../assets/icons/logo.png';
 import { GlowButton } from './ui';
 
-/** Smooth-scroll to a section, looking up its position AT click time so
- *  late-loading images / iframes don't throw off the target offset. */
+/**
+ * Smooth-scroll to a section, with a correction pass to handle layout
+ * shift during scroll.
+ *
+ * The hero CTAs sit at the top of the page where the sections below
+ * (About videos, Gallery images, Instructor portraits) haven't been
+ * scrolled into view yet — their lazy-loaded media hasn't loaded.
+ * When you click 'Register your dancer', the browser calculates where
+ * #register currently is (assuming those images take ~0 height) and
+ * starts smooth-scrolling toward it. While the scroll is happening,
+ * images load, sections expand, and #register moves further down.
+ * The smooth scroll completes at the OLD position — which is now
+ * occupied by Contact. Hence "first click lands on Contact".
+ *
+ * Fix: do the smooth scroll for the nice animation, then re-scroll
+ * instantly after the smooth scroll has had time to finish (800ms),
+ * pulling the user to wherever #register actually is now.
+ */
 function scrollToSection(id) {
   return (e) => {
     if (typeof window === 'undefined') return;
     e.preventDefault();
-    // Defer a frame so any pending layout/image work settles before we read offsetTop.
-    requestAnimationFrame(() => {
-      const el = document.getElementById(id);
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
+    const el = document.getElementById(id);
+    if (!el) return;
+
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    // Re-scroll after the smooth scroll likely completes, correcting for
+    // any layout shift caused by lazy-loaded media expanding sections above.
+    setTimeout(() => {
+      el.scrollIntoView({ behavior: 'auto', block: 'start' });
+    }, 800);
   };
 }
 

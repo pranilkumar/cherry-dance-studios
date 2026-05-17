@@ -134,21 +134,23 @@ body {
 }
 
 /* Anchors inherit the parent text color by default — prevents iOS Safari's
-   default blue link styling from showing when Tailwind utilities don't load
-   or fail (e.g. older Safari + color-mix() opacity colors). Sections that
-   want a red link still set it explicitly via Tailwind classes. */
-a {
+   default blue/underline link styling when Tailwind utilities don't load
+   or fail (e.g. older Safari + color-mix() opacity colors). */
+a,
+a:link,
+a:visited,
+a:hover,
+a:active {
   color: inherit;
   text-decoration: none;
+  -webkit-text-decoration: none;
 }
-a:hover { text-decoration: none; }
 
-/* Belt-and-suspenders: kill the iOS auto-detection blue/underline style
-   on tel: and mailto: links inside text. */
+/* Kill iOS tap-detection blue/underline on tel: and mailto: links. */
 a[href^="tel:"],
 a[href^="mailto:"] {
-  color: inherit;
-  text-decoration: none;
+  color: inherit !important;
+  text-decoration: none !important;
 }
 
 img {

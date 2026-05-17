@@ -110,7 +110,8 @@ export default function Home() {
           </GlowButton>
           <a
             href="#classes"
-            className="group inline-flex items-center gap-2 text-sm font-medium text-white/85 transition hover:text-white md:text-base"
+            className="group inline-flex items-center gap-2 text-sm font-medium text-white no-underline transition hover:text-white md:text-base"
+            style={{ color: '#ffffff', textDecoration: 'none' }}
           >
             See the classes
             <span className="transition group-hover:translate-x-1">→</span>

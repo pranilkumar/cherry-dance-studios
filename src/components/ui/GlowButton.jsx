@@ -62,12 +62,12 @@ export default function GlowButton({
       transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
       className={`
         inline-flex items-center justify-center gap-2.5
-        rounded-full font-semibold tracking-tight
+        rounded-full font-semibold tracking-tight no-underline
         font-[family-name:var(--font-sans)]
         transition-shadow
         ${sizes[size]} ${v.base} ${className}
       `}
-      style={v.style}
+      style={{ ...v.style, textDecoration: 'none' }}
     >
       {icon && iconPosition === 'left' && <span className="flex">{icon}</span>}
       <span>{children}</span>

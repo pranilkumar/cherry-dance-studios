@@ -86,9 +86,33 @@ export const viewport = {
   themeColor: '#0a0a0f',
 };
 
+/**
+ * Inline cleanup script — unregisters any service worker left over from
+ * the old PWABar setup, and clears its caches. The SW was caching HTML/CSS
+ * aggressively and serving stale content to returning users even after we
+ * deployed new code. Safe to keep running indefinitely (a no-op once no SW
+ * is registered).
+ */
+const swCleanup = `
+(function () {
+  if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return;
+  navigator.serviceWorker.getRegistrations().then(function (regs) {
+    regs.forEach(function (r) { r.unregister(); });
+  }).catch(function () {});
+  if (window.caches && caches.keys) {
+    caches.keys().then(function (keys) {
+      keys.forEach(function (k) { caches.delete(k); });
+    }).catch(function () {});
+  }
+})();
+`;
+
 export default function RootLayout({ children }) {
   return (
     <html lang="en" className={`${spaceGrotesk.variable} ${inter.variable} ${yatraOne.variable}`}>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: swCleanup }} />
+      </head>
       <body>{children}</body>
     </html>
   );

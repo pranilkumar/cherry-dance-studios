@@ -114,19 +114,22 @@ export default function Home() {
           </span>
         </motion.h1>
 
-        {/* Meta line */}
-        <motion.p
+        {/* Meta lines — founders on top (closer to brand), location/ages below */}
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.7, duration: 0.6 }}
-          className="mt-6 font-[family-name:var(--font-display)] text-[0.65rem] uppercase tracking-[0.2em] text-white/55 sm:mt-8 sm:tracking-[0.25em] md:text-sm"
+          className="mt-6 space-y-1.5 font-[family-name:var(--font-display)] uppercase tracking-[0.2em] text-white/55 sm:mt-8 sm:tracking-[0.25em]"
         >
-          Barrhaven, Ottawa
-          <span className="mx-3 text-[#d1060f]">●</span>
-          Ages 4+
-          <span className="mx-3 text-[#d1060f]">●</span>
-          Cherry &amp; Pranil
-        </motion.p>
+          <div className="text-[0.7rem] text-white/75 md:text-sm">
+            Cherry &amp; Pranil
+          </div>
+          <div className="text-[0.65rem] md:text-sm">
+            Barrhaven, Ottawa
+            <span className="mx-3 text-[#d1060f]">●</span>
+            Ages 4+
+          </div>
+        </motion.div>
 
         {/* CTAs */}
         <motion.div

@@ -5,6 +5,20 @@ import { FaArrowRight } from 'react-icons/fa';
 import logo from '../assets/icons/logo.png';
 import { GlowButton } from './ui';
 
+/** Smooth-scroll to a section, looking up its position AT click time so
+ *  late-loading images / iframes don't throw off the target offset. */
+function scrollToSection(id) {
+  return (e) => {
+    if (typeof window === 'undefined') return;
+    e.preventDefault();
+    // Defer a frame so any pending layout/image work settles before we read offsetTop.
+    requestAnimationFrame(() => {
+      const el = document.getElementById(id);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  };
+}
+
 /**
  * Hero — confident, minimal, centered.
  * Style ticker · logo · headline · meta · CTAs.
@@ -104,12 +118,14 @@ export default function Home() {
             variant="primary"
             size="lg"
             href="#register"
+            onClick={scrollToSection('register')}
             icon={<FaArrowRight />}
           >
             Register your dancer
           </GlowButton>
           <a
             href="#classes"
+            onClick={scrollToSection('classes')}
             className="group inline-flex items-center gap-2 text-sm font-medium text-white no-underline transition hover:text-white md:text-base"
             style={{ color: '#ffffff', textDecoration: 'none' }}
           >

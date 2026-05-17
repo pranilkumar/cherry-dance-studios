@@ -89,6 +89,14 @@
 
 html {
   scroll-behavior: smooth;
+  /* Floating navbar is ~70px (top-4 + pill height) — give anchor scrolls
+     a buffer so target sections aren't tucked under the navbar. */
+  scroll-padding-top: 90px;
+}
+
+/* Same as scroll-padding-top but per-section, in case Safari ignores it on html. */
+section[id] {
+  scroll-margin-top: 90px;
 }
 
 body {

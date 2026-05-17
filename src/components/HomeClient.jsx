@@ -42,7 +42,7 @@ export default function HomeClient() {
             boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
             fontSize: '0.9rem',
           },
-          success: { iconTheme: { primary: '#0071e3', secondary: '#fff' } },
+          success: { iconTheme: { primary: '#d1060f', secondary: '#fff' } },
         }}
       />
       <NavigationBar />

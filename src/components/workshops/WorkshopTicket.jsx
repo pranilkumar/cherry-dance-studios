@@ -207,7 +207,7 @@ function PaymentBadge({ status }) {
     },
     paid: {
       label: 'Paid',
-      cls: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600',
+      cls: 'border-[#0a0a0f] bg-[#0a0a0f] text-white',
     },
     cancelled: {
       label: 'Cancelled',

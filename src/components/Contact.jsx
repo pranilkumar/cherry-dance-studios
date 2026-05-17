@@ -127,26 +127,6 @@ export default function Contact() {
           })}
         </div>
 
-        {/* Map */}
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          viewport={{ once: true }}
-          className="mt-12 overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur-md"
-        >
-          <iframe
-            src="https://maps.google.com/maps?q=Barrhaven%2C+Ottawa%2C+ON%2C+Canada&t=&z=13&ie=UTF8&iwloc=B&output=embed"
-            width="100%"
-            height="380"
-            style={{ border: 0, filter: 'invert(0.92) hue-rotate(180deg) saturate(0.6)' }}
-            allowFullScreen=""
-            loading="lazy"
-            referrerPolicy="no-referrer-when-downgrade"
-            title="Cherry Dance Studios — Barrhaven"
-          />
-        </motion.div>
-
         {/* Socials */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
@@ -189,8 +169,8 @@ export default function Contact() {
         transition={{ delay: 1.2, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
         whileHover={{ scale: 1.08 }}
         whileTap={{ scale: 0.94 }}
-        className="fixed bottom-5 right-5 z-40 grid h-14 w-14 place-items-center rounded-full text-white shadow-[0_12px_40px_rgba(37,211,102,0.45)]"
-        style={{ background: 'linear-gradient(135deg, #25d366 0%, #128c7e 100%)' }}
+        className="fixed bottom-5 right-5 z-40 grid h-14 w-14 place-items-center rounded-full text-white shadow-[0_12px_40px_rgba(209,6,15,0.5)]"
+        style={{ background: 'linear-gradient(135deg, #b00310 0%, #d1060f 50%, #ee2435 100%)' }}
       >
         <FaWhatsapp className="text-xl" />
       </motion.a>

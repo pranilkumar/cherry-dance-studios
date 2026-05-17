@@ -1,3 +1,4 @@
+'use client';
 // src/VideoEmbed.jsx
 import React, { useState } from 'react';
 import '../styles/VideoEmbed.css';

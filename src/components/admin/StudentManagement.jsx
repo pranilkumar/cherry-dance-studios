@@ -1,580 +1,470 @@
-import { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Table, Button, Form, Modal, Alert, Badge } from 'react-bootstrap';
-import { FaUsers, FaPlus, FaEdit, FaTrash, FaSearch, FaFilter, FaDownload } from 'react-icons/fa';
-import { supabase } from '../../lib/supabaseClient';
-import '../../styles/AdminModern.css';
+'use client';
 
-const StudentManagement = () => {
+import { useState, useEffect, useMemo } from 'react';
+import { supabase } from '../../lib/supabaseClient';
+import {
+  FaPlus, FaEdit, FaTrash, FaSearch, FaDownload, FaTimes,
+} from 'react-icons/fa';
+
+const STATUS_META = {
+  active:   { bg: '#ffffff', fg: '#0a0a0f', label: 'Active' },
+  pending:  { bg: 'rgba(209,6,15,0.18)', fg: '#ee2435', label: 'Pending' },
+  inactive: { bg: 'rgba(255,255,255,0.08)', fg: 'rgba(255,255,255,0.55)', label: 'Inactive' },
+  dropped:  { bg: '#d1060f', fg: '#ffffff', label: 'Dropped' },
+};
+
+const inputCls =
+  'w-full rounded-lg border border-white/15 bg-white/[0.04] px-3 py-2 text-sm text-white placeholder:text-white/35 focus:border-[#ee2435] focus:bg-white/[0.06] focus:outline-none focus:ring-2 focus:ring-[#d1060f]/25';
+const selectChevron =
+  "appearance-none bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23ffffff%22 stroke-width=%221.5%22><path d=%22m6 9 6 6 6-6%22/></svg>')] bg-[length:18px] bg-[right_0.65rem_center] bg-no-repeat pr-9";
+
+const emptyForm = () => ({
+  parent_name: '',
+  student_name: '',
+  email: '',
+  phone: '',
+  date_of_birth: '',
+  gender: '',
+  preferred_class: '',
+  preferred_weekday: '',
+  preferred_time_slot: '',
+  experience_level: '',
+  status: 'active',
+  notes: '',
+});
+
+export default function StudentManagement() {
   const [students, setStudents] = useState([]);
-  const [filteredStudents, setFilteredStudents] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [currentStudent, setCurrentStudent] = useState(null);
+  const [editing, setEditing] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(null);
+  const [formData, setFormData] = useState(emptyForm());
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [alert, setAlert] = useState({ show: false, message: '', variant: '' });
+  const [alert, setAlert] = useState(null);
 
-  // Form state
-  const [formData, setFormData] = useState({
-    parent_name: '',
-    student_name: '',
-    email: '',
-    phone: '',
-    date_of_birth: '',
-    gender: '',
-    preferred_class: '',
-    preferred_weekday: '',
-    preferred_time_slot: '',
-    experience_level: '',
-    status: 'active',
-    notes: ''
-  });
-
-  useEffect(() => {
-    fetchStudents();
-  }, []);
-
-  useEffect(() => {
-    filterStudents();
-  }, [students, searchTerm, statusFilter]);
+  useEffect(() => { fetchStudents(); }, []);
 
   const fetchStudents = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('students')
-        .select('*')
-        .order('enrollment_date', { ascending: false });
-
-      if (error) throw error;
-      setStudents(data || []);
-    } catch (error) {
-      console.error('Error fetching students:', error);
-      showAlert('Failed to load students', 'danger');
-    } finally {
-      setLoading(false);
-    }
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('students')
+      .select('*')
+      .order('enrollment_date', { ascending: false });
+    if (error) showAlert('error', 'Failed to load students');
+    else setStudents(data || []);
+    setLoading(false);
   };
 
-  const filterStudents = () => {
-    let filtered = [...students];
-
-    // Apply search filter
-    if (searchTerm) {
-      filtered = filtered.filter(student =>
-        student.student_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        student.parent_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        student.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        student.phone?.includes(searchTerm)
-      );
-    }
-
-    // Apply status filter
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(student => student.status === statusFilter);
-    }
-
-    setFilteredStudents(filtered);
+  const openCreate = () => { setFormData(emptyForm()); setEditing('new'); };
+  const openEdit = (s) => {
+    setFormData({
+      parent_name: s.parent_name || '',
+      student_name: s.student_name || '',
+      email: s.email || '',
+      phone: s.phone || '',
+      date_of_birth: s.date_of_birth || '',
+      gender: s.gender || '',
+      preferred_class: s.preferred_class || '',
+      preferred_weekday: s.preferred_weekday || '',
+      preferred_time_slot: s.preferred_time_slot || '',
+      experience_level: s.experience_level || '',
+      status: s.status || 'active',
+      notes: s.notes || '',
+    });
+    setEditing(s);
   };
-
-  const handleShowModal = (student = null) => {
-    if (student) {
-      setCurrentStudent(student);
-      setFormData({
-        parent_name: student.parent_name || '',
-        student_name: student.student_name || '',
-        email: student.email || '',
-        phone: student.phone || '',
-        date_of_birth: student.date_of_birth || '',
-        gender: student.gender || '',
-        preferred_class: student.preferred_class || '',
-        preferred_weekday: student.preferred_weekday || '',
-        preferred_time_slot: student.preferred_time_slot || '',
-        experience_level: student.experience_level || '',
-        status: student.status || 'active',
-        notes: student.notes || ''
-      });
-    } else {
-      setCurrentStudent(null);
-      setFormData({
-        parent_name: '',
-        student_name: '',
-        email: '',
-        phone: '',
-        date_of_birth: '',
-        gender: '',
-        preferred_class: '',
-        preferred_weekday: '',
-        preferred_time_slot: '',
-        experience_level: '',
-        status: 'active',
-        notes: ''
-      });
-    }
-    setShowModal(true);
-  };
-
-  const handleCloseModal = () => {
-    setShowModal(false);
-    setCurrentStudent(null);
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
+  const closeModal = () => { setEditing(null); setFormData(emptyForm()); };
+  const setField = (name, value) => setFormData((p) => ({ ...p, [name]: value }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    try {
-      if (currentStudent) {
-        // Update existing student
-        const { error } = await supabase
-          .from('students')
-          .update(formData)
-          .eq('id', currentStudent.id);
-
-        if (error) throw error;
-        showAlert('Student updated successfully', 'success');
-      } else {
-        // Add new student
-        const { error } = await supabase
-          .from('students')
-          .insert([formData]);
-
-        if (error) throw error;
-        showAlert('Student added successfully', 'success');
-      }
-
-      handleCloseModal();
-      fetchStudents();
-    } catch (error) {
-      console.error('Error saving student:', error);
-      showAlert('Failed to save student', 'danger');
+    if (editing === 'new') {
+      const { error } = await supabase.from('students').insert([formData]);
+      if (error) return showAlert('error', error.message || 'Failed to add');
+      showAlert('success', 'Student added.');
+    } else {
+      const { error } = await supabase.from('students').update(formData).eq('id', editing.id);
+      if (error) return showAlert('error', error.message || 'Failed to update');
+      showAlert('success', 'Student updated.');
     }
-  };
-
-  const handleDeleteClick = (student) => {
-    setCurrentStudent(student);
-    setShowDeleteModal(true);
+    closeModal();
+    fetchStudents();
   };
 
   const handleDeleteConfirm = async () => {
-    try {
-      const { error } = await supabase
-        .from('students')
-        .delete()
-        .eq('id', currentStudent.id);
-
-      if (error) throw error;
-      showAlert('Student deleted successfully', 'success');
-      setShowDeleteModal(false);
-      fetchStudents();
-    } catch (error) {
-      console.error('Error deleting student:', error);
-      showAlert('Failed to delete student', 'danger');
-    }
+    const { error } = await supabase.from('students').delete().eq('id', confirmDelete.id);
+    if (error) showAlert('error', error.message || 'Failed to delete');
+    else { showAlert('success', 'Student deleted.'); fetchStudents(); }
+    setConfirmDelete(null);
   };
 
-  const showAlert = (message, variant) => {
-    setAlert({ show: true, message, variant });
-    setTimeout(() => {
-      setAlert({ show: false, message: '', variant: '' });
-    }, 3000);
+  const showAlert = (type, message) => {
+    setAlert({ type, message });
+    setTimeout(() => setAlert(null), 3500);
   };
+
+  const filtered = useMemo(() => students.filter((s) => {
+    const term = searchTerm.toLowerCase();
+    const matchesSearch = !term ||
+      (s.student_name || '').toLowerCase().includes(term) ||
+      (s.parent_name || '').toLowerCase().includes(term) ||
+      (s.email || '').toLowerCase().includes(term) ||
+      (s.phone || '').includes(term);
+    const matchesStatus = statusFilter === 'all' || s.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  }), [students, searchTerm, statusFilter]);
+
+  const counts = useMemo(() => students.reduce(
+    (acc, s) => { acc.total++; acc[s.status] = (acc[s.status] || 0) + 1; return acc; },
+    { total: 0, active: 0, inactive: 0, pending: 0, dropped: 0 }
+  ), [students]);
 
   const exportToCSV = () => {
-    const headers = ['Student Name', 'Parent Name', 'Email', 'Phone', 'Date of Birth', 'Gender', 'Preferred Class', 'Status', 'Enrollment Date'];
-    const rows = filteredStudents.map(student => [
-      student.student_name,
-      student.parent_name,
-      student.email,
-      student.phone,
-      student.date_of_birth,
-      student.gender,
-      student.preferred_class,
-      student.status,
-      new Date(student.enrollment_date).toLocaleDateString()
-    ]);
-
-    const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
+    const headers = ['Student name', 'Parent name', 'Email', 'Phone', 'Date of birth', 'Gender', 'Preferred class', 'Status', 'Enrollment date'];
+    const rows = filtered.map((s) => [
+      s.student_name, s.parent_name, s.email, s.phone, s.date_of_birth, s.gender,
+      s.preferred_class, s.status, s.enrollment_date ? new Date(s.enrollment_date).toLocaleDateString() : '',
+    ].map((v) => `"${String(v ?? '').replace(/"/g, '""')}"`));
+    const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = `students_${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
+    URL.revokeObjectURL(url);
   };
-
-  const getStatusBadge = (status) => {
-    const variants = {
-      active: 'success',
-      inactive: 'secondary',
-      pending: 'warning',
-      dropped: 'danger'
-    };
-    return <Badge bg={variants[status] || 'secondary'}>{status}</Badge>;
-  };
-
-  if (loading) {
-    return (
-      <Container className="student-management py-5">
-        <div className="text-center">
-          <p>Loading students...</p>
-        </div>
-      </Container>
-    );
-  }
 
   return (
-    <Container className="student-management py-4">
-      {alert.show && (
-        <Alert variant={alert.variant} dismissible onClose={() => setAlert({ show: false })}>
-          {alert.message}
-        </Alert>
+    <div className="p-6 md:p-8">
+      <header className="mb-8 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <span className="inline-block rounded-full border border-white/15 bg-white/[0.04] px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-white/70 backdrop-blur">
+            Students
+          </span>
+          <h1 className="mt-5 font-[family-name:var(--font-display)] text-4xl font-bold tracking-tight text-white">
+            The roster.
+          </h1>
+          <p className="mt-2 text-sm text-white/55">
+            Active dancers, contact info, and class assignments.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={exportToCSV}
+            className="inline-flex items-center gap-2 rounded-lg border border-white/15 bg-white/5 px-4 py-2 text-sm font-medium text-white/85 hover:border-white/30"
+          >
+            <FaDownload className="text-xs" />
+            Export CSV
+          </button>
+          <button
+            type="button"
+            onClick={openCreate}
+            className="inline-flex items-center gap-2 rounded-lg bg-[#d1060f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#b00310]"
+          >
+            <FaPlus className="text-xs" />
+            Add student
+          </button>
+        </div>
+      </header>
+
+      {alert && (
+        <div
+          className={`mb-5 flex items-center justify-between rounded-xl border px-4 py-3 text-sm backdrop-blur-md ${
+            alert.type === 'success'
+              ? 'border-white/15 bg-white/[0.06] text-white'
+              : 'border-[#d1060f]/30 bg-[#d1060f]/10 text-[#ee2435]'
+          }`}
+        >
+          <span>{alert.message}</span>
+          <button onClick={() => setAlert(null)} className="ml-3 opacity-65 hover:opacity-100">
+            <FaTimes className="text-xs" />
+          </button>
+        </div>
       )}
 
-      <Row className="mb-4">
-        <Col>
-          <div className="d-flex align-items-center mb-3">
-            <FaUsers className="me-2" size={32} style={{ color: '#0ea5e9' }} />
-            <h2 className="mb-0">Student Management</h2>
-          </div>
-          <p className="text-muted">Manage student enrollments, information, and status</p>
-        </Col>
-      </Row>
+      <div className="mb-5 flex flex-wrap items-center gap-3">
+        <div className="relative flex-1 min-w-[260px] max-w-md">
+          <FaSearch className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-white/40" />
+          <input
+            type="text"
+            placeholder="Search name, email, phone…"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className={`${inputCls} pl-9`}
+          />
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {[
+            { v: 'all',      label: `All (${counts.total})` },
+            { v: 'active',   label: `Active (${counts.active || 0})` },
+            { v: 'pending',  label: `Pending (${counts.pending || 0})` },
+            { v: 'inactive', label: `Inactive (${counts.inactive || 0})` },
+            { v: 'dropped',  label: `Dropped (${counts.dropped || 0})` },
+          ].map((f) => (
+            <button
+              key={f.v}
+              type="button"
+              onClick={() => setStatusFilter(f.v)}
+              className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition ${
+                statusFilter === f.v
+                  ? 'border-[#d1060f] bg-[#d1060f] text-white'
+                  : 'border-white/15 bg-white/5 text-white/80 hover:border-white/30'
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
-      {/* Search and Filter Controls */}
-      <Card className="control-card mb-4">
-        <Card.Body>
-          <Row className="g-3">
-            <Col md={5}>
-              <div className="search-box">
-                <FaSearch className="search-icon" />
-                <Form.Control
-                  type="text"
-                  placeholder="Search by name, email, or phone..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="search-input"
-                />
-              </div>
-            </Col>
-            <Col md={3}>
-              <div className="filter-box">
-                <FaFilter className="filter-icon" />
-                <Form.Select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="filter-select"
-                >
-                  <option value="all">All Status</option>
+      <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-md">
+        {loading ? (
+          <div className="px-6 py-16 text-center text-sm text-white/40">Loading students…</div>
+        ) : filtered.length === 0 ? (
+          <div className="px-6 py-16 text-center text-sm text-white/55">
+            {students.length === 0 ? 'No students yet.' : 'No students match this filter.'}
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="border-b border-white/8 bg-white/[0.04] text-xs uppercase tracking-wider text-white/45">
+                <tr>
+                  <th className="px-5 py-3 text-left font-medium">Student</th>
+                  <th className="px-5 py-3 text-left font-medium">Contact</th>
+                  <th className="px-5 py-3 text-left font-medium">Class</th>
+                  <th className="px-5 py-3 text-left font-medium">Status</th>
+                  <th className="px-5 py-3 text-left font-medium">Enrolled</th>
+                  <th className="px-5 py-3 text-right font-medium">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/8">
+                {filtered.map((s) => (
+                  <tr key={s.id} className="hover:bg-white/[0.04]">
+                    <td className="px-5 py-3">
+                      <div className="font-medium text-white">{s.student_name}</div>
+                      <div className="text-xs text-white/55">{s.parent_name}</div>
+                    </td>
+                    <td className="px-5 py-3 text-xs">
+                      <div className="text-white/85">{s.email}</div>
+                      <div className="text-white/55">{s.phone}</div>
+                    </td>
+                    <td className="px-5 py-3 text-white/80">
+                      {s.preferred_class || <span className="text-white/35">—</span>}
+                    </td>
+                    <td className="px-5 py-3"><StatusBadge status={s.status} /></td>
+                    <td className="px-5 py-3 text-xs text-white/55 tabular-nums">
+                      {s.enrollment_date
+                        ? new Date(s.enrollment_date).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' })
+                        : '—'}
+                    </td>
+                    <td className="px-5 py-3">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => openEdit(s)}
+                          className="inline-flex items-center gap-1 rounded-md border border-white/15 bg-white/[0.04] px-2 py-1 text-xs font-medium text-white/85 hover:border-white/30"
+                        >
+                          <FaEdit className="text-[10px]" /> Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setConfirmDelete(s)}
+                          className="inline-flex items-center gap-1 rounded-md border border-[#d1060f]/40 bg-[#d1060f]/15 px-2 py-1 text-xs font-medium text-[#ee2435] hover:bg-[#d1060f]/25"
+                        >
+                          <FaTrash className="text-[10px]" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {editing && (
+        <Modal title={editing === 'new' ? 'Add student' : 'Edit student'} onClose={closeModal}>
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <Grid2>
+              <Field label="Parent name" required>
+                <input type="text" value={formData.parent_name} onChange={(e) => setField('parent_name', e.target.value)} required className={inputCls} />
+              </Field>
+              <Field label="Student name" required>
+                <input type="text" value={formData.student_name} onChange={(e) => setField('student_name', e.target.value)} required className={inputCls} />
+              </Field>
+            </Grid2>
+
+            <Grid2>
+              <Field label="Email" required>
+                <input type="email" value={formData.email} onChange={(e) => setField('email', e.target.value)} required className={inputCls} />
+              </Field>
+              <Field label="Phone" required>
+                <input type="tel" value={formData.phone} onChange={(e) => setField('phone', e.target.value)} required className={inputCls} />
+              </Field>
+            </Grid2>
+
+            <Grid2>
+              <Field label="Date of birth">
+                <input type="date" value={formData.date_of_birth} onChange={(e) => setField('date_of_birth', e.target.value)} className={inputCls} />
+              </Field>
+              <Field label="Gender">
+                <select value={formData.gender} onChange={(e) => setField('gender', e.target.value)} className={`${inputCls} ${selectChevron}`}>
+                  <option value="">Select…</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="other">Other</option>
+                </select>
+              </Field>
+            </Grid2>
+
+            <div className="grid gap-4 md:grid-cols-3">
+              <Field label="Preferred class">
+                <select value={formData.preferred_class} onChange={(e) => setField('preferred_class', e.target.value)} className={`${inputCls} ${selectChevron}`}>
+                  <option value="">Select…</option>
+                  <option value="Bollywood">Bollywood</option>
+                  <option value="Hip-Hop">Hip-Hop</option>
+                  <option value="Freestyle">Freestyle</option>
+                  <option value="Indian">Indian</option>
+                  <option value="Contemporary">Contemporary</option>
+                </select>
+              </Field>
+              <Field label="Preferred weekday">
+                <select value={formData.preferred_weekday} onChange={(e) => setField('preferred_weekday', e.target.value)} className={`${inputCls} ${selectChevron}`}>
+                  <option value="">Select…</option>
+                  {['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'].map((d) => <option key={d}>{d}</option>)}
+                </select>
+              </Field>
+              <Field label="Time slot">
+                <select value={formData.preferred_time_slot} onChange={(e) => setField('preferred_time_slot', e.target.value)} className={`${inputCls} ${selectChevron}`}>
+                  <option value="">Select…</option>
+                  <option value="morning">Morning</option>
+                  <option value="afternoon">Afternoon</option>
+                  <option value="evening">Evening</option>
+                </select>
+              </Field>
+            </div>
+
+            <Grid2>
+              <Field label="Experience level">
+                <select value={formData.experience_level} onChange={(e) => setField('experience_level', e.target.value)} className={`${inputCls} ${selectChevron}`}>
+                  <option value="">Select…</option>
+                  <option value="beginner">Beginner</option>
+                  <option value="intermediate">Intermediate</option>
+                  <option value="advanced">Advanced</option>
+                </select>
+              </Field>
+              <Field label="Status">
+                <select value={formData.status} onChange={(e) => setField('status', e.target.value)} className={`${inputCls} ${selectChevron}`}>
                   <option value="active">Active</option>
                   <option value="inactive">Inactive</option>
                   <option value="pending">Pending</option>
                   <option value="dropped">Dropped</option>
-                </Form.Select>
-              </div>
-            </Col>
-            <Col md={4} className="d-flex justify-content-end gap-2">
-              <Button variant="outline-primary" onClick={exportToCSV}>
-                <FaDownload className="me-2" />
-                Export CSV
-              </Button>
-              <Button variant="primary" onClick={() => handleShowModal()}>
-                <FaPlus className="me-2" />
-                Add Student
-              </Button>
-            </Col>
-          </Row>
-        </Card.Body>
-      </Card>
+                </select>
+              </Field>
+            </Grid2>
 
-      {/* Students Table */}
-      <Card className="data-card">
-        <Card.Header>
-          <h5 className="mb-0">All Students ({filteredStudents.length})</h5>
-        </Card.Header>
-        <Card.Body className="p-0">
-          <div className="table-responsive">
-            <Table hover className="mb-0">
-              <thead>
-                <tr>
-                  <th>Student Name</th>
-                  <th>Parent Name</th>
-                  <th>Email</th>
-                  <th>Phone</th>
-                  <th>Preferred Class</th>
-                  <th>Status</th>
-                  <th>Enrollment Date</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredStudents.length === 0 ? (
-                  <tr>
-                    <td colSpan="8" className="text-center py-4">
-                      No students found
-                    </td>
-                  </tr>
-                ) : (
-                  filteredStudents.map((student) => (
-                    <tr key={student.id}>
-                      <td className="fw-bold">{student.student_name}</td>
-                      <td>{student.parent_name}</td>
-                      <td>{student.email}</td>
-                      <td>{student.phone}</td>
-                      <td>{student.preferred_class || 'N/A'}</td>
-                      <td>{getStatusBadge(student.status)}</td>
-                      <td>{new Date(student.enrollment_date).toLocaleDateString()}</td>
-                      <td>
-                        <Button
-                          variant="outline-primary"
-                          size="sm"
-                          className="me-2"
-                          onClick={() => handleShowModal(student)}
-                        >
-                          <FaEdit />
-                        </Button>
-                        <Button
-                          variant="outline-danger"
-                          size="sm"
-                          onClick={() => handleDeleteClick(student)}
-                        >
-                          <FaTrash />
-                        </Button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </Table>
-          </div>
-        </Card.Body>
-      </Card>
+            <Field label="Notes">
+              <textarea rows={3} value={formData.notes} onChange={(e) => setField('notes', e.target.value)} placeholder="Anything else…" className={`${inputCls} resize-none`} />
+            </Field>
 
-      {/* Add/Edit Student Modal */}
-      <Modal show={showModal} onHide={handleCloseModal} size="lg">
-        <Modal.Header closeButton>
-          <Modal.Title>
-            {currentStudent ? 'Edit Student' : 'Add New Student'}
-          </Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form onSubmit={handleSubmit}>
-            <Row>
-              <Col md={6}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Parent Name *</Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="parent_name"
-                    value={formData.parent_name}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </Form.Group>
-              </Col>
-              <Col md={6}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Student Name *</Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="student_name"
-                    value={formData.student_name}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </Form.Group>
-              </Col>
-            </Row>
-
-            <Row>
-              <Col md={6}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Email *</Form.Label>
-                  <Form.Control
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </Form.Group>
-              </Col>
-              <Col md={6}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Phone *</Form.Label>
-                  <Form.Control
-                    type="tel"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </Form.Group>
-              </Col>
-            </Row>
-
-            <Row>
-              <Col md={6}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Date of Birth</Form.Label>
-                  <Form.Control
-                    type="date"
-                    name="date_of_birth"
-                    value={formData.date_of_birth}
-                    onChange={handleInputChange}
-                  />
-                </Form.Group>
-              </Col>
-              <Col md={6}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Gender</Form.Label>
-                  <Form.Select
-                    name="gender"
-                    value={formData.gender}
-                    onChange={handleInputChange}
-                  >
-                    <option value="">Select...</option>
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                    <option value="other">Other</option>
-                  </Form.Select>
-                </Form.Group>
-              </Col>
-            </Row>
-
-            <Row>
-              <Col md={4}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Preferred Class</Form.Label>
-                  <Form.Select
-                    name="preferred_class"
-                    value={formData.preferred_class}
-                    onChange={handleInputChange}
-                  >
-                    <option value="">Select...</option>
-                    <option value="Ballet">Ballet</option>
-                    <option value="Hip Hop">Hip Hop</option>
-                    <option value="Contemporary">Contemporary</option>
-                    <option value="Jazz">Jazz</option>
-                    <option value="Tap">Tap</option>
-                  </Form.Select>
-                </Form.Group>
-              </Col>
-              <Col md={4}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Preferred Weekday</Form.Label>
-                  <Form.Select
-                    name="preferred_weekday"
-                    value={formData.preferred_weekday}
-                    onChange={handleInputChange}
-                  >
-                    <option value="">Select...</option>
-                    <option value="Monday">Monday</option>
-                    <option value="Tuesday">Tuesday</option>
-                    <option value="Wednesday">Wednesday</option>
-                    <option value="Thursday">Thursday</option>
-                    <option value="Friday">Friday</option>
-                    <option value="Saturday">Saturday</option>
-                  </Form.Select>
-                </Form.Group>
-              </Col>
-              <Col md={4}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Time Slot</Form.Label>
-                  <Form.Select
-                    name="preferred_time_slot"
-                    value={formData.preferred_time_slot}
-                    onChange={handleInputChange}
-                  >
-                    <option value="">Select...</option>
-                    <option value="morning">Morning</option>
-                    <option value="afternoon">Afternoon</option>
-                    <option value="evening">Evening</option>
-                  </Form.Select>
-                </Form.Group>
-              </Col>
-            </Row>
-
-            <Row>
-              <Col md={6}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Experience Level</Form.Label>
-                  <Form.Select
-                    name="experience_level"
-                    value={formData.experience_level}
-                    onChange={handleInputChange}
-                  >
-                    <option value="">Select...</option>
-                    <option value="beginner">Beginner</option>
-                    <option value="intermediate">Intermediate</option>
-                    <option value="advanced">Advanced</option>
-                  </Form.Select>
-                </Form.Group>
-              </Col>
-              <Col md={6}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Status</Form.Label>
-                  <Form.Select
-                    name="status"
-                    value={formData.status}
-                    onChange={handleInputChange}
-                  >
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                    <option value="pending">Pending</option>
-                    <option value="dropped">Dropped</option>
-                  </Form.Select>
-                </Form.Group>
-              </Col>
-            </Row>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Notes</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={3}
-                name="notes"
-                value={formData.notes}
-                onChange={handleInputChange}
-                placeholder="Any additional notes..."
-              />
-            </Form.Group>
-
-            <div className="d-flex justify-content-end gap-2">
-              <Button variant="secondary" onClick={handleCloseModal}>
+            <div className="flex items-center justify-end gap-3 border-t border-white/8 pt-4">
+              <button
+                type="button"
+                onClick={closeModal}
+                className="rounded-lg border border-white/15 bg-white/5 px-4 py-2 text-sm font-medium text-white/85 hover:border-white/30"
+              >
                 Cancel
-              </Button>
-              <Button variant="primary" type="submit">
-                {currentStudent ? 'Update Student' : 'Add Student'}
-              </Button>
+              </button>
+              <button
+                type="submit"
+                className="rounded-lg bg-[#d1060f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#b00310]"
+              >
+                {editing === 'new' ? 'Add student' : 'Save changes'}
+              </button>
             </div>
-          </Form>
-        </Modal.Body>
-      </Modal>
+          </form>
+        </Modal>
+      )}
 
-      {/* Delete Confirmation Modal */}
-      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Confirm Delete</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          Are you sure you want to delete {currentStudent?.student_name}? This action cannot be undone.
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
-            Cancel
-          </Button>
-          <Button variant="danger" onClick={handleDeleteConfirm}>
-            Delete
-          </Button>
-        </Modal.Footer>
-      </Modal>
-    </Container>
+      {confirmDelete && (
+        <Modal title="Delete student?" onClose={() => setConfirmDelete(null)} size="sm">
+          <p className="text-sm text-white/85">
+            Are you sure you want to delete{' '}
+            <strong className="text-white">{confirmDelete.student_name}</strong>?
+            This action can&rsquo;t be undone.
+          </p>
+          <div className="mt-6 flex items-center justify-end gap-3">
+            <button
+              type="button"
+              onClick={() => setConfirmDelete(null)}
+              className="rounded-lg border border-white/15 bg-white/5 px-4 py-2 text-sm font-medium text-white/85 hover:border-white/30"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleDeleteConfirm}
+              className="rounded-lg bg-[#d1060f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#b00310]"
+            >
+              Delete
+            </button>
+          </div>
+        </Modal>
+      )}
+    </div>
   );
-};
+}
 
-export default StudentManagement;
+/* ── tiny primitives ── */
+
+function Modal({ title, children, onClose, size = 'lg' }) {
+  const widthCls = size === 'sm' ? 'max-w-md' : 'max-w-2xl';
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-[#0a0a0f]/80 p-4 backdrop-blur-md sm:items-center">
+      <div className={`w-full ${widthCls} overflow-hidden rounded-2xl border border-white/10 bg-[#12121a] shadow-[0_30px_120px_rgba(0,0,0,0.6)]`}>
+        <header className="flex items-center justify-between border-b border-white/8 px-6 py-4">
+          <h2 className="font-[family-name:var(--font-display)] text-lg font-bold tracking-tight text-white">{title}</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="grid h-8 w-8 place-items-center rounded-full text-white/45 hover:bg-white/10 hover:text-white"
+          >
+            <FaTimes className="text-xs" />
+          </button>
+        </header>
+        <div className="max-h-[75vh] overflow-y-auto px-6 py-5">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+function Grid2({ children }) {
+  return <div className="grid gap-4 md:grid-cols-2">{children}</div>;
+}
+
+function Field({ label, required, children }) {
+  return (
+    <div>
+      <label className="mb-1.5 block text-xs font-medium text-white/70">
+        {label}{required && <span className="ml-1 text-[#ee2435]">*</span>}
+      </label>
+      {children}
+    </div>
+  );
+}
+
+function StatusBadge({ status }) {
+  const v = STATUS_META[status] || STATUS_META.pending;
+  return (
+    <span
+      className="inline-block rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
+      style={{ background: v.bg, color: v.fg }}
+    >
+      {v.label}
+    </span>
+  );
+}

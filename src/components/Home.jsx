@@ -1,141 +1,122 @@
-import React from 'react';
-import { Container, Row, Col, Button } from 'react-bootstrap';
+'use client';
+
 import { motion } from 'framer-motion';
-import { FaPlay, FaArrowRight, FaStar } from 'react-icons/fa';
+import { FaArrowRight } from 'react-icons/fa';
 import logo from '../assets/icons/logo.png';
-import '../styles/Home.css';
+import { GlowButton } from './ui';
 
-const Home = () => {
-  const textVariants = {
-    hidden: { opacity: 0, y: 50 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.8,
-        ease: [0.6, -0.05, 0.01, 0.99]
-      }
-    }
-  };
+/**
+ * Hero — confident, minimal, centered.
+ * Style ticker · logo · headline · meta · CTAs.
+ */
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.2,
-        delayChildren: 0.3
-      }
-    }
-  };
+const STYLES = ['Bollywood', 'Hip-hop', 'Freestyle', 'Indian'];
 
-  const floatingVariants = {
-    animate: {
-      y: [-20, 20, -20],
-      rotate: [0, 5, 0, -5, 0],
-      transition: {
-        duration: 6,
-        repeat: Infinity,
-        ease: "easeInOut"
-      }
-    }
-  };
-
+export default function Home() {
   return (
-    <section id="home" className="home-section d-flex align-items-center">
-      {/* Animated Background Elements */}
-      <div className="home-background">
-        <div className="gradient-orb orb-1"></div>
-        <div className="gradient-orb orb-2"></div>
-        <div className="gradient-orb orb-3"></div>
+    <section
+      id="home"
+      className="relative flex min-h-[100svh] items-center overflow-hidden bg-[#0a0a0f] text-white"
+    >
+      {/* Single off-screen red glow — atmosphere, not decoration */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -bottom-1/3 -right-1/4 h-[80vh] w-[80vh] rounded-full blur-3xl"
+        style={{
+          background:
+            'radial-gradient(circle, rgba(209,6,15,0.28) 0%, transparent 60%)',
+        }}
+      />
+
+      {/* Film grain */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-[0.05] mix-blend-overlay"
+        style={{
+          backgroundImage:
+            'url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'200\' height=\'200\'><filter id=\'n\'><feTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\'/></filter><rect width=\'100%\' height=\'100%\' filter=\'url(%23n)\'/></svg>")',
+        }}
+      />
+
+      <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center px-6 pb-24 pt-32 text-center md:pt-40">
+        {/* Style ticker — what we teach */}
+        <motion.div
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 font-[family-name:var(--font-display)] text-[0.75rem] font-semibold uppercase tracking-[0.18em] text-white/90 md:text-sm"
+        >
+          {STYLES.map((s, i) => (
+            <span key={s} className="flex items-center gap-3">
+              {i > 0 && <span className="text-[#ee2435]">／</span>}
+              <span>{s}</span>
+            </span>
+          ))}
+        </motion.div>
+
+        {/* Big logo — the identity mark */}
+        <motion.img
+          src={logo.src}
+          alt="Cherry Dance Studios"
+          initial={{ opacity: 0, scale: 0.85 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+          className="mx-auto mt-10 h-28 w-28 drop-shadow-[0_12px_48px_rgba(209,6,15,0.55)] sm:h-32 sm:w-32 md:mt-12 md:h-40 md:w-40 lg:h-48 lg:w-48"
+        />
+
+        {/* Editorial headline — brand name on one line, centered. */}
+        <motion.h1
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          className="mt-8 whitespace-nowrap font-[family-name:var(--font-display)] font-bold leading-[1] tracking-[-0.045em]"
+          style={{ fontSize: 'clamp(1.5rem, 6vw, 5.25rem)' }}
+        >
+          Cherry Dance{' '}
+          <span className="bg-gradient-to-br from-[#ee2435] via-[#d1060f] to-[#910813] bg-clip-text text-transparent">
+            Studios.
+          </span>
+        </motion.h1>
+
+        {/* Meta line */}
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.7, duration: 0.6 }}
+          className="mt-8 font-[family-name:var(--font-display)] text-xs uppercase tracking-[0.25em] text-white/55 md:text-sm"
+        >
+          Barrhaven, Ottawa
+          <span className="mx-3 text-[#d1060f]">●</span>
+          Ages 4+
+          <span className="mx-3 text-[#d1060f]">●</span>
+          Cherry &amp; Pranil
+        </motion.p>
+
+        {/* CTAs */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.85, duration: 0.6 }}
+          className="mt-12 flex flex-wrap items-center justify-center gap-x-7 gap-y-4"
+        >
+          <GlowButton
+            variant="primary"
+            size="lg"
+            href="#register"
+            icon={<FaArrowRight />}
+          >
+            Register your dancer
+          </GlowButton>
+          <a
+            href="#classes"
+            className="group inline-flex items-center gap-2 text-sm font-medium text-white/85 transition hover:text-white md:text-base"
+          >
+            See the classes
+            <span className="transition group-hover:translate-x-1">→</span>
+          </a>
+        </motion.div>
       </div>
-      
-      {/* Floating Particles */}
-      <div className="particles">
-        {[...Array(20)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="particle"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-            }}
-            animate={{
-              y: [0, -30, 0],
-              opacity: [0.2, 0.8, 0.2],
-            }}
-            transition={{
-              duration: 3 + Math.random() * 2,
-              repeat: Infinity,
-              delay: Math.random() * 2,
-            }}
-          />
-        ))}
-      </div>
-      
-      <Container className="home-content">
-        <Row className="justify-content-center text-center">
-          <Col xs={12} md={10} lg={9}>
-            <motion.div
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-            >
-              {/* Logo */}
-              <motion.div className="hero-logo-wrap" variants={textVariants}>
-                <img src={logo} alt="Cherry Dance Studios" className="hero-logo" />
-              </motion.div>
 
-              {/* Main Title */}
-              <motion.h1
-                className="home-title"
-                variants={textVariants}
-              >
-                <span className="studio-name"><span className="name-cherry">Cherry</span> Dance Studios</span>
-              </motion.h1>
-
-              {/* Subtitle */}
-              <motion.h2
-                className="home-subtitle"
-                variants={textVariants}
-              >
-                Move with Passion, Dance with Heart!
-              </motion.h2>
-
-              {/* Description */}
-              {/* CTA Buttons */}
-              <motion.div
-                className="button-group"
-                variants={textVariants}
-              >
-                <Button className="cta-primary" size="lg" href="#register">
-                  <span>Start Your Journey</span>
-                  <FaArrowRight className="btn-icon" />
-                </Button>
-                <Button className="cta-secondary" size="lg" href="#gallery" variant="outline-light">
-                  <FaPlay className="btn-icon" />
-                  <span>Watch Videos</span>
-                </Button>
-              </motion.div>
-            </motion.div>
-
-            {/* Scroll Indicator */}
-            <motion.div
-              className="scroll-indicator"
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 1.5, duration: 1 }}
-            >
-              <div className="mouse">
-                <div className="mouse-wheel"></div>
-              </div>
-              <span className="scroll-text">Scroll to explore</span>
-            </motion.div>
-          </Col>
-        </Row>
-      </Container>
     </section>
   );
-};
-
-export default Home;
+}

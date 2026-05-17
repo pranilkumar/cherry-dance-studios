@@ -1,3 +1,4 @@
+'use client';
 // src/RegistrationBanner.jsx
 import React from 'react';
 import { Modal, Button, Container, Row, Col } from 'react-bootstrap';

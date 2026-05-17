@@ -1,127 +1,197 @@
-import React from 'react';
-import { Container, Row, Col } from 'react-bootstrap';
-import { motion } from 'framer-motion';
-import { FaBolt, FaPalette, FaTheaterMasks } from 'react-icons/fa';
-import '../styles/Classes.css';
+'use client';
 
-const classData = [
+import { motion } from 'framer-motion';
+import { FaBolt, FaPalette, FaTheaterMasks, FaArrowRight, FaClock } from 'react-icons/fa';
+import { BentoCard, GlowButton, KineticHeading } from './ui';
+
+const classes = [
   {
     title: 'Little Stars',
     ageGroup: 'Ages 4–7',
-    description: 'A fun and nurturing introduction to dance. Build coordination, confidence, and a love for movement.',
-    slots: [
-      { days: 'Tuesday & Thursday', time: '5:45 PM – 6:30 PM' }
-    ],
-    duration: '45 min per class',
+    tagline: 'First steps, big smiles.',
+    description:
+      'A nurturing intro to dance. Coordination, confidence, and a love for movement.',
+    slots: [{ days: 'Tue & Thu', time: '5:45 – 6:30 PM' }],
+    duration: '45 min',
     icon: FaPalette,
-    color: '#D1060F'
+    gradient: 'cherry',
+    span: { col: 1 },
   },
   {
     title: 'The Crew',
     ageGroup: 'Ages 7–10',
-    description: 'Structured choreography, rhythm training, and creative expression in a supportive environment.',
+    tagline: 'Where the squad forms.',
+    description:
+      'Structured choreography, rhythm training, and creative expression in a tight-knit crew.',
     slots: [
-      { days: 'Monday & Wednesday', time: '6:00 PM – 7:00 PM' },
-      { days: 'Tuesday & Thursday', time: '6:30 PM – 7:30 PM' }
+      { days: 'Mon & Wed', time: '6:00 – 7:00 PM' },
+      { days: 'Tue & Thu', time: '6:30 – 7:30 PM' },
     ],
-    duration: '60 min per class',
+    duration: '60 min',
     icon: FaTheaterMasks,
-    color: '#1d1d1f'
+    gradient: 'fire',
+    span: { col: 1 },
+    featured: true,
   },
   {
     title: 'Slay Squad',
     ageGroup: 'Ages 10+',
-    description: 'Intensive Bollywood, freestyle, and choreography training for dedicated dancers ready to level up.',
-    slots: [
-      { days: 'Monday & Wednesday', time: '7:00 PM – 8:00 PM' }
-    ],
-    duration: '2 hrs per class',
+    tagline: 'Train hard. Slay harder.',
+    description:
+      'Intensive Bollywood, hip-hop, freestyle, and choreography for dancers ready to level up.',
+    slots: [{ days: 'Mon & Wed', time: '7:00 – 8:00 PM' }],
+    duration: '2 hrs',
     icon: FaBolt,
-    color: '#D1060F'
-  }
+    gradient: 'noir',
+    span: { col: 3 },
+  },
 ];
 
-const Classes = () => {
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { staggerChildren: 0.15 } }
-  };
-
-  const cardVariants = {
-    hidden: { y: 50, opacity: 0 },
-    visible: { y: 0, opacity: 1, transition: { duration: 0.5, ease: 'easeOut' } }
-  };
-
+export default function Classes() {
   return (
-    <section id="classes" className="classes-section">
-      <Container>
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          viewport={{ once: true }}
-        >
-          <h2 className="section-title text-center mb-2">Our Classes</h2>
-          <p className="section-subtitle text-center mb-5">
-            Classes for all age groups — register to discuss fees and availability
-          </p>
-        </motion.div>
+    <section
+      id="classes"
+      className="relative overflow-hidden bg-[#0a0a0f] py-24 text-white md:py-32"
+    >
+      {/* Subtle grid pattern */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-[0.04]"
+        style={{
+          backgroundImage:
+            'linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px)',
+          backgroundSize: '64px 64px',
+          maskImage: 'radial-gradient(ellipse at center, black 30%, transparent 75%)',
+        }}
+      />
 
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: '-100px' }}
-        >
-          <Row className="justify-content-center">
-            {classData.map((cls, index) => (
-              <Col key={index} xs={12} md={6} lg={4} className="mb-4">
-                <motion.div variants={cardVariants} whileHover={{ y: -8, transition: { duration: 0.3 } }}>
-                  <div className="class-card">
-                    <div className="class-card-header" style={{ background: cls.color }}>
-                      <cls.icon className="class-card-icon" />
-                      <span className="class-age-badge">{cls.ageGroup}</span>
+      <div className="relative mx-auto max-w-7xl px-6">
+        {/* Header */}
+        <div className="mx-auto mb-16 max-w-3xl text-center">
+          <motion.span
+            initial={{ opacity: 0, y: 12 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            viewport={{ once: true }}
+            className="inline-block rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-xs font-medium uppercase tracking-[0.18em] text-white/70 backdrop-blur"
+          >
+            Our classes
+          </motion.span>
+
+          <KineticHeading
+            as="h2"
+            split="word"
+            className="mt-6 text-[clamp(2.5rem,6vw,4.5rem)] text-white"
+          >
+            Pick your level.
+          </KineticHeading>
+          <KineticHeading
+            as="h2"
+            split="word"
+            gradient="cherry"
+            className="-mt-2 text-[clamp(2.5rem,6vw,4.5rem)]"
+          >
+            Find your crew.
+          </KineticHeading>
+
+          <motion.p
+            initial={{ opacity: 0, y: 12 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4, duration: 0.6 }}
+            viewport={{ once: true }}
+            className="mt-6 text-lg text-white/65"
+          >
+            Three programs built around how kids actually learn — by playing, by belonging,
+            and by leveling up with people they love training with.
+          </motion.p>
+        </div>
+
+        {/* Bento grid */}
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-3 md:auto-rows-[1fr]">
+          {classes.map((cls, i) => {
+            const Icon = cls.icon;
+            return (
+              <motion.div
+                key={cls.title}
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 * i, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                viewport={{ once: true, margin: '-80px' }}
+                className={
+                  cls.span.col === 2 ? 'md:col-span-2' : 'md:col-span-1'
+                }
+              >
+                <BentoCard
+                  gradient={cls.gradient}
+                  glow={cls.featured}
+                  className="flex h-full min-h-[360px] flex-col justify-between"
+                >
+                  {/* Header row */}
+                  <div className="flex items-start justify-between">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-md">
+                      <Icon className="text-2xl text-white" />
                     </div>
-                    <div className="class-card-body">
-                      <h3 className="class-title">{cls.title}</h3>
-                      <p className="class-description">{cls.description}</p>
+                    <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-white backdrop-blur-md">
+                      {cls.ageGroup}
+                    </span>
+                  </div>
 
-                      <div className="class-schedule">
-                        <div className="schedule-label">Schedule</div>
-                        {cls.slots.map((slot, i) => (
-                          <div key={i} className="schedule-slot">
-                            <span className="slot-days">{slot.days}</span>
-                            <span className="slot-time">{slot.time}</span>
-                          </div>
-                        ))}
-                      </div>
+                  {/* Content */}
+                  <div className="mt-8">
+                    <h3 className="font-[family-name:var(--font-display)] text-3xl font-bold tracking-tight md:text-4xl">
+                      {cls.title}
+                    </h3>
+                    <p className="mt-1 text-base font-medium text-white/85">
+                      {cls.tagline}
+                    </p>
+                    <p className="mt-3 text-sm leading-relaxed text-white/75">
+                      {cls.description}
+                    </p>
+                  </div>
 
-                      <div className="class-duration">
-                        <span className="duration-label">Duration: </span>
-                        <span className="duration-value">{cls.duration}</span>
+                  {/* Schedule */}
+                  <div className="mt-6 space-y-2 border-t border-white/15 pt-5">
+                    {cls.slots.map((slot, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between text-sm"
+                      >
+                        <span className="font-semibold text-white/95">{slot.days}</span>
+                        <span className="font-mono text-xs text-white/75">{slot.time}</span>
                       </div>
+                    ))}
+                    <div className="mt-3 flex items-center gap-1.5 text-xs text-white/65">
+                      <FaClock className="text-[10px]" />
+                      <span>{cls.duration} per class</span>
                     </div>
                   </div>
-                </motion.div>
-              </Col>
-            ))}
-          </Row>
-        </motion.div>
+                </BentoCard>
+              </motion.div>
+            );
+          })}
+        </div>
 
+        {/* CTA row */}
         <motion.div
-          className="text-center mt-4"
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          transition={{ delay: 0.5, duration: 0.6 }}
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.6 }}
           viewport={{ once: true }}
+          className="mt-14 flex flex-col items-center gap-4 text-center"
         >
-          <p className="class-note">
-            <strong>Interested?</strong> Register below and we'll get in touch to discuss availability and fees.
+          <p className="text-base text-white/70">
+            Not sure which fits? Register and we&apos;ll match your dancer to the right crew.
           </p>
+          <GlowButton
+            variant="primary"
+            size="lg"
+            href="#register"
+            icon={<FaArrowRight />}
+          >
+            Register your dancer
+          </GlowButton>
         </motion.div>
-      </Container>
+      </div>
     </section>
   );
-};
-
-export default Classes;
+}

@@ -1,13 +1,5 @@
-import { Navigate } from 'react-router-dom';
-
-const ProtectedRoute = ({ children }) => {
-  const isAuthenticated = localStorage.getItem('admin_auth') === 'true';
-
-  if (!isAuthenticated) {
-    return <Navigate to="/admin" replace />;
-  }
-
-  return children;
-};
-
+'use client';
+// Auth is handled by AdminLayoutWrapper — this component is kept for compatibility
+const ProtectedRoute = ({ children }) => children;
 export default ProtectedRoute;
+

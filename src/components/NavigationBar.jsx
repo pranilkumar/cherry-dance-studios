@@ -1,200 +1,249 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Navbar, Nav, Container } from 'react-bootstrap';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { FaHome, FaInfoCircle, FaDumbbell, FaImages, FaUserTie, FaEnvelope, FaUserPlus } from 'react-icons/fa';
-import CP from '../assets/icons/logo.png';
-import '../styles/NavigationBar.css';
+'use client';
 
-const NavigationBar = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
+import { useState, useEffect, useRef } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FaUserPlus, FaBars, FaTimes } from 'react-icons/fa';
+import CP from '../assets/icons/logo.png';
+
+// Section anchors on home plus dedicated routes for Workshops + Gallery.
+const navItems = [
+  { id: 'home', label: 'Home' },
+  { id: 'about', label: 'About' },
+  { id: 'classes', label: 'Classes' },
+  { id: 'workshops', label: 'Workshops', route: '/workshops' },
+  { id: 'gallery', label: 'Gallery', route: '/gallery' },
+  { id: 'instructors', label: 'Instructors' },
+  { id: 'contact', label: 'Contact' },
+];
+
+export default function NavigationBar() {
+  const router = useRouter();
+  const pathname = usePathname();
   const [activeLink, setActiveLink] = useState('home');
   const [scrolled, setScrolled] = useState(false);
-  const navbarRef = useRef(null);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const navRef = useRef(null);
 
-  // Update active link based on current route
+  // Sync active link with pathname for the routes that actually exist.
   useEffect(() => {
-    const path = location.pathname;
     const pathToId = {
       '/': 'home',
-      '/about': 'about',
-      '/classes': 'classes',
       '/gallery': 'gallery',
-      '/instructors': 'instructors',
-      '/contact': 'contact',
-      '/register': 'register'
+      '/register': 'register',
+      '/workshops': 'workshops',
     };
-    
-    if (pathToId[path]) {
-      setActiveLink(pathToId[path]);
+    // Nested workshop pages (/workshops/[slug]) still highlight Workshops.
+    if (pathname?.startsWith('/workshops')) {
+      setActiveLink('workshops');
+    } else if (pathToId[pathname]) {
+      setActiveLink(pathToId[pathname]);
     }
-  }, [location]);
+  }, [pathname]);
 
+  // Scrolled state — non-home pages stay in the solid-dark style by default
+  // (the transparent pill disappears on white backgrounds).
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 50);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []); 
+    const onScroll = () => setScrolled(window.scrollY > 40 || pathname !== '/');
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [pathname]);
 
+
+  // Section scrollspy on home page
   useEffect(() => {
-    // Only track scroll position on the home page
-    if (location.pathname !== '/') return;
-
-    const sections = [
-      { id: 'home', element: document.getElementById('home') },
-      { id: 'about', element: document.getElementById('about') },
-      { id: 'classes', element: document.getElementById('classes') },
-      { id: 'pricing', element: document.getElementById('pricing') },
-      { id: 'gallery', element: document.getElementById('gallery') },
-      { id: 'instructors', element: document.getElementById('instructors') },
-      { id: 'faq', element: document.getElementById('faq') },
-      { id: 'contact', element: document.getElementById('contact') },
-      { id: 'register', element: document.getElementById('register') },
-    ].filter(sec => sec.element); 
-
-    const handleScroll = () => {
-      const navbarHeight = navbarRef.current ? navbarRef.current.offsetHeight : 0;
-      const scrollPos = window.scrollY + navbarHeight + 1;
-      let currentActive = 'home';
-
-      for (let i = sections.length - 1; i >= 0; i--) {
-        const section = sections[i].element;
-        const sectionId = sections[i].id;
-
-        if (section && scrollPos >= section.offsetTop && scrollPos < (section.offsetTop + section.offsetHeight)) {
-          currentActive = sectionId;
-          break;
-        }
-      }
-
-      if (activeLink !== currentActive) {
-        setActiveLink(currentActive);
+    if (pathname !== '/') return;
+    const ids = ['home', 'about', 'classes', 'gallery', 'instructors', 'contact', 'register'];
+    const onScroll = () => {
+      const navHeight = navRef.current?.offsetHeight ?? 0;
+      const pos = window.scrollY + navHeight + 4;
+      for (let i = ids.length - 1; i >= 0; i--) {
+        const el = document.getElementById(ids[i]);
+        if (!el) continue;
+        if (pos >= el.offsetTop) { setActiveLink(ids[i]); break; }
       }
     };
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [pathname]);
 
-    window.addEventListener('scroll', handleScroll);
-    handleScroll();
+  // Lock body scroll when mobile drawer open
+  useEffect(() => {
+    document.body.style.overflow = mobileOpen ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [mobileOpen]);
 
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
-  }, [activeLink, location.pathname]); 
+  const handleNav = (item) => {
+    setMobileOpen(false);
 
-  const handleNavClick = (id) => {
-    const currentPath = location.pathname;
-    
-    // Check if we're on the home page
-    if (currentPath === '/') {
-      // On home page - scroll to section
-      setActiveLink(id);
-      const section = document.getElementById(id);
-      if (section) {
-        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // On home: smooth-scroll to the section.
+    if (pathname === '/') {
+      const el = document.getElementById(item.id);
+      if (el) {
+        setActiveLink(item.id);
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
       }
+    }
+
+    // From other pages: home nav goes to /, items with explicit routes
+    // (e.g. Gallery → /gallery) go there, everything else goes to /#id.
+    if (item.id === 'home') {
+      router.push('/');
+    } else if (item.route) {
+      router.push(item.route);
     } else {
-      // On other pages - navigate to respective route or home
-      const routeMap = {
-        'home': '/',
-        'about': '/about',
-        'classes': '/classes',
-        'instructors': '/instructors',
-        'contact': '/contact',
-        'gallery': '/gallery'
-      };
-      
-      if (routeMap[id]) {
-        navigate(routeMap[id]);
-      } else {
-        // If no specific route, go to home and scroll
-        navigate('/');
-        setTimeout(() => {
-          const section = document.getElementById(id);
-          if (section) {
-            section.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          }
-        }, 100);
-      }
+      router.push(`/#${item.id}`);
     }
   };
 
-  const handleRegisterClick = () => {
-    navigate('/register');
+  const goRegister = () => {
+    setMobileOpen(false);
+    router.push('/register');
   };
-
-  const navItems = [
-    { id: 'home', label: 'Home', icon: FaHome },
-    { id: 'about', label: 'About', icon: FaInfoCircle },
-    { id: 'classes', label: 'Classes', icon: FaDumbbell },
-    { id: 'gallery', label: 'Gallery', icon: FaImages },
-    { id: 'instructors', label: 'Instructors', icon: FaUserTie },
-    { id: 'contact', label: 'Contact', icon: FaEnvelope },
-  ];
 
   return (
-    <Navbar 
-      ref={navbarRef} 
-      variant="dark" 
-      expand="lg" 
-      fixed="top" 
-      className={`modern-navbar ${scrolled ? 'scrolled' : ''}`}
-    >
-      <Container fluid>
-        <Navbar.Brand 
-          onClick={() => handleNavClick('home')} 
-          className="modern-brand"
+    <>
+      <motion.nav
+        ref={navRef}
+        initial={{ y: -24, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+        className="fixed left-1/2 top-4 z-50 w-[min(1200px,calc(100%-1.5rem))] -translate-x-1/2"
+      >
+        <div
+          className={`flex items-center justify-between rounded-full border px-3 py-2 transition-all duration-500 md:px-5 ${
+            scrolled
+              ? 'border-white/10 bg-[#0a0a0f]/80 shadow-[0_8px_40px_rgba(10,10,15,0.4)] backdrop-blur-2xl'
+              : 'border-white/10 bg-white/5 backdrop-blur-xl'
+          }`}
         >
-          <motion.div
-            className="brand-container"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+          {/* Brand — always visible in the navbar. */}
+          <button
+            onClick={() => handleNav({ id: 'home', route: '/' })}
+            className="flex items-center gap-2.5 pl-2 transition hover:opacity-80"
           >
-            <img src={CP} alt="Logo" className="brand-logo" />
-            <span className="brand-text">Cherry <span className="brand-accent">Dance Studios</span></span>
-          </motion.div>
-        </Navbar.Brand>
-        <Navbar.Toggle aria-controls="navbar-nav" className="modern-toggler" />
-        <Navbar.Collapse id="navbar-nav">
-          <Nav className="ms-auto align-items-center">
-            {navItems.map((item, index) => {
-              const Icon = item.icon;
+            <img src={CP.src} alt="Cherry Dance Studios" className="h-9 w-9 rounded-full" />
+            <span className="hidden font-[family-name:var(--font-display)] text-base font-bold tracking-tight text-white sm:inline">
+              Cherry <span className="bg-gradient-to-r from-[#d1060f] to-[#ee2435] bg-clip-text text-transparent">Dance Studios</span>
+            </span>
+          </button>
+
+          {/* Desktop nav with animated active pill */}
+          <div className="relative hidden items-center gap-1 lg:flex">
+            {navItems.map((item) => {
+              const isActive = activeLink === item.id;
               return (
-                <motion.div
+                <button
                   key={item.id}
-                  initial={{ opacity: 0, y: -20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
+                  onClick={() => handleNav(item)}
+                  className="relative px-4 py-2 text-sm font-medium text-white/70 transition hover:text-white"
                 >
-                  <Nav.Link
-                    onClick={() => handleNavClick(item.id)}
-                    className={`modern-nav-link ${activeLink === item.id ? 'active' : ''}`}
-                  >
-                    <Icon className="nav-icon" />
-                    <span>{item.label}</span>
-                  </Nav.Link>
-                </motion.div>
+                  {isActive && (
+                    <motion.span
+                      layoutId="nav-active-pill"
+                      className="absolute inset-0 rounded-full bg-white/10"
+                      transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+                    />
+                  )}
+                  <span className={`relative z-10 ${isActive ? 'text-white' : ''}`}>
+                    {item.label}
+                  </span>
+                </button>
               );
             })}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.8 }}
-            >
-              <Nav.Link
-                onClick={handleRegisterClick}
-                className="register-btn-nav"
-              >
-                <FaUserPlus className="me-2" />
-                Register
-              </Nav.Link>
-            </motion.div>
-          </Nav>
-        </Navbar.Collapse>
-      </Container>
-    </Navbar>
-  );
-};
+          </div>
 
-export default NavigationBar;
+          {/* Right cluster */}
+          <div className="flex items-center gap-2">
+            <motion.button
+              onClick={goRegister}
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.96 }}
+              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              className="hidden items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white shadow-[0_8px_24px_rgba(209,6,15,0.5)] sm:inline-flex"
+              style={{ background: 'linear-gradient(135deg, #b00310 0%, #d1060f 50%, #ee2435 100%)' }}
+            >
+              <FaUserPlus />
+              Register
+            </motion.button>
+
+            <button
+              onClick={() => setMobileOpen(true)}
+              aria-label="Open menu"
+              className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/5 text-white backdrop-blur-md transition hover:bg-white/10 lg:hidden"
+            >
+              <FaBars className="text-sm" />
+            </button>
+          </div>
+        </div>
+      </motion.nav>
+
+      {/* Mobile drawer */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="fixed inset-0 z-[60] bg-[#0a0a0f]/95 backdrop-blur-2xl lg:hidden"
+          >
+            <div className="flex h-full flex-col">
+              <div className="flex items-center justify-between p-6">
+                <div className="flex items-center gap-2.5">
+                  <img src={CP.src} alt="" className="h-9 w-9 rounded-full" />
+                  <span className="font-[family-name:var(--font-display)] text-lg font-bold text-white">
+                    Cherry <span className="bg-gradient-to-r from-[#d1060f] to-[#ee2435] bg-clip-text text-transparent">Dance Studios</span>
+                  </span>
+                </div>
+                <button
+                  onClick={() => setMobileOpen(false)}
+                  aria-label="Close menu"
+                  className="grid h-11 w-11 place-items-center rounded-full border border-white/15 bg-white/5 text-white"
+                >
+                  <FaTimes />
+                </button>
+              </div>
+
+              <div className="flex flex-1 flex-col items-center justify-center gap-4 px-8">
+                {navItems.map((item, i) => (
+                  <motion.button
+                    key={item.id}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.05 * i, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                    onClick={() => handleNav(item)}
+                    className={`font-[family-name:var(--font-display)] text-4xl font-bold tracking-tight transition ${
+                      activeLink === item.id
+                        ? 'text-[#ee2435]'
+                        : 'text-white/85 hover:text-white'
+                    }`}
+                  >
+                    {item.label}
+                  </motion.button>
+                ))}
+              </div>
+
+              <div className="p-6">
+                <motion.button
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4, duration: 0.4 }}
+                  onClick={goRegister}
+                  className="flex w-full items-center justify-center gap-2 rounded-full px-6 py-4 text-base font-semibold text-white shadow-[0_12px_40px_rgba(209,6,15,0.55)]"
+                  style={{ background: 'linear-gradient(135deg, #b00310 0%, #d1060f 50%, #ee2435 100%)' }}
+                >
+                  <FaUserPlus />
+                  Register now
+                </motion.button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { usePathname } from 'next/navigation';
 
 // Real-time notification service using Service Worker
 export const useNotificationService = () => {
@@ -57,7 +57,7 @@ export const useNotificationService = () => {
       const registration = await navigator.serviceWorker.ready;
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: import.meta.env.VITE_PUBLIC_VAPID_KEY
+        applicationServerKey: process.env.NEXT_PUBLIC_PUBLIC_VAPID_KEY
       });
       
       // Send subscription to backend

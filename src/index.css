@@ -1,24 +1,90 @@
+@import "tailwindcss";
+
+/* ════════════════════════════════════════════════════════════════════
+   Cherry Dance Studios — Design System (Option B: Vibrant Gen-Z)
+   Cherry red anchor + magenta + electric violet + sunset orange
+   Built on Tailwind v4. Tokens exposed as both CSS variables
+   (legacy components) and @theme (Tailwind utilities).
+   ═══════════════════════════════════════════════════════════════════ */
+
+@theme {
+  /* ── Brand — red + black + white only ──
+     Cherry red is THE color. Variations are warm/dark/light shades of red.
+     No magenta, orange, violet — energy comes from motion, scale, type. */
+  --color-cherry-50: #fff1f2;
+  --color-cherry-100: #ffe1e3;
+  --color-cherry-200: #ffc8cc;
+  --color-cherry-300: #ffa1a8;
+  --color-cherry-400: #ff6b76;
+  --color-cherry-500: #ee2435;
+  --color-cherry-600: #d1060f;   /* primary brand red */
+  --color-cherry-700: #b00310;
+  --color-cherry-800: #910813;
+  --color-cherry-900: #780f17;
+
+  /* Surfaces — pure black scale */
+  --color-ink-950: #0a0a0f;
+  --color-ink-900: #12121a;
+  --color-ink-800: #1c1c27;
+  --color-ink-700: #262635;
+  --color-ink-600: #3a3a4f;
+  --color-ink-500: #525269;
+  --color-ink-400: #7d7d92;
+  --color-ink-300: #a8a8b8;
+  --color-ink-200: #d2d2dc;
+  --color-ink-100: #e8e8ee;
+  --color-ink-50: #f5f5f8;
+
+  /* Typography */
+  --font-display: "Space Grotesk", "SF Pro Display", system-ui, sans-serif;
+  --font-sans: "Inter", "SF Pro Text", system-ui, sans-serif;
+  --font-mono: ui-monospace, "JetBrains Mono", "Menlo", monospace;
+  --font-poster: "Yatra One", "Bebas Neue", "Impact", serif;
+
+  /* Motion */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
+
+  /* Radius */
+  --radius-pill: 9999px;
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   Legacy CSS variables — keeps existing component CSS working while
+   we migrate. Maps Apple-era names to new vibrant equivalents.
+   ────────────────────────────────────────────────────────────────── */
 :root {
-  --primary: #1d1d1f;
-  --secondary: #f5f5f7;
-  --accent: #D1060F;
-  --accent-hover: #a80000;
-  --accent-light: #e8f0fe;
+  --primary: #0a0a0f;
+  --secondary: #f5f5f8;
+  --accent: #d1060f;
+  --accent-hover: #b00310;
+  --accent-light: #ffe1e3;
   --surface: #ffffff;
-  --surface-alt: #f5f5f7;
-  --text-primary: #1d1d1f;
-  --text-secondary: #6e6e73;
-  --text-tertiary: #86868b;
-  --border: #d2d2d7;
-  --border-light: #e8e8ed;
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.1);
-  --shadow-xl: 0 24px 64px rgba(0, 0, 0, 0.12);
-  --transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --surface-alt: #f5f5f8;
+  --text-primary: #0a0a0f;
+  --text-secondary: #525269;
+  --text-tertiary: #7d7d92;
+  --border: #d2d2dc;
+  --border-light: #e8e8ee;
+
+  --shadow-sm: 0 1px 3px rgba(10, 10, 15, 0.06);
+  --shadow-md: 0 4px 16px rgba(10, 10, 15, 0.08);
+  --shadow-lg: 0 12px 40px rgba(10, 10, 15, 0.1);
+  --shadow-xl: 0 24px 64px rgba(10, 10, 15, 0.12);
+  --shadow-glow: 0 8px 40px rgba(209, 6, 15, 0.45);
+
+  --transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   --radius-sm: 10px;
   --radius-md: 18px;
   --radius-lg: 24px;
+
+  /* Brand gradient tokens — all red-on-black variations */
+  --gradient-cherry: linear-gradient(135deg, #d1060f 0%, #ee2435 100%);
+  --gradient-fire:   linear-gradient(135deg, #b00310 0%, #ee2435 60%, #ff6b76 100%);
+  --gradient-blood:  linear-gradient(135deg, #780f17 0%, #d1060f 100%);
+  --gradient-ink:    linear-gradient(135deg, #12121a 0%, #1c1c27 100%);
+  --gradient-noir:   linear-gradient(135deg, #0a0a0f 0%, #780f17 80%, #d1060f 100%);
 }
 
 html {
@@ -26,8 +92,7 @@ html {
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
-    "Helvetica Neue", Arial, sans-serif;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   margin: 0;
@@ -37,6 +102,7 @@ body {
   line-height: 1.6;
   letter-spacing: -0.011em;
   font-size: 17px;
+  font-feature-settings: "ss01", "cv11";
 }
 
 * {
@@ -44,12 +110,13 @@ body {
 }
 
 .section-title {
-  font-size: 3.5rem;
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 5vw, 3.75rem);
   font-weight: 700;
   color: var(--text-primary);
   margin-bottom: 1.25rem;
-  letter-spacing: -0.025em;
-  line-height: 1.1;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
 }
 
 .section-subtitle {
@@ -61,63 +128,58 @@ body {
   max-width: 650px;
 }
 
-/* ── Apple-style utility classes ── */
-
-/* Fade-up animation used by framer-motion sections */
 @keyframes apple-fade-up {
-  from {
-    opacity: 0;
-    transform: translateY(24px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-/* Responsive section title scaling */
-@media (max-width: 768px) {
-  .section-title {
-    font-size: 2.2rem;
-  }
-
-  .section-subtitle {
-    font-size: 1rem;
-  }
-}
-
-@media (max-width: 576px) {
-  .section-title {
-    font-size: 1.85rem;
-  }
-}
-
-/* Links default */
 a {
   color: var(--accent);
   text-decoration: none;
 }
+a:hover { text-decoration: underline; }
 
-a:hover {
-  text-decoration: underline;
-}
-
-/* Smooth image rendering */
 img {
   -webkit-user-drag: none;
   user-select: none;
 }
 
-/* Focus ring — Apple-style */
 :focus-visible {
-  outline: 3px solid rgba(0, 113, 227, 0.5);
+  outline: 3px solid rgba(209, 6, 15, 0.55);
   outline-offset: 2px;
   border-radius: 4px;
 }
 
-/* Selection color */
 ::selection {
-  background: rgba(0, 113, 227, 0.2);
+  background: rgba(209, 6, 15, 0.25);
   color: var(--text-primary);
 }
 
+/* ──────────────────────────────────────────────────────────────────
+   Utility keyframes for primitives (used by GradientMesh etc.)
+   ────────────────────────────────────────────────────────────────── */
+@keyframes mesh-drift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(4%, -3%) scale(1.05); }
+  66% { transform: translate(-3%, 4%) scale(0.97); }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 8px 40px rgba(209, 6, 15, 0.45); }
+  50% { box-shadow: 0 8px 60px rgba(209, 6, 15, 0.65); }
+}
+
+/* Marquee scroll — used by DanceMarquee */
+@keyframes marquee-scroll-x {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+@keyframes marquee-scroll-x-reverse {
+  from { transform: translateX(-50%); }
+  to   { transform: translateX(0); }
+}
+
+@keyframes shimmer {
+  from { background-position: -200% 0; }
+  to { background-position: 200% 0; }
+}

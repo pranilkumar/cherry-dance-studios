@@ -73,6 +73,13 @@ export const metadata = {
   },
   alternates: { canonical: SITE_URL },
   robots: { index: true, follow: true },
+  // Stop iOS auto-detecting phone/email/address in plain text and styling
+  // them as blue tap-to-call links.
+  formatDetection: {
+    telephone: false,
+    email: false,
+    address: false,
+  },
 };
 
 export const viewport = {

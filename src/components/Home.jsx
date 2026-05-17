@@ -38,7 +38,7 @@ export default function Home() {
         }}
       />
 
-      <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center px-6 pb-24 pt-32 text-center md:pt-40">
+      <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center px-6 pb-16 pt-28 text-center sm:pt-32 md:pb-24 md:pt-40">
         {/* Style ticker — what we teach */}
         <motion.div
           initial={{ opacity: 0, y: -6 }}
@@ -61,16 +61,17 @@ export default function Home() {
           initial={{ opacity: 0, scale: 0.85 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-          className="mx-auto mt-10 h-28 w-28 drop-shadow-[0_12px_48px_rgba(209,6,15,0.55)] sm:h-32 sm:w-32 md:mt-12 md:h-40 md:w-40 lg:h-48 lg:w-48"
+          className="mx-auto mt-8 h-24 w-24 drop-shadow-[0_12px_48px_rgba(209,6,15,0.55)] sm:mt-10 sm:h-32 sm:w-32 md:mt-12 md:h-40 md:w-40 lg:h-48 lg:w-48"
         />
 
-        {/* Editorial headline — brand name on one line, centered. */}
+        {/* Editorial headline — brand name, centered. Allows wrap on narrow
+            screens (otherwise forced-one-line shrinks the type too much). */}
         <motion.h1
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="mt-8 whitespace-nowrap font-[family-name:var(--font-display)] font-bold leading-[1] tracking-[-0.045em]"
-          style={{ fontSize: 'clamp(1.5rem, 6vw, 5.25rem)' }}
+          className="mt-6 font-[family-name:var(--font-display)] font-bold leading-[1.02] tracking-[-0.045em] sm:mt-8 sm:whitespace-nowrap sm:leading-[1]"
+          style={{ fontSize: 'clamp(2.25rem, 8vw, 5.25rem)' }}
         >
           Cherry Dance{' '}
           <span className="bg-gradient-to-br from-[#ee2435] via-[#d1060f] to-[#910813] bg-clip-text text-transparent">
@@ -83,7 +84,7 @@ export default function Home() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.7, duration: 0.6 }}
-          className="mt-8 font-[family-name:var(--font-display)] text-xs uppercase tracking-[0.25em] text-white/55 md:text-sm"
+          className="mt-6 font-[family-name:var(--font-display)] text-[0.65rem] uppercase tracking-[0.2em] text-white/55 sm:mt-8 sm:tracking-[0.25em] md:text-sm"
         >
           Barrhaven, Ottawa
           <span className="mx-3 text-[#d1060f]">●</span>
@@ -97,7 +98,7 @@ export default function Home() {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.85, duration: 0.6 }}
-          className="mt-12 flex flex-wrap items-center justify-center gap-x-7 gap-y-4"
+          className="mt-10 flex flex-wrap items-center justify-center gap-x-7 gap-y-4 sm:mt-12"
         >
           <GlowButton
             variant="primary"

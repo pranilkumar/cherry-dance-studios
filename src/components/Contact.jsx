@@ -78,15 +78,8 @@ export default function Contact() {
           <KineticHeading
             as="h2"
             split="word"
-            className="mt-6 text-[clamp(2.25rem,5.5vw,4rem)] text-white"
-          >
-            Say hi.
-          </KineticHeading>
-          <KineticHeading
-            as="h2"
-            split="word"
             gradient="cherry"
-            className="-mt-2 text-[clamp(2.25rem,5.5vw,4rem)]"
+            className="mt-6 text-[clamp(2.25rem,6vw,4rem)]"
           >
             We&rsquo;re listening.
           </KineticHeading>
@@ -108,20 +101,22 @@ export default function Contact() {
                 transition={{ duration: 0.5, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] }}
                 viewport={{ once: true, margin: '-50px' }}
                 whileHover={c.href ? { y: -4 } : undefined}
-                className={`block rounded-2xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-md transition ${
+                className={`flex items-start gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-5 text-white backdrop-blur-md transition sm:block sm:p-6 ${
                   c.href ? 'cursor-pointer hover:border-white/25 hover:bg-white/[0.06]' : ''
                 }`}
               >
-                <div className="grid h-11 w-11 place-items-center rounded-full bg-[#d1060f]/20 text-[#ee2435]">
+                <div className="grid h-11 w-11 flex-shrink-0 place-items-center rounded-full bg-[#d1060f]/20 text-[#ee2435]">
                   <Icon className="text-base" />
                 </div>
-                <h3 className="mt-5 text-xs font-semibold uppercase tracking-[0.18em] text-white/55">
-                  {c.title}
-                </h3>
-                <p className="mt-2 break-words font-[family-name:var(--font-display)] text-base font-semibold tracking-tight text-white">
-                  {c.primary}
-                </p>
-                <p className="mt-1 text-xs text-white/55">{c.secondary}</p>
+                <div className="min-w-0 flex-1 sm:mt-5">
+                  <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-white/55">
+                    {c.title}
+                  </h3>
+                  <p className="mt-1.5 break-words font-[family-name:var(--font-display)] text-base font-semibold tracking-tight text-white">
+                    {c.primary}
+                  </p>
+                  <p className="mt-1 text-xs text-white/55">{c.secondary}</p>
+                </div>
               </Wrapper>
             );
           })}
@@ -158,22 +153,6 @@ export default function Contact() {
         </motion.div>
       </div>
 
-      {/* Floating WhatsApp */}
-      <motion.a
-        href="https://wa.me/16138903789"
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label="WhatsApp us"
-        initial={{ opacity: 0, scale: 0 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 1.2, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-        whileHover={{ scale: 1.08 }}
-        whileTap={{ scale: 0.94 }}
-        className="fixed bottom-5 right-5 z-40 grid h-14 w-14 place-items-center rounded-full text-white shadow-[0_12px_40px_rgba(209,6,15,0.5)]"
-        style={{ background: 'linear-gradient(135deg, #b00310 0%, #d1060f 50%, #ee2435 100%)' }}
-      >
-        <FaWhatsapp className="text-xl" />
-      </motion.a>
     </section>
   );
 }

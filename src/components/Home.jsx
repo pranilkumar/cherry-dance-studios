@@ -114,20 +114,15 @@ export default function Home() {
           </span>
         </motion.h1>
 
-        {/* Meta lines — founders on top (closer to brand), location/ages below */}
-        <motion.div
+        {/* Founders credit — single line, sits under the brand name */}
+        <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.7, duration: 0.6 }}
-          className="mt-6 space-y-1.5 font-[family-name:var(--font-display)] uppercase tracking-[0.2em] text-white/55 sm:mt-8 sm:tracking-[0.25em]"
+          className="mt-6 font-[family-name:var(--font-display)] text-[0.7rem] uppercase tracking-[0.25em] text-white/65 sm:mt-8 md:text-sm"
         >
-          <div className="text-[0.7rem] text-white/75 md:text-sm">
-            Cherry &amp; Pranil
-          </div>
-          <div className="text-[0.65rem] md:text-sm">
-            Barrhaven, Ottawa
-          </div>
-        </motion.div>
+          By Cherry &amp; Pranil
+        </motion.p>
 
         {/* CTAs */}
         <motion.div

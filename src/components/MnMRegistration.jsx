@@ -337,6 +337,8 @@ export default function MnMRegistration() {
                   <Field label="WhatsApp / Phone" required error={errors.phone}>
                     <PhoneInput
                       country="ca"
+                      preferredCountries={['ca', 'us', 'in']}
+                      disableCountryGuess
                       value={form.phone}
                       onChange={(val) => set('phone', val)}
                       inputProps={{ name: 'phone', required: true }}

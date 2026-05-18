@@ -18,10 +18,17 @@ import { supabase } from '../../lib/supabaseClient';
  * Same email-match strategy as the rest of the portal.
  */
 
+/** Parse "YYYY-MM-DD" as a local-time date (avoids UTC timezone shift). */
+function parseLocalDate(iso) {
+  if (!iso || typeof iso !== 'string') return null;
+  const [y, m, d] = iso.split('-').map(Number);
+  if (!y || !m || !d) return null;
+  return new Date(y, m - 1, d);
+}
+
 function calcAge(dobIso) {
-  if (!dobIso) return null;
-  const d = new Date(dobIso);
-  if (Number.isNaN(d.getTime())) return null;
+  const d = parseLocalDate(dobIso);
+  if (!d) return null;
   const today = new Date();
   let age = today.getFullYear() - d.getFullYear();
   const m = today.getMonth() - d.getMonth();
@@ -30,9 +37,8 @@ function calcAge(dobIso) {
 }
 
 function formatNextBirthday(dobIso) {
-  if (!dobIso) return null;
-  const d = new Date(dobIso);
-  if (Number.isNaN(d.getTime())) return null;
+  const d = parseLocalDate(dobIso);
+  if (!d) return null;
   const today = new Date();
   let next = new Date(today.getFullYear(), d.getMonth(), d.getDate());
   if (next < today) next = new Date(today.getFullYear() + 1, d.getMonth(), d.getDate());

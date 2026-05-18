@@ -18,10 +18,22 @@ import {
    Helpers — age math, class tier suggestion, next-birthday display
    ──────────────────────────────────────────────────────────────── */
 
+/**
+ * Parse a "YYYY-MM-DD" string (from <input type="date">) into a local-time
+ * Date. NEVER do `new Date("YYYY-MM-DD")` — that treats the string as UTC
+ * midnight, which shifts to the previous day in timezones west of UTC
+ * (e.g., Ottawa shows "Feb 24" for an input of "2026-02-25").
+ */
+function parseLocalDate(iso) {
+  if (!iso || typeof iso !== 'string') return null;
+  const [y, m, d] = iso.split('-').map(Number);
+  if (!y || !m || !d) return null;
+  return new Date(y, m - 1, d);  // local-time constructor — no timezone shift
+}
+
 function calcAge(dobIso) {
-  if (!dobIso) return null;
-  const d = new Date(dobIso);
-  if (Number.isNaN(d.getTime())) return null;
+  const d = parseLocalDate(dobIso);
+  if (!d) return null;
   const today = new Date();
   let age = today.getFullYear() - d.getFullYear();
   const m = today.getMonth() - d.getMonth();
@@ -40,9 +52,8 @@ function suggestTier(age) {
 }
 
 function formatNextBirthday(dobIso) {
-  if (!dobIso) return null;
-  const d = new Date(dobIso);
-  if (Number.isNaN(d.getTime())) return null;
+  const d = parseLocalDate(dobIso);
+  if (!d) return null;
   const today = new Date();
   let next = new Date(today.getFullYear(), d.getMonth(), d.getDate());
   if (next < today) next = new Date(today.getFullYear() + 1, d.getMonth(), d.getDate());
@@ -154,9 +165,10 @@ export default function Register() {
     if (!form.childDob) {
       e.childDob = 'Date of birth is required.';
     } else {
-      const d = new Date(form.childDob);
+      const d = parseLocalDate(form.childDob);
       const today = new Date();
-      if (d > today) e.childDob = 'DOB cannot be in the future.';
+      if (!d) e.childDob = 'Please enter a valid date.';
+      else if (d > today) e.childDob = 'DOB cannot be in the future.';
       else if (today.getFullYear() - d.getFullYear() > 30) e.childDob = 'That date looks too far back. Please re-enter.';
     }
     if (!form.parentName.trim()) e.parentName = "Parent / guardian name is required.";

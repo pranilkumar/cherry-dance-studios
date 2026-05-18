@@ -31,21 +31,6 @@ const faqData = [
     answer:
       'Classes run on weekday evenings. Little Stars meet Tuesday & Thursday (5:45–6:30 PM). The Crew has two batch options: Mon & Wed (6:00–7:00 PM) or Tue & Thu (6:30–7:30 PM). Slay Squad trains Mon & Wed (7:00–8:00 PM).',
   },
-  {
-    question: 'What dance styles do you teach?',
-    answer:
-      'We specialize in Bollywood, Hip-Hop, Contemporary, and Indian semi-classical dance. Our instructors bring energy, tradition, and creativity into every class.',
-  },
-  {
-    question: 'Do you offer private lessons?',
-    answer:
-      'Yes! We offer personalized sessions for students who want individual attention or want to prepare for a specific event or performance. Contact us for availability.',
-  },
-  {
-    question: 'What if I have more questions?',
-    answer:
-      "We're always happy to help! Reach us at 613 890 3789, email cherrydancestudio.cds@gmail.com, or send us a message on Instagram or Facebook. Studio hours are weekdays 6:00 PM – 8:00 PM.",
-  },
 ];
 
 export default function FAQ() {

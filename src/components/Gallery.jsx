@@ -102,9 +102,10 @@ export default function Gallery() {
           <KineticHeading
             as="h2"
             split="word"
-            className="mt-6 text-[clamp(2.25rem,5.5vw,4rem)] text-[#0a0a0f]"
+            gradient="cherry"
+            className="mt-6 text-[clamp(2.25rem,5.5vw,4rem)]"
           >
-            Caught in motion.
+            The gallery.
           </KineticHeading>
         </div>
 

@@ -81,17 +81,10 @@ export default function Classes() {
           <KineticHeading
             as="h2"
             split="word"
-            className="mt-6 text-[clamp(2.5rem,6vw,4.5rem)] text-white"
+            gradient="cherry"
+            className="mt-6 text-[clamp(2.5rem,6vw,4.5rem)]"
           >
             Pick your level.
-          </KineticHeading>
-          <KineticHeading
-            as="h2"
-            split="word"
-            gradient="cherry"
-            className="-mt-2 text-[clamp(2.5rem,6vw,4.5rem)]"
-          >
-            Find your crew.
           </KineticHeading>
 
           <motion.p

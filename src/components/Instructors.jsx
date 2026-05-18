@@ -56,17 +56,10 @@ export default function Instructors() {
           <KineticHeading
             as="h2"
             split="word"
-            className="mt-6 text-[clamp(2.25rem,5.5vw,4rem)] text-white"
-          >
-            The crew behind
-          </KineticHeading>
-          <KineticHeading
-            as="h2"
-            split="word"
             gradient="cherry"
-            className="-mt-2 text-[clamp(2.25rem,5.5vw,4rem)]"
+            className="mt-6 text-[clamp(2.25rem,5.5vw,4rem)]"
           >
-            the choreography.
+            Cherry &amp; Pranil.
           </KineticHeading>
         </div>
 

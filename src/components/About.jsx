@@ -38,7 +38,7 @@ export default function About() {
           split="word"
           className="text-[clamp(2.25rem,5.5vw,4rem)] text-[#0a0a0f]"
         >
-          A studio built around
+          Where Ottawa kids
         </KineticHeading>
         <KineticHeading
           as="h2"
@@ -46,7 +46,7 @@ export default function About() {
           gradient="cherry"
           className="-mt-2 text-[clamp(2.25rem,5.5vw,4rem)]"
         >
-          movement, not pressure.
+          learn to dance.
         </KineticHeading>
 
         {/* Body */}

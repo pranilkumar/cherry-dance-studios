@@ -139,6 +139,7 @@ export default function Register() {
   const [form, setForm] = useState(EMPTY);
   const [errors, setErrors] = useState({});
   const [status, setStatus] = useState('idle');
+  const [submitError, setSubmitError] = useState('');
 
   const set = (field, value) => {
     setForm((p) => ({ ...p, [field]: value }));
@@ -190,30 +191,34 @@ export default function Register() {
     e.preventDefault();
     if (!validate()) return;
     setStatus('submitting');
+    setSubmitError('');
+
+    const payload = {
+      parent_name:           form.parentName.trim(),
+      student_name:          form.childName.trim(),
+      email:                 form.email.trim(),
+      phone:                 form.phone,
+      date_of_birth:         form.childDob,
+      preferred_class:       form.preferredClass,
+      preferred_weekdays:    form.flexibleDays ? ['Flexible'] : form.preferredDays,
+      preferred_time_slots:  form.preferredTimes,
+      experience_level:      form.experience,
+      allergies:             form.allergies.trim() || null,
+      emergency_contact:     form.emergencyContact.trim() || null,
+      photo_consent:         form.photoConsent,
+      heard_from:            form.heardFrom || null,
+      notes:                 form.notes.trim() || null,
+      status:                'pending',
+    };
+
     try {
-      const { error } = await supabase.from('registrations').insert([
-        {
-          parent_name:           form.parentName.trim(),
-          student_name:          form.childName.trim(),
-          email:                 form.email.trim(),
-          phone:                 form.phone,
-          date_of_birth:         form.childDob,
-          preferred_class:       form.preferredClass,
-          preferred_weekdays:    form.flexibleDays ? ['Flexible'] : form.preferredDays,
-          preferred_time_slots:  form.preferredTimes,
-          experience_level:      form.experience,
-          allergies:             form.allergies.trim() || null,
-          emergency_contact:     form.emergencyContact.trim() || null,
-          photo_consent:         form.photoConsent,
-          heard_from:            form.heardFrom || null,
-          notes:                 form.notes.trim() || null,
-          status:                'pending',
-        },
-      ]);
-      if (error) throw error;
+      const result = await supabase.from('registrations').insert([payload]).select();
+      if (result.error) throw result.error;
       setStatus('success');
     } catch (err) {
       console.error('[register] insert failed:', err);
+      const detail = err?.message || err?.details || err?.hint || 'Unknown error';
+      setSubmitError(detail);
       setStatus('error');
     }
   };
@@ -663,7 +668,15 @@ export default function Register() {
             {/* Submit */}
             {status === 'error' && (
               <div className="rounded-xl border border-[#d1060f]/30 bg-[#d1060f]/5 p-4 text-sm text-[#d1060f]">
-                Something went wrong. Please try again or WhatsApp us at 613-890-3789.
+                <p className="font-semibold">Something went wrong saving your enquiry.</p>
+                {submitError && (
+                  <p className="mt-1.5 break-words font-mono text-xs opacity-80">
+                    {submitError}
+                  </p>
+                )}
+                <p className="mt-2 text-xs opacity-80">
+                  Please try again or WhatsApp us at 613-890-3789.
+                </p>
               </div>
             )}
 

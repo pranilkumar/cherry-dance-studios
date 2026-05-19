@@ -176,7 +176,7 @@ export default function NavigationBar() {
               whileHover={{ scale: 1.04 }}
               whileTap={{ scale: 0.96 }}
               transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-              className="hidden shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-5 py-2.5 text-sm font-semibold text-white shadow-[0_8px_24px_rgba(209,6,15,0.5)] sm:inline-flex"
+              className="hidden shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-5 py-2.5 text-sm font-semibold text-white sm:inline-flex"
               style={{ background: 'linear-gradient(135deg, #b00310 0%, #d1060f 50%, #ee2435 100%)' }}
             >
               <FaUserPlus />

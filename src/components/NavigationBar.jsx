@@ -261,7 +261,7 @@ export default function NavigationBar() {
                   className="flex w-full items-center justify-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-6 py-4 text-base font-medium text-white/85 backdrop-blur-md transition hover:bg-white/[0.08] hover:text-white"
                 >
                   <FaSignInAlt />
-                  Parent sign in
+                  Sign in
                 </motion.button>
               </div>
             </div>

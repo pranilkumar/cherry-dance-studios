@@ -122,7 +122,7 @@ export default function PortalLogin() {
             </span>
           </p>
           <h1 className="mt-4 font-[family-name:var(--font-display)] text-3xl font-bold tracking-tight md:text-4xl">
-            Parent portal.
+            Sign in.
           </h1>
           <p className="mt-2 text-sm text-white/55">
             {step === 'email'

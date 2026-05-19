@@ -136,7 +136,7 @@ export default function Footer() {
               href="/portal/login"
               className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-medium uppercase tracking-[0.18em] text-white/65 transition hover:border-[#d1060f]/40 hover:text-[#ee2435]"
             >
-              Parent sign in
+              Sign in
             </a>
             <a
               href="#home"

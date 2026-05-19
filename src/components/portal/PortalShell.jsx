@@ -79,13 +79,18 @@ export default function PortalShell({ children }) {
     };
   }, [router, isAuthRoute]);
 
-  // Render auth pages bare
-  if (isAuthRoute) return <>{children}</>;
-
+  // NOTE: every hook must run on every render — this effect lives above
+  // the conditional return below to satisfy React's Rules of Hooks.
+  // (Layout components persist across /portal/* navigation, so the
+  // conditional early-return path was firing different hook counts and
+  // crashing with "Rendered fewer hooks than expected".)
   useEffect(() => {
     document.body.style.overflow = mobileOpen ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
   }, [mobileOpen]);
+
+  // Render auth pages bare
+  if (isAuthRoute) return <>{children}</>;
 
   const logout = async () => {
     await supabase.auth.signOut();

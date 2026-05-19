@@ -106,7 +106,7 @@ export default function NavigationBar() {
 
   const goSignIn = () => {
     setMobileOpen(false);
-    router.push('/portal');
+    router.push('/portal/login');
   };
 
   return (

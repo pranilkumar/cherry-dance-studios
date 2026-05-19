@@ -162,13 +162,12 @@ export default function NavigationBar() {
           </div>
 
           {/* Right cluster */}
-          <div className="flex shrink-0 items-center gap-2">
-            {/* Quiet "Sign in" link — for returning parents. */}
+          <div className="flex shrink-0 items-center gap-3">
+            {/* Quiet text-link Sign in — doesn't compete with Register CTA. */}
             <button
               onClick={goSignIn}
-              className="hidden shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-white/15 bg-white/[0.04] px-4 py-2 text-sm font-medium text-white/80 backdrop-blur-md transition hover:border-white/30 hover:bg-white/[0.08] hover:text-white sm:inline-flex"
+              className="hidden shrink-0 whitespace-nowrap px-2 text-sm font-medium text-white/70 transition hover:text-white sm:inline-flex"
             >
-              <FaSignInAlt className="text-xs" />
               Sign in
             </button>
 

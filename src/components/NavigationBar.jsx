@@ -116,10 +116,13 @@ export default function NavigationBar() {
         initial={{ y: -24, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-        className="fixed left-1/2 top-4 z-50 w-[min(1200px,calc(100%-1.5rem))] -translate-x-1/2"
+        className="fixed left-1/2 top-4 z-50 flex w-[calc(100%-1.5rem)] max-w-[1200px] -translate-x-1/2 items-center gap-3"
       >
+        {/* Pill containing brand + nav items + Sign in. Register lives OUTSIDE
+            the pill (sibling to it) so its rounded-full curve doesn't fight
+            with the pill's rounded-full curve at the right edge. */}
         <div
-          className={`flex items-center justify-between rounded-full border px-3 py-1.5 transition-all duration-500 md:px-6 ${
+          className={`flex flex-1 items-center justify-between rounded-full border px-3 py-2 transition-all duration-500 md:px-5 ${
             scrolled
               ? 'border-white/10 bg-[#0a0a0f]/80 shadow-[0_8px_40px_rgba(10,10,15,0.4)] backdrop-blur-2xl'
               : 'border-white/10 bg-white/5 backdrop-blur-xl'
@@ -161,37 +164,36 @@ export default function NavigationBar() {
             })}
           </div>
 
-          {/* Right cluster */}
-          <div className="flex shrink-0 items-center gap-3">
-            {/* Quiet text-link Sign in — doesn't compete with Register CTA. */}
-            <button
-              onClick={goSignIn}
-              className="hidden shrink-0 whitespace-nowrap px-2 text-sm font-medium text-white/70 transition hover:text-white sm:inline-flex"
-            >
-              Sign in
-            </button>
+          {/* Sign in lives INSIDE the pill as a quiet text link. */}
+          <button
+            onClick={goSignIn}
+            className="hidden shrink-0 whitespace-nowrap px-3 text-sm font-medium text-white/70 transition hover:text-white sm:inline-flex"
+          >
+            Sign in
+          </button>
 
-            <motion.button
-              onClick={goRegister}
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.96 }}
-              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-              className="hidden shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-5 py-2.5 text-sm font-semibold text-white sm:inline-flex"
-              style={{ background: 'linear-gradient(135deg, #b00310 0%, #d1060f 50%, #ee2435 100%)' }}
-            >
-              <FaUserPlus />
-              Register
-            </motion.button>
-
-            <button
-              onClick={() => setMobileOpen(true)}
-              aria-label="Open menu"
-              className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/5 text-white backdrop-blur-md transition hover:bg-white/10 lg:hidden"
-            >
-              <FaBars className="text-sm" />
-            </button>
-          </div>
+          {/* Mobile menu trigger lives inside the pill on lg-down. */}
+          <button
+            onClick={() => setMobileOpen(true)}
+            aria-label="Open menu"
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/10 bg-white/5 text-white backdrop-blur-md transition hover:bg-white/10 lg:hidden"
+          >
+            <FaBars className="text-sm" />
+          </button>
         </div>
+
+        {/* Register — separate floating CTA outside the pill. */}
+        <motion.button
+          onClick={goRegister}
+          whileHover={{ scale: 1.04 }}
+          whileTap={{ scale: 0.96 }}
+          transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+          className="hidden shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-5 py-2.5 text-sm font-semibold text-white sm:inline-flex"
+          style={{ background: 'linear-gradient(135deg, #b00310 0%, #d1060f 50%, #ee2435 100%)' }}
+        >
+          <FaUserPlus />
+          Register
+        </motion.button>
       </motion.nav>
 
       {/* Mobile drawer */}

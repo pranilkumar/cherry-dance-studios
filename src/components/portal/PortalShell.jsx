@@ -142,7 +142,7 @@ export default function PortalShell({ children }) {
               Cherry <span className="bg-gradient-to-r from-[#d1060f] to-[#ee2435] bg-clip-text text-transparent">Dance Studios</span>
             </div>
             <div className="mt-1 text-[10px] font-semibold uppercase tracking-[0.25em] text-white/45">
-              Parent Portal
+              Student Portal
             </div>
           </div>
         </Link>

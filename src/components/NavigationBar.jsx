@@ -128,10 +128,10 @@ export default function NavigationBar() {
           {/* Brand — always visible in the navbar. */}
           <button
             onClick={() => handleNav({ id: 'home', route: '/' })}
-            className="flex items-center gap-2.5 pl-2 transition hover:opacity-80"
+            className="flex shrink-0 items-center gap-2.5 pl-2 transition hover:opacity-80"
           >
-            <img src={CP.src} alt="Cherry Dance Studios" className="h-9 w-9 rounded-full" />
-            <span className="hidden font-[family-name:var(--font-display)] text-base font-bold tracking-tight text-white sm:inline">
+            <img src={CP.src} alt="Cherry Dance Studios" className="h-9 w-9 shrink-0 rounded-full" />
+            <span className="hidden whitespace-nowrap font-[family-name:var(--font-display)] text-base font-bold tracking-tight text-white sm:inline">
               Cherry <span className="bg-gradient-to-r from-[#d1060f] to-[#ee2435] bg-clip-text text-transparent">Dance Studios</span>
             </span>
           </button>
@@ -162,11 +162,11 @@ export default function NavigationBar() {
           </div>
 
           {/* Right cluster */}
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             {/* Quiet "Sign in" link — for returning parents. */}
             <button
               onClick={goSignIn}
-              className="hidden items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.04] px-4 py-2 text-sm font-medium text-white/80 backdrop-blur-md transition hover:border-white/30 hover:bg-white/[0.08] hover:text-white sm:inline-flex"
+              className="hidden shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-white/15 bg-white/[0.04] px-4 py-2 text-sm font-medium text-white/80 backdrop-blur-md transition hover:border-white/30 hover:bg-white/[0.08] hover:text-white sm:inline-flex"
             >
               <FaSignInAlt className="text-xs" />
               Sign in
@@ -177,7 +177,7 @@ export default function NavigationBar() {
               whileHover={{ scale: 1.04 }}
               whileTap={{ scale: 0.96 }}
               transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-              className="hidden items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white shadow-[0_8px_24px_rgba(209,6,15,0.5)] sm:inline-flex"
+              className="hidden shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-5 py-2.5 text-sm font-semibold text-white shadow-[0_8px_24px_rgba(209,6,15,0.5)] sm:inline-flex"
               style={{ background: 'linear-gradient(135deg, #b00310 0%, #d1060f 50%, #ee2435 100%)' }}
             >
               <FaUserPlus />

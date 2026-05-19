@@ -119,7 +119,7 @@ export default function NavigationBar() {
         className="fixed left-1/2 top-4 z-50 w-[min(1200px,calc(100%-1.5rem))] -translate-x-1/2"
       >
         <div
-          className={`flex items-center justify-between rounded-full border px-3 py-2 transition-all duration-500 md:px-5 ${
+          className={`flex items-center justify-between rounded-full border px-3 py-1.5 transition-all duration-500 md:px-6 ${
             scrolled
               ? 'border-white/10 bg-[#0a0a0f]/80 shadow-[0_8px_40px_rgba(10,10,15,0.4)] backdrop-blur-2xl'
               : 'border-white/10 bg-white/5 backdrop-blur-xl'

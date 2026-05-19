@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaUserPlus, FaBars, FaTimes } from 'react-icons/fa';
+import { FaUserPlus, FaBars, FaTimes, FaSignInAlt } from 'react-icons/fa';
 import CP from '../assets/icons/logo.png';
 
 // Section anchors on home plus dedicated routes for Workshops + Gallery.
@@ -104,6 +104,11 @@ export default function NavigationBar() {
     router.push('/register');
   };
 
+  const goSignIn = () => {
+    setMobileOpen(false);
+    router.push('/portal');
+  };
+
   return (
     <>
       <motion.nav
@@ -158,6 +163,15 @@ export default function NavigationBar() {
 
           {/* Right cluster */}
           <div className="flex items-center gap-2">
+            {/* Quiet "Sign in" link — for returning parents. */}
+            <button
+              onClick={goSignIn}
+              className="hidden items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.04] px-4 py-2 text-sm font-medium text-white/80 backdrop-blur-md transition hover:border-white/30 hover:bg-white/[0.08] hover:text-white sm:inline-flex"
+            >
+              <FaSignInAlt className="text-xs" />
+              Sign in
+            </button>
+
             <motion.button
               onClick={goRegister}
               whileHover={{ scale: 1.04 }}
@@ -227,7 +241,7 @@ export default function NavigationBar() {
                 ))}
               </div>
 
-              <div className="p-6">
+              <div className="space-y-3 p-6">
                 <motion.button
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -238,6 +252,16 @@ export default function NavigationBar() {
                 >
                   <FaUserPlus />
                   Register now
+                </motion.button>
+                <motion.button
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.45, duration: 0.4 }}
+                  onClick={goSignIn}
+                  className="flex w-full items-center justify-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-6 py-4 text-base font-medium text-white/85 backdrop-blur-md transition hover:bg-white/[0.08] hover:text-white"
+                >
+                  <FaSignInAlt />
+                  Parent sign in
                 </motion.button>
               </div>
             </div>

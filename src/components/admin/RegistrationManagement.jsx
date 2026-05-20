@@ -53,16 +53,46 @@ export default function RegistrationManagement() {
 
   const convertToStudent = async (registrationId) => {
     setConverting(true);
+
+    // Find the registration so we know the parent's email for the welcome email.
+    const reg = registrations.find((r) => r.id === registrationId);
+
     const { error } = await supabase.rpc('convert_registration_to_student', {
       registration_id: registrationId,
     });
     if (error) {
       showAlert('error', error.message || 'Failed to convert');
-    } else {
-      showAlert('success', 'Registration converted to student.');
-      fetchRegistrations();
-      setSelected(null);
+      setConverting(false);
+      return;
     }
+
+    // Fire-and-forget sign-in email so the parent is auto-onboarded into the
+    // portal. signInWithOtp creates the auth user if it doesn't exist and
+    // emails them a 6-digit code (or magic link), same as if they'd hit the
+    // login page themselves. We don't await the result for UX — a failed
+    // email shouldn't block the conversion that already succeeded.
+    let emailNote = '';
+    if (reg?.email) {
+      const siteUrl =
+        typeof window !== 'undefined' ? window.location.origin : undefined;
+      const { error: mailErr } = await supabase.auth.signInWithOtp({
+        email: reg.email.trim().toLowerCase(),
+        options: {
+          emailRedirectTo: siteUrl ? `${siteUrl}/portal/auth/callback` : undefined,
+        },
+      });
+      if (mailErr) {
+        // Most common: Supabase rate limit. Convert succeeded — just flag it.
+        console.warn('[convert] welcome email failed:', mailErr);
+        emailNote = ' (welcome email failed — try resending later)';
+      } else {
+        emailNote = ` Welcome email sent to ${reg.email}.`;
+      }
+    }
+
+    showAlert('success', `Registration converted to student.${emailNote}`);
+    fetchRegistrations();
+    setSelected(null);
     setConverting(false);
   };
 

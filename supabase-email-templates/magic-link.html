@@ -1,0 +1,117 @@
+<!--
+  ════════════════════════════════════════════════════════════════════
+  Cherry Dance Studios — "Magic Link" email template
+  ════════════════════════════════════════════════════════════════════
+  Sent by Supabase every time an EXISTING parent requests a sign-in
+  code (i.e. they've signed in at least once before). Quieter than the
+  welcome — they already know what the portal is.
+
+  To install:
+    1. Open Supabase Dashboard → Authentication → Email Templates
+    2. Select "Magic Link" from the dropdown
+    3. Set Subject to:  Your Cherry Dance Studios sign-in code
+    4. Paste this entire file into the "Message body" / HTML editor
+    5. Click Save
+
+  Variables Supabase substitutes at send time:
+    {{ .Token }}            The 6-digit OTP code
+    {{ .ConfirmationURL }}  Magic-link URL (backup if they don't type code)
+    {{ .SiteURL }}          Your configured Site URL
+    {{ .Email }}            The recipient's email
+  ════════════════════════════════════════════════════════════════════
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="dark light">
+  <meta name="supported-color-schemes" content="dark light">
+  <title>Your sign-in code · Cherry Dance Studios</title>
+</head>
+<body style="margin:0;padding:0;background-color:#0a0a0f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#ffffff;-webkit-font-smoothing:antialiased;">
+  <!-- Hidden preheader -->
+  <div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;">
+    Your sign-in code is {{ .Token }}. Expires in 60 minutes.
+  </div>
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#0a0a0f;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" style="max-width:520px;background-color:#12121a;border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,0.06);" cellpadding="0" cellspacing="0" border="0">
+
+          <!-- Brand band (slimmer than welcome email) -->
+          <tr>
+            <td style="background:linear-gradient(135deg,#b00310 0%,#d1060f 50%,#ee2435 100%);padding:22px 28px;">
+              <div style="font-size:11px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:rgba(255,255,255,0.85);">
+                CHERRY DANCE STUDIOS
+              </div>
+              <h1 style="margin:6px 0 0;font-size:22px;font-weight:700;color:#ffffff;letter-spacing:-0.3px;line-height:1.2;">
+                Your sign-in code.
+              </h1>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:28px 28px 12px;">
+              <p style="margin:0 0 22px;font-size:15px;line-height:1.6;color:rgba(255,255,255,0.78);">
+                Enter this 6-digit code on the sign-in page to access your portal.
+              </p>
+
+              <!-- Code box -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td align="center" style="background-color:rgba(238,36,53,0.08);border:1px solid rgba(238,36,53,0.3);border-radius:12px;padding:26px 16px;">
+                    <div style="font-family:'SF Mono','Monaco','Cascadia Code',Consolas,monospace;font-size:38px;font-weight:700;letter-spacing:10px;color:#ffffff;line-height:1;">
+                      {{ .Token }}
+                    </div>
+                    <div style="margin-top:12px;font-size:11px;color:rgba(255,255,255,0.45);">
+                      Expires in 60 minutes
+                    </div>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Sign-in CTA button -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:22px;">
+                <tr>
+                  <td align="center">
+                    <a href="{{ .SiteURL }}/portal/login"
+                       style="display:inline-block;padding:12px 24px;background:linear-gradient(135deg,#b00310 0%,#d1060f 50%,#ee2435 100%);color:#ffffff;text-decoration:none;font-size:14px;font-weight:600;border-radius:999px;letter-spacing:0.2px;">
+                      Open the portal &rarr;
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin:16px 0 0;text-align:center;font-size:12px;line-height:1.6;color:rgba(255,255,255,0.45);">
+                Or use the <a href="{{ .ConfirmationURL }}" style="color:#ee2435;text-decoration:none;">one-tap sign-in link</a>.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Safety note -->
+          <tr>
+            <td style="padding:18px 28px 24px;">
+              <p style="margin:0;font-size:12px;line-height:1.5;color:rgba(255,255,255,0.45);">
+                Didn&rsquo;t request this? Ignore the email — nobody can sign in without the code, and your account stays safe.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background-color:rgba(0,0,0,0.35);padding:18px 28px;text-align:center;border-top:1px solid rgba(255,255,255,0.05);">
+              <p style="margin:0;font-size:12px;color:rgba(255,255,255,0.55);">
+                Cherry Dance Studios · <a href="https://wa.me/16138903789" style="color:rgba(255,255,255,0.7);text-decoration:none;">613-890-3789</a>
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

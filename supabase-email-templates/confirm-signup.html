@@ -1,0 +1,173 @@
+<!--
+  ════════════════════════════════════════════════════════════════════
+  Cherry Dance Studios — "Confirm Signup" email template
+  ════════════════════════════════════════════════════════════════════
+  Sent by Supabase the FIRST time a parent's email is used to sign in
+  (i.e. immediately after admin clicks "Convert" in the registrations
+  page, which triggers signInWithOtp on a brand-new email).
+
+  To install:
+    1. Open Supabase Dashboard → Authentication → Email Templates
+    2. Select "Confirm Signup" from the dropdown
+    3. Set Subject to:  Welcome to Cherry Dance Studios — your sign-in code
+    4. Paste this entire file into the "Message body" / HTML editor
+    5. Click Save
+
+  Variables Supabase substitutes at send time:
+    {{ .Token }}            The 6-digit OTP code
+    {{ .ConfirmationURL }}  Magic-link URL (backup if they don't type code)
+    {{ .SiteURL }}          Your configured Site URL (set in URL Configuration)
+    {{ .Email }}            The recipient's email
+  ════════════════════════════════════════════════════════════════════
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="dark light">
+  <meta name="supported-color-schemes" content="dark light">
+  <title>Welcome to Cherry Dance Studios</title>
+</head>
+<body style="margin:0;padding:0;background-color:#0a0a0f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#ffffff;-webkit-font-smoothing:antialiased;">
+  <!-- Hidden preheader (preview text in inbox) -->
+  <div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;">
+    Your dancer is in. Sign in with code {{ .Token }} to see classes, fees, and workshops.
+  </div>
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#0a0a0f;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" style="max-width:560px;background-color:#12121a;border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,0.06);" cellpadding="0" cellspacing="0" border="0">
+
+          <!-- Brand band with red gradient -->
+          <tr>
+            <td style="background:linear-gradient(135deg,#b00310 0%,#d1060f 50%,#ee2435 100%);padding:32px 32px 28px;">
+              <div style="font-size:11px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:rgba(255,255,255,0.85);">
+                CHERRY DANCE STUDIOS
+              </div>
+              <h1 style="margin:10px 0 0;font-size:28px;font-weight:700;color:#ffffff;letter-spacing:-0.5px;line-height:1.2;">
+                Welcome to the studio.
+              </h1>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:32px 32px 8px;">
+              <p style="margin:0 0 16px;font-size:16px;line-height:1.6;color:rgba(255,255,255,0.92);">
+                Your enrolment is approved — your dancer&rsquo;s in.
+              </p>
+              <p style="margin:0 0 28px;font-size:15px;line-height:1.6;color:rgba(255,255,255,0.7);">
+                Use the 6-digit code below to sign into your portal. You&rsquo;ll see class days, fees, and upcoming workshops in one place.
+              </p>
+
+              <!-- Code box -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td align="center" style="background-color:rgba(238,36,53,0.08);border:1px solid rgba(238,36,53,0.3);border-radius:12px;padding:28px 16px;">
+                    <div style="font-size:10px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,0.55);margin-bottom:14px;">
+                      Your sign-in code
+                    </div>
+                    <div style="font-family:'SF Mono','Monaco','Cascadia Code',Consolas,monospace;font-size:38px;font-weight:700;letter-spacing:10px;color:#ffffff;line-height:1;">
+                      {{ .Token }}
+                    </div>
+                    <div style="margin-top:14px;font-size:11px;color:rgba(255,255,255,0.45);">
+                      Expires in 60 minutes
+                    </div>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Sign-in CTA button -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:24px;">
+                <tr>
+                  <td align="center">
+                    <a href="{{ .SiteURL }}/portal/login"
+                       style="display:inline-block;padding:14px 28px;background:linear-gradient(135deg,#b00310 0%,#d1060f 50%,#ee2435 100%);color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;border-radius:999px;letter-spacing:0.2px;">
+                      Open the portal &rarr;
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin:18px 0 0;text-align:center;font-size:12px;line-height:1.6;color:rgba(255,255,255,0.45);">
+                Or click <a href="{{ .ConfirmationURL }}" style="color:#ee2435;text-decoration:none;">this one-tap sign-in link</a>.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Divider -->
+          <tr>
+            <td style="padding:24px 32px 0;">
+              <div style="border-top:1px solid rgba(255,255,255,0.08);height:1px;line-height:1px;">&nbsp;</div>
+            </td>
+          </tr>
+
+          <!-- What's next -->
+          <tr>
+            <td style="padding:24px 32px 28px;">
+              <div style="font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,0.55);margin-bottom:14px;">
+                What you can do in the portal
+              </div>
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="padding:6px 0;font-size:14px;line-height:1.6;color:rgba(255,255,255,0.8);">
+                    <span style="color:#ee2435;font-weight:700;">·</span>&nbsp;&nbsp;See your dancer&rsquo;s class days &amp; times
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:6px 0;font-size:14px;line-height:1.6;color:rgba(255,255,255,0.8);">
+                    <span style="color:#ee2435;font-weight:700;">·</span>&nbsp;&nbsp;Check fees and payment due dates
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:6px 0;font-size:14px;line-height:1.6;color:rgba(255,255,255,0.8);">
+                    <span style="color:#ee2435;font-weight:700;">·</span>&nbsp;&nbsp;Book new workshops as we drop them
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:6px 0;font-size:14px;line-height:1.6;color:rgba(255,255,255,0.8);">
+                    <span style="color:#ee2435;font-weight:700;">·</span>&nbsp;&nbsp;Update your contact info &amp; emergency contacts
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Personal sign-off -->
+          <tr>
+            <td style="padding:0 32px 28px;">
+              <p style="margin:0;font-size:14px;line-height:1.6;color:rgba(255,255,255,0.7);">
+                Excited to have you with us.
+              </p>
+              <p style="margin:4px 0 0;font-size:14px;line-height:1.6;color:#ffffff;font-weight:600;">
+                — Cherry &amp; Pranil
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background-color:rgba(0,0,0,0.35);padding:22px 32px;text-align:center;border-top:1px solid rgba(255,255,255,0.05);">
+              <p style="margin:0 0 6px;font-size:13px;color:rgba(255,255,255,0.7);">
+                Questions? WhatsApp us at <a href="https://wa.me/16138903789" style="color:#ffffff;text-decoration:none;font-weight:600;">613-890-3789</a>
+              </p>
+              <p style="margin:0;font-size:12px;color:rgba(255,255,255,0.4);">
+                Cherry Dance Studios · Barrhaven, Ottawa
+              </p>
+            </td>
+          </tr>
+
+        </table>
+
+        <!-- Legal / meta line -->
+        <p style="margin:18px 0 0;font-size:11px;line-height:1.6;color:rgba(255,255,255,0.3);text-align:center;max-width:520px;">
+          You&rsquo;re receiving this because someone requested portal access for {{ .Email }} after your dancer&rsquo;s enrolment was approved. If that wasn&rsquo;t you, ignore this email — your account stays safe.
+        </p>
+
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

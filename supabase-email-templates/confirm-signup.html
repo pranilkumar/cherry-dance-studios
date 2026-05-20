@@ -40,13 +40,26 @@
       <td align="center">
         <table role="presentation" width="100%" style="max-width:560px;background-color:#12121a;border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,0.06);" cellpadding="0" cellspacing="0" border="0">
 
-          <!-- Brand band with red gradient -->
+          <!-- Brand band with red gradient + logo -->
           <tr>
-            <td style="background:linear-gradient(135deg,#b00310 0%,#d1060f 50%,#ee2435 100%);padding:32px 32px 28px;">
+            <td align="center" style="background:linear-gradient(135deg,#b00310 0%,#d1060f 50%,#ee2435 100%);padding:36px 32px 32px;">
+              <!-- Logo (circular, on a white disc so it pops on the red gradient
+                   and degrades gracefully if image-blocking is on — width/height
+                   reserve space, alt text stands in.) -->
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto 18px;">
+                <tr>
+                  <td align="center" style="background-color:#ffffff;border-radius:999px;padding:8px;line-height:0;">
+                    <img src="https://cherrydancestudios.com/logo.png"
+                         alt="Cherry Dance Studios"
+                         width="56" height="56"
+                         style="display:block;width:56px;height:56px;border-radius:999px;border:0;outline:none;">
+                  </td>
+                </tr>
+              </table>
               <div style="font-size:11px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:rgba(255,255,255,0.85);">
                 CHERRY DANCE STUDIOS
               </div>
-              <h1 style="margin:10px 0 0;font-size:28px;font-weight:700;color:#ffffff;letter-spacing:-0.5px;line-height:1.2;">
+              <h1 style="margin:8px 0 0;font-size:28px;font-weight:700;color:#ffffff;letter-spacing:-0.5px;line-height:1.2;">
                 Welcome to the studio.
               </h1>
             </td>

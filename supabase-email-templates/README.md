@@ -10,6 +10,7 @@ deployed by code. You have to paste them into the Supabase dashboard.
 |------|---------------|---------------------|
 | `confirm-signup.html` | First sign-in for a brand-new parent (e.g. right after admin clicks "Convert" on their registration) | `Welcome to Cherry Dance Studios — your sign-in code` |
 | `magic-link.html` | Every return sign-in after that | `Your Cherry Dance Studios sign-in code` |
+| `recovery.html` | Parent clicks "Forgot password?" on the login page | `Reset your Cherry Dance Studios password` |
 
 Both templates use the same Supabase variables:
 - `{{ .Token }}` — 6-digit OTP code

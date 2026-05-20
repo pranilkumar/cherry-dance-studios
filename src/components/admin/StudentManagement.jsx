@@ -34,6 +34,7 @@ const emptyForm = () => ({
   preferred_time_slot: '',
   experience_level: '',
   status: 'active',
+  break_until: '',
   notes: '',
 });
 
@@ -74,6 +75,7 @@ export default function StudentManagement() {
       preferred_time_slot: s.preferred_time_slot || '',
       experience_level: s.experience_level || '',
       status: s.status || 'active',
+      break_until: s.break_until || '',
       notes: s.notes || '',
     });
     setEditing(s);
@@ -83,12 +85,18 @@ export default function StudentManagement() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // break_until only meaningful when the student is on_break — clear it
+    // otherwise so it doesn't linger and confuse the table cell.
+    const payload = {
+      ...formData,
+      break_until: formData.status === 'on_break' ? (formData.break_until || null) : null,
+    };
     if (editing === 'new') {
-      const { error } = await supabase.from('students').insert([formData]);
+      const { error } = await supabase.from('students').insert([payload]);
       if (error) return showAlert('error', error.message || 'Failed to add');
       showAlert('success', 'Student added.');
     } else {
-      const { error } = await supabase.from('students').update(formData).eq('id', editing.id);
+      const { error } = await supabase.from('students').update(payload).eq('id', editing.id);
       if (error) return showAlert('error', error.message || 'Failed to update');
       showAlert('success', 'Student updated.');
     }
@@ -98,9 +106,14 @@ export default function StudentManagement() {
 
   // One-click status change from the table row — no modal needed.
   const updateStatus = async (id, newStatus) => {
+    // Moving off on_break clears the return date so it doesn't stick around.
+    const patch = newStatus === 'on_break'
+      ? { status: newStatus }
+      : { status: newStatus, break_until: null };
+
     // Optimistic update so the UI feels instant.
-    setStudents((prev) => prev.map((s) => (s.id === id ? { ...s, status: newStatus } : s)));
-    const { error } = await supabase.from('students').update({ status: newStatus }).eq('id', id);
+    setStudents((prev) => prev.map((s) => (s.id === id ? { ...s, ...patch } : s)));
+    const { error } = await supabase.from('students').update(patch).eq('id', id);
     if (error) {
       showAlert('error', error.message || 'Failed to update status');
       fetchStudents(); // Roll back from server.
@@ -277,6 +290,11 @@ export default function StudentManagement() {
                         status={s.status}
                         onChange={(v) => updateStatus(s.id, v)}
                       />
+                      {s.status === 'on_break' && s.break_until && (
+                        <div className="mt-1 text-[10px] text-white/55">
+                          until {new Date(s.break_until + 'T00:00').toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })}
+                        </div>
+                      )}
                     </td>
                     <td className="px-5 py-3 text-xs text-white/55 tabular-nums">
                       {s.enrollment_date
@@ -388,6 +406,20 @@ export default function StudentManagement() {
                 </select>
               </Field>
             </Grid2>
+
+            {formData.status === 'on_break' && (
+              <Field label="Expected back (optional)">
+                <input
+                  type="date"
+                  value={formData.break_until}
+                  onChange={(e) => setField('break_until', e.target.value)}
+                  className={inputCls}
+                />
+                <p className="mt-1.5 text-xs text-white/45">
+                  Leave blank if open-ended. We&rsquo;ll surface this in the roster so you remember when to follow up.
+                </p>
+              </Field>
+            )}
 
             <Field label="Notes">
               <textarea rows={3} value={formData.notes} onChange={(e) => setField('notes', e.target.value)} placeholder="Anything else…" className={`${inputCls} resize-none`} />

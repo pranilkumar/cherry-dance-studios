@@ -8,10 +8,14 @@ import {
 
 const STATUS_META = {
   active:   { bg: '#ffffff', fg: '#0a0a0f', label: 'Active' },
+  on_break: { bg: 'rgba(238,36,53,0.12)', fg: '#ffb3ba', label: 'On break' },
   pending:  { bg: 'rgba(209,6,15,0.18)', fg: '#ee2435', label: 'Pending' },
   inactive: { bg: 'rgba(255,255,255,0.08)', fg: 'rgba(255,255,255,0.55)', label: 'Inactive' },
   dropped:  { bg: '#d1060f', fg: '#ffffff', label: 'Dropped' },
 };
+
+// Order in dropdowns / filters — active/on_break grouped first.
+const STATUS_OPTIONS = ['active', 'on_break', 'pending', 'inactive', 'dropped'];
 
 const inputCls =
   'w-full rounded-lg border border-white/15 bg-white/[0.04] px-3 py-2 text-sm text-white placeholder:text-white/35 focus:border-[#ee2435] focus:bg-white/[0.06] focus:outline-none focus:ring-2 focus:ring-[#d1060f]/25';
@@ -92,6 +96,19 @@ export default function StudentManagement() {
     fetchStudents();
   };
 
+  // One-click status change from the table row — no modal needed.
+  const updateStatus = async (id, newStatus) => {
+    // Optimistic update so the UI feels instant.
+    setStudents((prev) => prev.map((s) => (s.id === id ? { ...s, status: newStatus } : s)));
+    const { error } = await supabase.from('students').update({ status: newStatus }).eq('id', id);
+    if (error) {
+      showAlert('error', error.message || 'Failed to update status');
+      fetchStudents(); // Roll back from server.
+    } else {
+      showAlert('success', `Marked as ${STATUS_META[newStatus]?.label || newStatus}.`);
+    }
+  };
+
   const handleDeleteConfirm = async () => {
     const { error } = await supabase.from('students').delete().eq('id', confirmDelete.id);
     if (error) showAlert('error', error.message || 'Failed to delete');
@@ -117,7 +134,7 @@ export default function StudentManagement() {
 
   const counts = useMemo(() => students.reduce(
     (acc, s) => { acc.total++; acc[s.status] = (acc[s.status] || 0) + 1; return acc; },
-    { total: 0, active: 0, inactive: 0, pending: 0, dropped: 0 }
+    { total: 0, active: 0, on_break: 0, inactive: 0, pending: 0, dropped: 0 }
   ), [students]);
 
   const exportToCSV = () => {
@@ -200,6 +217,7 @@ export default function StudentManagement() {
           {[
             { v: 'all',      label: `All (${counts.total})` },
             { v: 'active',   label: `Active (${counts.active || 0})` },
+            { v: 'on_break', label: `On break (${counts.on_break || 0})` },
             { v: 'pending',  label: `Pending (${counts.pending || 0})` },
             { v: 'inactive', label: `Inactive (${counts.inactive || 0})` },
             { v: 'dropped',  label: `Dropped (${counts.dropped || 0})` },
@@ -254,7 +272,12 @@ export default function StudentManagement() {
                     <td className="px-5 py-3 text-white/80">
                       {s.preferred_class || <span className="text-white/35">—</span>}
                     </td>
-                    <td className="px-5 py-3"><StatusBadge status={s.status} /></td>
+                    <td className="px-5 py-3">
+                      <StatusSelect
+                        status={s.status}
+                        onChange={(v) => updateStatus(s.id, v)}
+                      />
+                    </td>
                     <td className="px-5 py-3 text-xs text-white/55 tabular-nums">
                       {s.enrollment_date
                         ? new Date(s.enrollment_date).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' })
@@ -359,10 +382,9 @@ export default function StudentManagement() {
               </Field>
               <Field label="Status">
                 <select value={formData.status} onChange={(e) => setField('status', e.target.value)} className={`${inputCls} ${selectChevron}`}>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                  <option value="pending">Pending</option>
-                  <option value="dropped">Dropped</option>
+                  {STATUS_OPTIONS.map((v) => (
+                    <option key={v} value={v}>{STATUS_META[v].label}</option>
+                  ))}
                 </select>
               </Field>
             </Grid2>
@@ -466,5 +488,34 @@ function StatusBadge({ status }) {
     >
       {v.label}
     </span>
+  );
+}
+
+/** Clickable status badge — opens a native select so admins can change status
+ *  with one click, no Edit modal needed. */
+function StatusSelect({ status, onChange }) {
+  const v = STATUS_META[status] || STATUS_META.pending;
+  return (
+    <div className="relative inline-block">
+      <span
+        className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
+        style={{ background: v.bg, color: v.fg }}
+      >
+        {v.label}
+        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="opacity-70">
+          <path d="m6 9 6 6 6-6" />
+        </svg>
+      </span>
+      <select
+        value={status || ''}
+        onChange={(e) => onChange(e.target.value)}
+        aria-label="Change status"
+        className="absolute inset-0 cursor-pointer opacity-0"
+      >
+        {STATUS_OPTIONS.map((s) => (
+          <option key={s} value={s}>{STATUS_META[s].label}</option>
+        ))}
+      </select>
+    </div>
   );
 }

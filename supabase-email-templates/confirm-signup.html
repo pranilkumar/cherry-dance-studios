@@ -76,7 +76,7 @@
                 You now have access to the <strong style="color:#ffffff;">Student Portal</strong> &mdash; one place for everything about your dancer at Cherry Dance Studios. Class schedule, attendance, billing details, workshop bookings, and contact updates all live in there.
               </p>
               <p style="margin:0 0 8px;font-size:15px;line-height:1.6;color:rgba(255,255,255,0.7);">
-                Use the 6-digit code below to sign in.
+                Use the code below to sign in, or tap the big button to open the portal in one click.
               </p>
               <p style="margin:0 0 28px;font-size:13px;line-height:1.55;color:rgba(255,255,255,0.5);">
                 Prefer a password? Sign in with the code, then add one from your Profile &mdash; both ways work going forward.
@@ -99,11 +99,12 @@
                 </tr>
               </table>
 
-              <!-- Sign-in CTA button -->
+              <!-- One-tap sign-in button — uses the magic-link URL so clicking
+                   signs the parent in directly, no code entry needed. -->
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:24px;">
                 <tr>
                   <td align="center">
-                    <a href="{{ .SiteURL }}/portal/login"
+                    <a href="{{ .ConfirmationURL }}"
                        style="display:inline-block;padding:14px 28px;background:linear-gradient(135deg,#b00310 0%,#d1060f 50%,#ee2435 100%);color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;border-radius:999px;letter-spacing:0.2px;">
                       Open the portal &rarr;
                     </a>
@@ -112,7 +113,7 @@
               </table>
 
               <p style="margin:18px 0 0;text-align:center;font-size:12px;line-height:1.6;color:rgba(255,255,255,0.45);">
-                Or click <a href="{{ .ConfirmationURL }}" style="color:#ee2435;text-decoration:none;">this one-tap sign-in link</a>.
+                Or visit <a href="{{ .SiteURL }}/portal/login" style="color:#ee2435;text-decoration:none;">cherrydancestudios.com/portal/login</a> and type the code.
               </p>
             </td>
           </tr>

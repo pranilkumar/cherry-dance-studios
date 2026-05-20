@@ -94,11 +94,11 @@
                 </tr>
               </table>
 
-              <!-- Sign-in CTA button -->
+              <!-- One-tap sign-in CTA — uses magic-link URL. -->
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:22px;">
                 <tr>
                   <td align="center">
-                    <a href="{{ .SiteURL }}/portal/login"
+                    <a href="{{ .ConfirmationURL }}"
                        style="display:inline-block;padding:12px 24px;background:linear-gradient(135deg,#b00310 0%,#d1060f 50%,#ee2435 100%);color:#ffffff;text-decoration:none;font-size:14px;font-weight:600;border-radius:999px;letter-spacing:0.2px;">
                       Open the portal &rarr;
                     </a>
@@ -107,7 +107,7 @@
               </table>
 
               <p style="margin:16px 0 0;text-align:center;font-size:12px;line-height:1.6;color:rgba(255,255,255,0.45);">
-                Or use the <a href="{{ .ConfirmationURL }}" style="color:#ee2435;text-decoration:none;">one-tap sign-in link</a>.
+                Or type the code at <a href="{{ .SiteURL }}/portal/login" style="color:#ee2435;text-decoration:none;">cherrydancestudios.com/portal/login</a>.
               </p>
             </td>
           </tr>

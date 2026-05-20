@@ -289,7 +289,7 @@ export default function PortalLogin() {
                     className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-base text-white placeholder:text-white/30 transition focus:border-[#ee2435] focus:bg-white/[0.06] focus:outline-none focus:ring-4 focus:ring-[#d1060f]/20"
                   />
                   <p className="mt-2 text-xs text-white/45">
-                    We&rsquo;ll email you a 6-digit code. No password needed.
+                    We&rsquo;ll email you a sign-in code. No password needed.
                   </p>
                 </div>
 
@@ -327,7 +327,7 @@ export default function PortalLogin() {
                 <div>
                   <label className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.15em] text-white/65">
                     <FaLock className="text-[10px]" />
-                    6-digit code
+                    Sign-in code
                   </label>
                   <input
                     ref={codeInputRef}
@@ -335,20 +335,22 @@ export default function PortalLogin() {
                     inputMode="numeric"
                     pattern="[0-9]*"
                     autoComplete="one-time-code"
-                    maxLength={6}
+                    maxLength={8}
                     value={code}
                     onChange={(e) => {
-                      const v = e.target.value.replace(/\D/g, '').slice(0, 6);
+                      const v = e.target.value.replace(/\D/g, '').slice(0, 8);
                       setCode(v);
-                      if (v.length === 6) {
+                      // Supabase OTPs are 6 OR 8 digits depending on project
+                      // config — auto-submit when the input lands on either.
+                      if (v.length === 6 || v.length === 8) {
                         setTimeout(() => {
                           const form = e.target.form;
                           if (form) form.requestSubmit();
                         }, 50);
                       }
                     }}
-                    placeholder="123456"
-                    className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3.5 text-center font-mono text-3xl tracking-[0.4em] text-white placeholder:text-white/20 transition focus:border-[#ee2435] focus:bg-white/[0.06] focus:outline-none focus:ring-4 focus:ring-[#d1060f]/20"
+                    placeholder="••••••"
+                    className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3.5 text-center font-mono text-3xl tracking-[0.35em] text-white placeholder:text-white/20 transition focus:border-[#ee2435] focus:bg-white/[0.06] focus:outline-none focus:ring-4 focus:ring-[#d1060f]/20"
                   />
                   <p className="mt-2 text-xs text-white/45">
                     Sent to <strong className="text-white/75">{email}</strong>. It expires in 24 hours.
@@ -359,7 +361,7 @@ export default function PortalLogin() {
 
                 <button
                   type="submit"
-                  disabled={status === 'verifying' || code.length !== 6}
+                  disabled={status === 'verifying' || (code.length !== 6 && code.length !== 8)}
                   className="group flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3.5 text-base font-semibold text-white shadow-[0_8px_24px_rgba(209,6,15,0.45)] transition hover:shadow-[0_12px_32px_rgba(209,6,15,0.6)] disabled:opacity-60 disabled:shadow-none"
                   style={{
                     background:

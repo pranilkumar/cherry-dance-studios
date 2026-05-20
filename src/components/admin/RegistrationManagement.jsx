@@ -9,6 +9,8 @@ import {
   FaEye,
   FaSearch,
   FaTimes,
+  FaPaperPlane,
+  FaExclamationCircle,
 } from 'react-icons/fa';
 
 /**
@@ -66,34 +68,60 @@ export default function RegistrationManagement() {
       return;
     }
 
-    // Fire-and-forget sign-in email so the parent is auto-onboarded into the
-    // portal. signInWithOtp creates the auth user if it doesn't exist and
-    // emails them a 6-digit code (or magic link), same as if they'd hit the
-    // login page themselves. We don't await the result for UX — a failed
-    // email shouldn't block the conversion that already succeeded.
+    // Fire-and-forget sign-in email. On success we stamp
+    // welcome_email_sent_at so the table can show "✓ sent"; on failure we
+    // leave it null so the row offers a "Resend" button.
     let emailNote = '';
     if (reg?.email) {
-      const siteUrl =
-        typeof window !== 'undefined' ? window.location.origin : undefined;
-      const { error: mailErr } = await supabase.auth.signInWithOtp({
-        email: reg.email.trim().toLowerCase(),
-        options: {
-          emailRedirectTo: siteUrl ? `${siteUrl}/portal/auth/callback` : undefined,
-        },
-      });
-      if (mailErr) {
-        // Most common: Supabase rate limit. Convert succeeded — just flag it.
-        console.warn('[convert] welcome email failed:', mailErr);
-        emailNote = ' (welcome email failed — try resending later)';
-      } else {
-        emailNote = ` Welcome email sent to ${reg.email}.`;
-      }
+      const ok = await sendWelcomeEmail(reg.email, registrationId);
+      emailNote = ok
+        ? ` Welcome email sent to ${reg.email}.`
+        : ' (welcome email failed — Resend from the table when ready.)';
     }
 
     showAlert('success', `Registration converted to student.${emailNote}`);
     fetchRegistrations();
     setSelected(null);
     setConverting(false);
+  };
+
+  // Shared welcome-email path used by both initial convert and "Resend".
+  // Returns true on success, false on failure. Writes the success timestamp
+  // back to the registrations row so the table can show status.
+  const sendWelcomeEmail = async (email, registrationId) => {
+    const siteUrl = typeof window !== 'undefined' ? window.location.origin : undefined;
+    const { error: mailErr } = await supabase.auth.signInWithOtp({
+      email: email.trim().toLowerCase(),
+      options: {
+        emailRedirectTo: siteUrl ? `${siteUrl}/portal/auth/callback` : undefined,
+      },
+    });
+    if (mailErr) {
+      console.warn('[welcome-email] failed:', mailErr);
+      return false;
+    }
+    // Best-effort stamp — if this update fails it's not catastrophic, the
+    // email still went out. We just lose the "Sent" badge in the UI.
+    await supabase
+      .from('registrations')
+      .update({ welcome_email_sent_at: new Date().toISOString() })
+      .eq('id', registrationId);
+    return true;
+  };
+
+  // Manual retry from the table row — same email, same destination.
+  const resendWelcomeEmail = async (reg) => {
+    if (!reg?.email) return;
+    setConverting(true);
+    const ok = await sendWelcomeEmail(reg.email, reg.id);
+    setConverting(false);
+    showAlert(
+      ok ? 'success' : 'error',
+      ok
+        ? `Welcome email sent to ${reg.email}.`
+        : 'Resend failed — likely a Supabase rate limit. Try again in an hour.'
+    );
+    if (ok) fetchRegistrations();
   };
 
   const updateStatus = async (registrationId, newStatus) => {
@@ -233,7 +261,12 @@ export default function RegistrationManagement() {
                     <td className="px-5 py-3 text-white/80">
                       {reg.preferred_class || <span className="text-white/35">—</span>}
                     </td>
-                    <td className="px-5 py-3"><StatusBadge status={reg.status} /></td>
+                    <td className="px-5 py-3">
+                      <StatusBadge status={reg.status} />
+                      {reg.status === 'converted' && (
+                        <EmailStatus sentAt={reg.welcome_email_sent_at} />
+                      )}
+                    </td>
                     <td className="px-5 py-3">
                       <div className="flex items-center justify-end gap-1.5">
                         <ActionBtn icon={FaEye} label="View" onClick={() => setSelected(reg)} />
@@ -245,6 +278,14 @@ export default function RegistrationManagement() {
                         )}
                         {(reg.status === 'approved' || reg.status === 'pending') && (
                           <ActionBtn icon={FaUserPlus} label="Convert" onClick={() => convertToStudent(reg.id)} color="primary" />
+                        )}
+                        {reg.status === 'converted' && !reg.welcome_email_sent_at && (
+                          <ActionBtn
+                            icon={FaPaperPlane}
+                            label={converting ? 'Sending…' : 'Resend'}
+                            onClick={() => resendWelcomeEmail(reg)}
+                            color="primary"
+                          />
                         )}
                       </div>
                     </td>
@@ -281,6 +322,26 @@ function StatusBadge({ status }) {
     >
       {v.label}
     </span>
+  );
+}
+
+/** Tiny indicator under the StatusBadge for converted rows — tells the admin
+ *  whether the welcome email actually went out. */
+function EmailStatus({ sentAt }) {
+  if (sentAt) {
+    const when = new Date(sentAt).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' });
+    return (
+      <div className="mt-1.5 inline-flex items-center gap-1 text-[10px] text-white/55">
+        <FaCheckCircle className="text-[9px] text-white/65" />
+        <span>Email sent · {when}</span>
+      </div>
+    );
+  }
+  return (
+    <div className="mt-1.5 inline-flex items-center gap-1 text-[10px] font-medium text-[#ee2435]">
+      <FaExclamationCircle className="text-[9px]" />
+      <span>Email pending</span>
+    </div>
   );
 }
 

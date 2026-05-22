@@ -33,6 +33,7 @@ export default function FeeManagement() {
     amount: '', payment_date: new Date().toISOString().split('T')[0], payment_method: 'cash', notes: '',
   });
   const [sendReceipt, setSendReceipt] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [alert, setAlert] = useState(null);
   const [monthlyStats, setMonthlyStats] = useState({ totalIncome: 0, paidCount: 0, pendingCount: 0, overdueCount: 0 });
 
@@ -107,22 +108,30 @@ export default function FeeManagement() {
     if (!paymentData.amount || parseFloat(paymentData.amount) <= 0) {
       return showAlert('error', 'Please enter a valid amount.');
     }
+    setIsSubmitting(true);
     try {
       const feeType = paymentModal.fee?.fee_type || 'Monthly Fee';
 
       if (!paymentModal.fee) {
-        const { error } = await supabase.from('fees').insert([{
+        console.log('[fees] INSERT — no existing fee for this month, creating new record');
+        const { data: insertedFee, error } = await supabase.from('fees').insert([{
           student_id: paymentModal.id, fee_type: feeType, amount: paymentData.amount,
           due_date: `${monthFilter}-05`, payment_status: 'paid', payment_date: paymentData.payment_date,
           payment_method: paymentData.payment_method, notes: paymentData.notes,
-        }]);
+        }]).select();
+        console.log('[fees] INSERT result:', insertedFee, 'error:', error);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from('fees').update({
+        console.log('[fees] UPDATE fee id:', paymentModal.fee.id);
+        const { data: updatedFee, error } = await supabase.from('fees').update({
           payment_status: 'paid', payment_date: paymentData.payment_date,
           payment_method: paymentData.payment_method, amount: paymentData.amount, notes: paymentData.notes,
-        }).eq('id', paymentModal.fee.id);
+        }).eq('id', paymentModal.fee.id).select();
+        console.log('[fees] UPDATE result:', updatedFee, 'error:', error);
         if (error) throw error;
+        if (!updatedFee || updatedFee.length === 0) {
+          throw new Error('Update matched 0 rows — fee ID may be wrong or RLS is blocking the write.');
+        }
       }
 
       // Send receipt email if the parent has an email and the checkbox is on.
@@ -152,7 +161,10 @@ export default function FeeManagement() {
       setPaymentModal(null);
       fetchData();
     } catch (err) {
+      console.error('[fees] submitPayment error:', err);
       showAlert('error', err.message || 'Failed to record payment.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -170,7 +182,8 @@ export default function FeeManagement() {
 
   const showAlert = (type, message) => {
     setAlert({ type, message });
-    setTimeout(() => setAlert(null), 3500);
+    // Errors stay until manually dismissed; success auto-clears after 4s.
+    if (type === 'success') setTimeout(() => setAlert(null), 4000);
   };
 
   const getStatusInfo = (student) => {
@@ -411,9 +424,10 @@ export default function FeeManagement() {
               className="rounded-lg border border-white/15 bg-white/5 px-4 py-2 text-sm font-medium text-white/85 hover:border-white/30">
               Cancel
             </button>
-            <button type="button" onClick={submitPayment}
-              className="inline-flex items-center gap-2 rounded-lg bg-[#d1060f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#b00310]">
-              <FaCheckCircle className="text-xs" /> Record payment
+            <button type="button" onClick={submitPayment} disabled={isSubmitting}
+              className="inline-flex items-center gap-2 rounded-lg bg-[#d1060f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#b00310] disabled:opacity-60 disabled:cursor-not-allowed">
+              <FaCheckCircle className="text-xs" />
+              {isSubmitting ? 'Saving…' : 'Record payment'}
             </button>
           </div>
         </Modal>

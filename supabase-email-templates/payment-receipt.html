@@ -1,0 +1,120 @@
+<!--
+  ════════════════════════════════════════════════════════════════════
+  Cherry Dance Studios — "Payment Receipt" email template
+  ════════════════════════════════════════════════════════════════════
+  NOT a Supabase template — sent programmatically via Resend when
+  admin clicks "Mark as paid" in the Fees page of the admin portal.
+
+  The HTML here is for reference only. The live version is generated
+  dynamically in /app/api/send-payment-receipt/route.js, which
+  interpolates the student name, amount, fee type, date, and method
+  directly into the HTML string.
+
+  To test: open the Fees page in admin, record a payment with
+  "Send receipt to parent" checked, and verify the email in Gmail.
+  ════════════════════════════════════════════════════════════════════
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="dark light">
+  <meta name="supported-color-schemes" content="dark light">
+  <title>Payment received · Cherry Dance Studios</title>
+</head>
+<body style="margin:0;padding:0;background-color:#0a0a0f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#ffffff;-webkit-font-smoothing:antialiased;">
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#0a0a0f;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" style="max-width:520px;background-color:#12121a;border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,0.06);" cellpadding="0" cellspacing="0" border="0">
+
+          <!-- Brand band -->
+          <tr>
+            <td style="background:linear-gradient(135deg,#b00310 0%,#d1060f 50%,#ee2435 100%);padding:22px 28px;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                <tr>
+                  <td valign="middle" width="46" style="line-height:0;padding-right:14px;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td align="center" style="background-color:#0a0a0f;border:1.5px solid rgba(255,255,255,0.25);border-radius:999px;padding:6px;line-height:0;">
+                          <img src="https://cherrydancestudios.com/logo.png"
+                               alt="Cherry Dance Studios"
+                               width="30" height="30"
+                               style="display:block;width:30px;height:30px;border:0;outline:none;">
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                  <td valign="middle">
+                    <div style="font-size:11px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:rgba(255,255,255,0.85);">
+                      CHERRY DANCE STUDIOS &nbsp;&middot;&nbsp; STUDENT PORTAL
+                    </div>
+                    <h1 style="margin:4px 0 0;font-size:22px;font-weight:700;color:#ffffff;letter-spacing:-0.3px;line-height:1.2;">
+                      Payment received.
+                    </h1>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:28px 28px 20px;">
+              <p style="margin:0 0 22px;font-size:15px;line-height:1.6;color:rgba(255,255,255,0.78);">
+                Hi [Parent first name], we&rsquo;ve received your payment for <strong style="color:#ffffff;">[Student name]</strong>. Here&rsquo;s your receipt.
+              </p>
+
+              <!-- Receipt box -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+                     style="background-color:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;">
+                <tr>
+                  <td style="padding:22px 20px 16px;border-bottom:1px solid rgba(255,255,255,0.06);">
+                    <div style="font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:6px;">Amount paid</div>
+                    <div style="font-size:36px;font-weight:700;color:#ffffff;letter-spacing:-1px;line-height:1;">$100.00 CAD</div>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:16px 20px 0;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td style="padding:5px 0;font-size:12px;color:rgba(255,255,255,0.45);width:120px;">For</td>
+                        <td style="padding:5px 0;font-size:13px;font-weight:600;color:#ffffff;">Monthly fee</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:5px 0;font-size:12px;color:rgba(255,255,255,0.45);">Student</td>
+                        <td style="padding:5px 0;font-size:13px;color:rgba(255,255,255,0.85);">[Student name]</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:5px 0;font-size:12px;color:rgba(255,255,255,0.45);">Date</td>
+                        <td style="padding:5px 0;font-size:13px;color:rgba(255,255,255,0.85);">June 1, 2026</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:5px 0 16px;font-size:12px;color:rgba(255,255,255,0.45);">Method</td>
+                        <td style="padding:5px 0 16px;font-size:13px;color:rgba(255,255,255,0.85);">Cash</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background-color:rgba(0,0,0,0.35);padding:18px 28px;text-align:center;border-top:1px solid rgba(255,255,255,0.05);">
+              <p style="margin:0 0 4px;font-size:12px;color:rgba(255,255,255,0.55);">
+                Questions? WhatsApp us at <a href="https://wa.me/16138903789" style="color:rgba(255,255,255,0.8);text-decoration:none;">613-890-3789</a>
+              </p>
+              <p style="margin:0;font-size:11px;color:rgba(255,255,255,0.3);">Cherry Dance Studios &middot; Barrhaven, Ottawa</p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

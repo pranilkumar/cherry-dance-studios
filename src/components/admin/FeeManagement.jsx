@@ -32,6 +32,7 @@ export default function FeeManagement() {
   const [paymentData, setPaymentData] = useState({
     amount: '', payment_date: new Date().toISOString().split('T')[0], payment_method: 'cash', notes: '',
   });
+  const [sendReceipt, setSendReceipt] = useState(true);
   const [alert, setAlert] = useState(null);
   const [monthlyStats, setMonthlyStats] = useState({ totalIncome: 0, paidCount: 0, pendingCount: 0, overdueCount: 0 });
 
@@ -98,6 +99,7 @@ export default function FeeManagement() {
       payment_method: 'cash',
       notes: '',
     });
+    setSendReceipt(!!student.email);
     setPaymentModal(student);
   };
 
@@ -106,9 +108,11 @@ export default function FeeManagement() {
       return showAlert('error', 'Please enter a valid amount.');
     }
     try {
+      const feeType = paymentModal.fee?.fee_type || 'Monthly Fee';
+
       if (!paymentModal.fee) {
         const { error } = await supabase.from('fees').insert([{
-          student_id: paymentModal.id, fee_type: 'Monthly Fee', amount: paymentData.amount,
+          student_id: paymentModal.id, fee_type: feeType, amount: paymentData.amount,
           due_date: `${monthFilter}-05`, payment_status: 'paid', payment_date: paymentData.payment_date,
           payment_method: paymentData.payment_method, notes: paymentData.notes,
         }]);
@@ -120,7 +124,31 @@ export default function FeeManagement() {
         }).eq('id', paymentModal.fee.id);
         if (error) throw error;
       }
-      showAlert('success', 'Payment recorded.');
+
+      // Send receipt email if the parent has an email and the checkbox is on.
+      let emailNote = '';
+      if (sendReceipt && paymentModal.email) {
+        try {
+          const res = await fetch('/api/send-payment-receipt', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: paymentModal.email,
+              studentName: paymentModal.student_name,
+              parentName: paymentModal.parent_name,
+              amount: parseFloat(paymentData.amount),
+              feeType,
+              paymentDate: paymentData.payment_date,
+              paymentMethod: paymentData.payment_method,
+            }),
+          });
+          emailNote = res.ok ? ` Receipt sent to ${paymentModal.email}.` : ' (receipt email failed)';
+        } catch {
+          emailNote = ' (receipt email failed)';
+        }
+      }
+
+      showAlert('success', `Payment recorded.${emailNote}`);
       setPaymentModal(null);
       fetchData();
     } catch (err) {
@@ -361,7 +389,24 @@ export default function FeeManagement() {
             </Field>
           </div>
 
-          <div className="mt-6 flex items-center justify-end gap-3 border-t border-white/8 pt-4">
+          <div className="mt-5 flex items-center gap-3 rounded-lg border border-white/8 bg-white/[0.03] px-4 py-3">
+            <input
+              id="send-receipt"
+              type="checkbox"
+              checked={sendReceipt}
+              onChange={(e) => setSendReceipt(e.target.checked)}
+              disabled={!paymentModal.email}
+              className="h-4 w-4 cursor-pointer accent-[#d1060f]"
+            />
+            <label htmlFor="send-receipt" className="cursor-pointer text-sm text-white/70">
+              Send receipt to parent
+              {paymentModal.email
+                ? <span className="ml-1.5 text-white/40">({paymentModal.email})</span>
+                : <span className="ml-1.5 text-white/35">(no email on file)</span>}
+            </label>
+          </div>
+
+          <div className="mt-4 flex items-center justify-end gap-3 border-t border-white/8 pt-4">
             <button type="button" onClick={() => setPaymentModal(null)}
               className="rounded-lg border border-white/15 bg-white/5 px-4 py-2 text-sm font-medium text-white/85 hover:border-white/30">
               Cancel

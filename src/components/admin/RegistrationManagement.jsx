@@ -33,6 +33,7 @@ export default function RegistrationManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selected, setSelected] = useState(null);
+  const [convertConfirm, setConvertConfirm] = useState(null);
   const [converting, setConverting] = useState(false);
   const [alert, setAlert] = useState(null);
 
@@ -53,13 +54,18 @@ export default function RegistrationManagement() {
     setLoading(false);
   };
 
-  const convertToStudent = async (registrationId) => {
+  // Opens the fee modal instead of converting immediately.
+  const handleConvertClick = (reg) => {
+    setSelected(null);
+    setConvertConfirm(reg);
+  };
+
+  const convertToStudent = async (registrationId, feeData) => {
     setConverting(true);
 
-    // Find the registration so we know the parent's email for the welcome email.
     const reg = registrations.find((r) => r.id === registrationId);
 
-    const { error } = await supabase.rpc('convert_registration_to_student', {
+    const { data: newStudentId, error } = await supabase.rpc('convert_registration_to_student', {
       registration_id: registrationId,
     });
     if (error) {
@@ -68,9 +74,19 @@ export default function RegistrationManagement() {
       return;
     }
 
-    // Fire-and-forget sign-in email. On success we stamp
-    // welcome_email_sent_at so the table can show "✓ sent"; on failure we
-    // leave it null so the row offers a "Resend" button.
+    // Insert the initial fee record if one was provided.
+    if (feeData && newStudentId) {
+      const { error: feeErr } = await supabase.from('fees').insert({
+        student_id: newStudentId,
+        fee_type: feeData.feeType,
+        amount: feeData.amount,
+        due_date: feeData.dueDate,
+        payment_status: 'pending',
+        notes: feeData.notes || null,
+      });
+      if (feeErr) console.warn('[fee-insert] failed:', feeErr);
+    }
+
     let emailNote = '';
     if (reg?.email) {
       const ok = await sendWelcomeEmail(reg.email, registrationId);
@@ -82,6 +98,7 @@ export default function RegistrationManagement() {
     showAlert('success', `Registration converted to student.${emailNote}`);
     fetchRegistrations();
     setSelected(null);
+    setConvertConfirm(null);
     setConverting(false);
   };
 
@@ -277,7 +294,7 @@ export default function RegistrationManagement() {
                           </>
                         )}
                         {(reg.status === 'approved' || reg.status === 'pending') && (
-                          <ActionBtn icon={FaUserPlus} label="Convert" onClick={() => convertToStudent(reg.id)} color="primary" />
+                          <ActionBtn icon={FaUserPlus} label="Convert" onClick={() => handleConvertClick(reg)} color="primary" />
                         )}
                         {reg.status === 'converted' && !reg.welcome_email_sent_at && (
                           <ActionBtn
@@ -302,7 +319,16 @@ export default function RegistrationManagement() {
           registration={selected}
           converting={converting}
           onClose={() => setSelected(null)}
-          onConvert={() => convertToStudent(selected.id)}
+          onConvert={() => handleConvertClick(selected)}
+        />
+      )}
+
+      {convertConfirm && (
+        <FeeModal
+          registration={convertConfirm}
+          converting={converting}
+          onConfirm={(feeData) => convertToStudent(convertConfirm.id, feeData)}
+          onCancel={() => setConvertConfirm(null)}
         />
       )}
     </div>
@@ -449,6 +475,132 @@ function KV({ k, v }) {
     <div>
       <dt className="text-xs font-medium uppercase tracking-wider text-white/45">{k}</dt>
       <dd className="mt-0.5 text-sm text-white">{v || <span className="text-white/35">—</span>}</dd>
+    </div>
+  );
+}
+
+function FeeModal({ registration, converting, onConfirm, onCancel }) {
+  const firstOfNextMonth = () => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth() + 1, 1)
+      .toISOString()
+      .split('T')[0];
+  };
+
+  const [amount, setAmount] = useState('100');
+  const [feeType, setFeeType] = useState('Monthly fee');
+  const [dueDate, setDueDate] = useState(firstOfNextMonth());
+  const [notes, setNotes] = useState('');
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onConfirm({ amount: parseFloat(amount), feeType, dueDate, notes });
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-[#0a0a0f]/80 p-4 backdrop-blur-md sm:items-center">
+      <div className="w-full max-w-md overflow-hidden rounded-2xl border border-white/10 bg-[#12121a] shadow-[0_30px_120px_rgba(0,0,0,0.6)]">
+        <header className="flex items-center justify-between border-b border-white/8 px-6 py-4">
+          <div>
+            <h2 className="font-[family-name:var(--font-display)] text-xl font-bold tracking-tight text-white">
+              Set initial fee
+            </h2>
+            <p className="mt-0.5 text-xs text-white/45">For {registration.student_name}</p>
+          </div>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="grid h-8 w-8 place-items-center rounded-full text-white/45 hover:bg-white/10 hover:text-white"
+          >
+            <FaTimes className="text-xs" />
+          </button>
+        </header>
+
+        <form onSubmit={handleSubmit} className="space-y-4 px-6 py-5">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-white/45">
+                Amount (CAD)
+              </label>
+              <div className="relative">
+                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-white/45">$</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  className={`${inputCls} pl-7`}
+                  required
+                />
+              </div>
+            </div>
+            <div>
+              <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-white/45">
+                Due date
+              </label>
+              <input
+                type="date"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+                className={inputCls}
+                required
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-white/45">
+              Fee type
+            </label>
+            <select
+              value={feeType}
+              onChange={(e) => setFeeType(e.target.value)}
+              className={inputCls}
+            >
+              <option value="Monthly fee">Monthly fee</option>
+              <option value="Registration fee">Registration fee</option>
+              <option value="Annual fee">Annual fee</option>
+              <option value="Costume deposit">Costume deposit</option>
+              <option value="Workshop fee">Workshop fee</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-white/45">
+              Notes{' '}
+              <span className="font-normal normal-case text-white/30">(optional)</span>
+            </label>
+            <input
+              type="text"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="e.g. First month pro-rated"
+              className={inputCls}
+            />
+          </div>
+
+          <div className="flex flex-col gap-2 pt-2">
+            <button
+              type="submit"
+              disabled={converting}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#d1060f] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#b00310] disabled:opacity-60"
+            >
+              <FaUserPlus className="text-xs" />
+              {converting ? 'Converting…' : 'Convert & set fee'}
+            </button>
+            <button
+              type="button"
+              onClick={() => onConfirm(null)}
+              disabled={converting}
+              className="py-1 text-center text-sm text-white/40 hover:text-white/70 disabled:opacity-50"
+            >
+              Convert without setting a fee
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

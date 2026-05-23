@@ -35,6 +35,7 @@ export default function RegistrationManagement() {
   const [selected, setSelected] = useState(null);
   const [convertConfirm, setConvertConfirm] = useState(null);
   const [converting, setConverting] = useState(false);
+  const [resendingId, setResendingId] = useState(null); // tracks which row's Resend is in-flight
   const [alert, setAlert] = useState(null);
 
   useEffect(() => { fetchRegistrations(); }, []);
@@ -129,9 +130,9 @@ export default function RegistrationManagement() {
   // Manual retry from the table row — same email, same destination.
   const resendWelcomeEmail = async (reg) => {
     if (!reg?.email) return;
-    setConverting(true);
+    setResendingId(reg.id);
     const ok = await sendWelcomeEmail(reg.email, reg.id);
-    setConverting(false);
+    setResendingId(null);
     showAlert(
       ok ? 'success' : 'error',
       ok
@@ -299,7 +300,8 @@ export default function RegistrationManagement() {
                         {reg.status === 'converted' && !reg.welcome_email_sent_at && (
                           <ActionBtn
                             icon={FaPaperPlane}
-                            label={converting ? 'Sending…' : 'Resend'}
+                            label={resendingId === reg.id ? 'Sending…' : 'Resend'}
+                            disabled={resendingId === reg.id}
                             onClick={() => resendWelcomeEmail(reg)}
                             color="primary"
                           />
@@ -371,7 +373,7 @@ function EmailStatus({ sentAt }) {
   );
 }
 
-function ActionBtn({ icon: Icon, label, onClick, color = 'default' }) {
+function ActionBtn({ icon: Icon, label, onClick, color = 'default', disabled = false }) {
   const colorCls = {
     default: 'border-white/15 bg-white/[0.04] text-white/85 hover:border-white/30',
     success: 'border-white/20 bg-white text-[#0a0a0f] hover:bg-white/90',
@@ -382,7 +384,8 @@ function ActionBtn({ icon: Icon, label, onClick, color = 'default' }) {
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-medium transition ${colorCls[color]}`}
+      disabled={disabled}
+      className={`inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${colorCls[color]}`}
     >
       <Icon className="text-[10px]" />
       <span className="hidden sm:inline">{label}</span>

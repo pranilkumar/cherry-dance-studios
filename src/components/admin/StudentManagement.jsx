@@ -3,7 +3,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import {
-  FaPlus, FaEdit, FaTrash, FaSearch, FaDownload, FaTimes,
+  FaPlus, FaEdit, FaTrash, FaSearch, FaDownload, FaTimes, FaEye,
+  FaCheckCircle, FaClock, FaExclamationTriangle,
 } from 'react-icons/fa';
 
 const STATUS_META = {
@@ -42,6 +43,9 @@ export default function StudentManagement() {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null);
+  const [detailStudent, setDetailStudent] = useState(null);
+  const [detailFees, setDetailFees] = useState([]);
+  const [detailLoading, setDetailLoading] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [formData, setFormData] = useState(emptyForm());
   const [searchTerm, setSearchTerm] = useState('');
@@ -59,6 +63,16 @@ export default function StudentManagement() {
     if (error) showAlert('error', 'Failed to load students');
     else setStudents(data || []);
     setLoading(false);
+  };
+
+  const openDetail = async (student) => {
+    setDetailStudent(student);
+    setDetailFees([]);
+    setDetailLoading(true);
+    const { data } = await supabase
+      .from('fees').select('*').eq('student_id', student.id).order('due_date', { ascending: false });
+    setDetailFees(data || []);
+    setDetailLoading(false);
   };
 
   const openCreate = () => { setFormData(emptyForm()); setEditing('new'); };
@@ -275,7 +289,13 @@ export default function StudentManagement() {
                 {filtered.map((s) => (
                   <tr key={s.id} className="hover:bg-white/[0.04]">
                     <td className="px-5 py-3">
-                      <div className="font-medium text-white">{s.student_name}</div>
+                      <button
+                        type="button"
+                        onClick={() => openDetail(s)}
+                        className="font-medium text-white hover:text-[#ee2435] transition text-left"
+                      >
+                        {s.student_name}
+                      </button>
                       <div className="text-xs text-white/55">{s.parent_name}</div>
                     </td>
                     <td className="px-5 py-3 text-xs">
@@ -469,6 +489,120 @@ export default function StudentManagement() {
           </div>
         </Modal>
       )}
+
+      {detailStudent && (
+        <Modal title={detailStudent.student_name} onClose={() => setDetailStudent(null)}>
+          {/* Info grid */}
+          <div className="mb-6 grid grid-cols-2 gap-x-6 gap-y-4 rounded-xl border border-white/8 bg-white/[0.03] p-5">
+            <InfoRow label="Parent" value={detailStudent.parent_name} />
+            <InfoRow label="Status">
+              <StatusBadge status={detailStudent.status} />
+              {detailStudent.status === 'on_break' && detailStudent.break_until && (
+                <span className="ml-2 text-xs text-white/45">
+                  until {new Date(detailStudent.break_until + 'T00:00').toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' })}
+                </span>
+              )}
+            </InfoRow>
+            <InfoRow label="Email" value={detailStudent.email} />
+            <InfoRow label="Phone" value={detailStudent.phone} />
+            <InfoRow label="Class" value={detailStudent.preferred_class} />
+            <InfoRow label="Day / time" value={[detailStudent.preferred_weekday, detailStudent.preferred_time_slot].filter(Boolean).join(' · ')} />
+            <InfoRow label="Date of birth" value={detailStudent.date_of_birth ? new Date(detailStudent.date_of_birth + 'T00:00').toLocaleDateString('en-CA', { year: 'numeric', month: 'short', day: 'numeric' }) : null} />
+            <InfoRow label="Level" value={detailStudent.experience_level} />
+            <InfoRow label="Enrolled" value={detailStudent.enrollment_date ? new Date(detailStudent.enrollment_date).toLocaleDateString('en-CA', { year: 'numeric', month: 'short', day: 'numeric' }) : null} />
+            <InfoRow label="Gender" value={detailStudent.gender} />
+            {detailStudent.notes && (
+              <div className="col-span-2">
+                <p className="mb-1 text-xs font-medium text-white/45">Notes</p>
+                <p className="text-sm text-white/85 whitespace-pre-wrap">{detailStudent.notes}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Fee history */}
+          <h3 className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-white/45">
+            Fee history
+          </h3>
+          {detailLoading ? (
+            <div className="py-8 text-center text-sm text-white/40">Loading fees…</div>
+          ) : detailFees.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-white/10 bg-white/[0.02] py-8 text-center text-sm text-white/40">
+              No fees recorded for this student.
+            </div>
+          ) : (
+            <div className="overflow-hidden rounded-xl border border-white/10">
+              {detailFees.map((fee, i) => {
+                const paid = fee.payment_status === 'paid';
+                const overdue = !paid && fee.due_date && new Date(fee.due_date + 'T00:00:00') < new Date();
+                return (
+                  <div
+                    key={fee.id}
+                    className={`flex items-center justify-between gap-4 px-4 py-3 ${
+                      i < detailFees.length - 1 ? 'border-b border-white/8' : ''
+                    } ${overdue ? 'bg-[#d1060f]/[0.04]' : ''}`}
+                  >
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        {paid
+                          ? <FaCheckCircle className="shrink-0 text-[10px] text-white/45" />
+                          : overdue
+                            ? <FaExclamationTriangle className="shrink-0 text-[10px] text-[#ee2435]" />
+                            : <FaClock className="shrink-0 text-[10px] text-white/45" />}
+                        <span className="text-sm font-medium text-white">{fee.fee_type}</span>
+                      </div>
+                      <p className={`mt-0.5 text-xs ${overdue ? 'text-[#ee2435]' : 'text-white/45'}`}>
+                        {paid
+                          ? `Paid ${fee.payment_date ? new Date(fee.payment_date + 'T00:00').toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}${fee.payment_method ? ' · ' + fee.payment_method.replace('_', ' ') : ''}`
+                          : overdue
+                            ? `Overdue · was due ${fee.due_date ? new Date(fee.due_date + 'T00:00').toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}`
+                            : `Due ${fee.due_date ? new Date(fee.due_date + 'T00:00').toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}`}
+                      </p>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <span className="font-[family-name:var(--font-display)] text-base font-bold tabular-nums text-white">
+                        {new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' }).format(fee.amount || 0)}
+                      </span>
+                      {paid && (
+                        <div className="mt-0.5 inline-flex items-center gap-1 rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#0a0a0f] ml-2">
+                          <FaCheckCircle className="text-[8px]" /> Paid
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          <div className="mt-6 flex items-center justify-between border-t border-white/8 pt-4">
+            <div className="text-xs text-white/45">
+              {detailFees.length > 0 && (
+                <>
+                  <span className="text-white/70 font-medium">
+                    {new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' }).format(
+                      detailFees.filter(f => f.payment_status === 'paid').reduce((s, f) => s + parseFloat(f.amount || 0), 0)
+                    )}
+                  </span>
+                  {' '}paid ·{' '}
+                  <span className={detailFees.filter(f => f.payment_status !== 'paid').length > 0 ? 'text-[#ee2435] font-medium' : 'text-white/70 font-medium'}>
+                    {new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' }).format(
+                      detailFees.filter(f => f.payment_status !== 'paid').reduce((s, f) => s + parseFloat(f.amount || 0), 0)
+                    )}
+                  </span>
+                  {' '}outstanding
+                </>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => { setDetailStudent(null); openEdit(detailStudent); }}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-medium text-white/85 hover:border-white/30"
+            >
+              <FaEdit className="text-[10px]" /> Edit student
+            </button>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }
@@ -520,6 +654,17 @@ function StatusBadge({ status }) {
     >
       {v.label}
     </span>
+  );
+}
+
+function InfoRow({ label, value, children }) {
+  return (
+    <div>
+      <p className="mb-0.5 text-xs font-medium text-white/45">{label}</p>
+      {children || (
+        <p className="text-sm text-white/85">{value || <span className="text-white/30">—</span>}</p>
+      )}
+    </div>
   );
 }
 

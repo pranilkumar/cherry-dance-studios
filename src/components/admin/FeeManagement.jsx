@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabaseClient';
 import {
   FaDollarSign, FaCheckCircle, FaClock, FaExclamationTriangle,
   FaCalendarAlt, FaSearch, FaMoneyBillWave, FaHistory, FaTimes,
+  FaEdit, FaBell, FaLayerGroup, FaUndo,
 } from 'react-icons/fa';
 
 const inputCls =
@@ -34,11 +35,21 @@ export default function FeeManagement() {
   });
   const [sendReceipt, setSendReceipt] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editModal, setEditModal] = useState(null);      // fee object being edited
+  const [editData, setEditData] = useState({});
+  const [bulkModal, setBulkModal] = useState(false);
+  const [bulkData, setBulkData] = useState({ amount: '100', feeType: 'Monthly fee', dueDate: '' });
+  const [isBulking, setIsBulking] = useState(false);
+  const [reminderModal, setReminderModal] = useState(false);
+  const [isSendingReminders, setIsSendingReminders] = useState(false);
   const [alert, setAlert] = useState(null);
   const [monthlyStats, setMonthlyStats] = useState({ totalIncome: 0, paidCount: 0, pendingCount: 0, overdueCount: 0 });
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { fetchData(); }, [monthFilter]);
+  useEffect(() => {
+    fetchData();
+    setBulkData((p) => ({ ...p, dueDate: `${monthFilter}-05` }));
+  }, [monthFilter]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -113,21 +124,18 @@ export default function FeeManagement() {
       const feeType = paymentModal.fee?.fee_type || 'Monthly Fee';
 
       if (!paymentModal.fee) {
-        console.log('[fees] INSERT — no existing fee for this month, creating new record');
         const { data: insertedFee, error } = await supabase.from('fees').insert([{
           student_id: paymentModal.id, fee_type: feeType, amount: paymentData.amount,
           due_date: `${monthFilter}-05`, payment_status: 'paid', payment_date: paymentData.payment_date,
           payment_method: paymentData.payment_method, notes: paymentData.notes,
         }]).select();
-        console.log('[fees] INSERT result:', insertedFee, 'error:', error);
         if (error) throw error;
+        if (!insertedFee || insertedFee.length === 0) throw new Error('Insert returned no data.');
       } else {
-        console.log('[fees] UPDATE fee id:', paymentModal.fee.id);
         const { data: updatedFee, error } = await supabase.from('fees').update({
           payment_status: 'paid', payment_date: paymentData.payment_date,
           payment_method: paymentData.payment_method, amount: paymentData.amount, notes: paymentData.notes,
         }).eq('id', paymentModal.fee.id).select();
-        console.log('[fees] UPDATE result:', updatedFee, 'error:', error);
         if (error) throw error;
         if (!updatedFee || updatedFee.length === 0) {
           throw new Error('Update matched 0 rows — fee ID may be wrong or RLS is blocking the write.');
@@ -181,6 +189,118 @@ export default function FeeManagement() {
     }
   };
 
+  // ── Bulk fee creation ───────────────────────────────────────────────
+  const createBulkFees = async () => {
+    const withoutFee = students.filter((s) => s.feeStatus === 'not_created');
+    if (withoutFee.length === 0) {
+      return showAlert('error', 'All active students already have a fee for this month.');
+    }
+    setIsBulking(true);
+    try {
+      const inserts = withoutFee.map((s) => ({
+        student_id: s.id,
+        fee_type: bulkData.feeType,
+        amount: parseFloat(bulkData.amount),
+        due_date: bulkData.dueDate,
+        payment_status: 'pending',
+      }));
+      const { error } = await supabase.from('fees').insert(inserts);
+      if (error) throw error;
+      showAlert('success', `Created ${inserts.length} fees for ${monthFilter}.`);
+      setBulkModal(false);
+      fetchData();
+    } catch (err) {
+      showAlert('error', err.message || 'Failed to create fees.');
+    } finally {
+      setIsBulking(false);
+    }
+  };
+
+  // ── Edit existing fee ────────────────────────────────────────────────
+  const openEdit = (student) => {
+    const fee = student.fee;
+    if (!fee) return;
+    setEditData({
+      amount: fee.amount?.toString() || '',
+      fee_type: fee.fee_type || 'Monthly fee',
+      due_date: fee.due_date || '',
+      notes: fee.notes || '',
+    });
+    setEditModal(student);
+  };
+
+  const submitEdit = async () => {
+    if (!editModal?.fee?.id) return;
+    try {
+      const { error } = await supabase.from('fees').update({
+        amount: parseFloat(editData.amount),
+        fee_type: editData.fee_type,
+        due_date: editData.due_date,
+        notes: editData.notes || null,
+      }).eq('id', editModal.fee.id);
+      if (error) throw error;
+      showAlert('success', 'Fee updated.');
+      setEditModal(null);
+      fetchData();
+    } catch (err) {
+      showAlert('error', err.message || 'Failed to update fee.');
+    }
+  };
+
+  // ── Mark unpaid (undo) ───────────────────────────────────────────────
+  const markUnpaid = async (student) => {
+    if (!student?.fee?.id) return;
+    try {
+      const { error } = await supabase.from('fees').update({
+        payment_status: 'pending',
+        payment_date: null,
+        payment_method: null,
+      }).eq('id', student.fee.id);
+      if (error) throw error;
+      showAlert('success', `${student.student_name} marked as unpaid.`);
+      fetchData();
+    } catch (err) {
+      showAlert('error', err.message || 'Failed to mark unpaid.');
+    }
+  };
+
+  // ── Overdue reminders ────────────────────────────────────────────────
+  const overdueStudents = students.filter(
+    (s) => s.feeStatus === 'pending' && s.dueDate && new Date(s.dueDate + 'T00:00:00') < new Date()
+  );
+
+  const sendOverdueReminders = async () => {
+    setIsSendingReminders(true);
+    let sent = 0, failed = 0;
+    for (const s of overdueStudents) {
+      if (!s.email) { failed++; continue; }
+      try {
+        const res = await fetch('/api/send-overdue-reminder', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: s.email,
+            emailSecondary: s.email_secondary || null,
+            studentName: s.student_name,
+            parentName: s.parent_name,
+            amount: s.amount,
+            feeType: s.fee?.fee_type || 'Monthly fee',
+            dueDate: s.dueDate,
+          }),
+        });
+        if (res.ok) sent++; else failed++;
+      } catch { failed++; }
+    }
+    setIsSendingReminders(false);
+    setReminderModal(false);
+    showAlert(
+      failed === 0 ? 'success' : 'error',
+      failed === 0
+        ? `Reminders sent to ${sent} parent${sent === 1 ? '' : 's'}.`
+        : `Sent ${sent}, failed ${failed}. Check that all students have emails on file.`
+    );
+  };
+
   const showAlert = (type, message) => {
     setAlert({ type, message });
     // Errors stay until manually dismissed; success auto-clears after 4s.
@@ -214,14 +334,34 @@ export default function FeeManagement() {
             Mark payments, see history, spot overdues.
           </p>
         </div>
-        <div className="flex items-center gap-2 rounded-lg border border-white/15 bg-white/[0.04] px-3 py-1.5">
-          <FaCalendarAlt className="text-xs text-[#ee2435]" />
-          <input
-            type="month"
-            value={monthFilter}
-            onChange={(e) => setMonthFilter(e.target.value)}
-            className="border-0 bg-transparent text-sm text-white focus:outline-none [color-scheme:dark]"
-          />
+        <div className="flex flex-wrap items-center gap-2">
+          {overdueStudents.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setReminderModal(true)}
+              className="inline-flex items-center gap-2 rounded-lg border border-[#d1060f]/50 bg-[#d1060f]/15 px-3.5 py-2 text-xs font-medium text-[#ee2435] hover:bg-[#d1060f]/25"
+            >
+              <FaBell className="text-[10px]" />
+              Send reminders ({overdueStudents.length})
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => setBulkModal(true)}
+            className="inline-flex items-center gap-2 rounded-lg border border-white/15 bg-white/[0.04] px-3.5 py-2 text-xs font-medium text-white/85 hover:border-white/30"
+          >
+            <FaLayerGroup className="text-[10px]" />
+            Create this month&rsquo;s fees
+          </button>
+          <div className="flex items-center gap-2 rounded-lg border border-white/15 bg-white/[0.04] px-3 py-1.5">
+            <FaCalendarAlt className="text-xs text-[#ee2435]" />
+            <input
+              type="month"
+              value={monthFilter}
+              onChange={(e) => setMonthFilter(e.target.value)}
+              className="border-0 bg-transparent text-sm text-white focus:outline-none [color-scheme:dark]"
+            />
+          </div>
         </div>
       </header>
 
@@ -345,6 +485,25 @@ export default function FeeManagement() {
                               <FaCheckCircle className="text-[10px]" /> Mark paid
                             </button>
                           )}
+                          {student.feeStatus === 'paid' && (
+                            <button
+                              type="button"
+                              onClick={() => markUnpaid(student)}
+                              title="Undo — mark as unpaid"
+                              className="inline-flex items-center gap-1 rounded-md border border-white/15 bg-white/[0.04] px-2.5 py-1 text-xs font-medium text-white/60 hover:border-white/30 hover:text-white/85"
+                            >
+                              <FaUndo className="text-[10px]" /> Undo
+                            </button>
+                          )}
+                          {student.fee && (
+                            <button
+                              type="button"
+                              onClick={() => openEdit(student)}
+                              className="inline-flex items-center gap-1 rounded-md border border-white/15 bg-white/[0.04] px-2.5 py-1 text-xs font-medium text-white/85 hover:border-white/30"
+                            >
+                              <FaEdit className="text-[10px]" /> Edit
+                            </button>
+                          )}
                           <button
                             type="button"
                             onClick={() => openHistory(student)}
@@ -429,6 +588,135 @@ export default function FeeManagement() {
               className="inline-flex items-center gap-2 rounded-lg bg-[#d1060f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#b00310] disabled:opacity-60 disabled:cursor-not-allowed">
               <FaCheckCircle className="text-xs" />
               {isSubmitting ? 'Saving…' : 'Record payment'}
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {/* ── Bulk fee creation modal ── */}
+      {bulkModal && (
+        <Modal title={<><FaLayerGroup className="inline -mt-0.5 mr-2 text-[#ee2435]" />Create fees for {monthFilter}</>} onClose={() => setBulkModal(false)}>
+          <p className="mb-5 text-sm text-white/60">
+            Creates a <strong className="text-white">pending</strong> fee for every active student who doesn&rsquo;t have one this month.{' '}
+            <span className="text-white/45">({students.filter((s) => s.feeStatus === 'not_created').length} student{students.filter((s) => s.feeStatus === 'not_created').length === 1 ? '' : 's'} will be billed.)</span>
+          </p>
+          <div className="space-y-4">
+            <Grid2>
+              <Field label="Amount (CAD)" required>
+                <div className="relative">
+                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-white/45">$</span>
+                  <input type="number" min="0" step="0.01" value={bulkData.amount}
+                    onChange={(e) => setBulkData((p) => ({ ...p, amount: e.target.value }))}
+                    className={`${inputCls} pl-7`} />
+                </div>
+              </Field>
+              <Field label="Due date" required>
+                <input type="date" value={bulkData.dueDate}
+                  onChange={(e) => setBulkData((p) => ({ ...p, dueDate: e.target.value }))}
+                  className={`${inputCls} [color-scheme:dark]`} />
+              </Field>
+            </Grid2>
+            <Field label="Fee type">
+              <select value={bulkData.feeType}
+                onChange={(e) => setBulkData((p) => ({ ...p, feeType: e.target.value }))}
+                className={`${inputCls} ${selectChevron}`}>
+                <option value="Monthly fee">Monthly fee</option>
+                <option value="Annual fee">Annual fee</option>
+                <option value="Registration fee">Registration fee</option>
+                <option value="Other">Other</option>
+              </select>
+            </Field>
+          </div>
+          <div className="mt-6 flex items-center justify-end gap-3 border-t border-white/8 pt-4">
+            <button type="button" onClick={() => setBulkModal(false)}
+              className="rounded-lg border border-white/15 bg-white/5 px-4 py-2 text-sm font-medium text-white/85 hover:border-white/30">
+              Cancel
+            </button>
+            <button type="button" onClick={createBulkFees} disabled={isBulking}
+              className="inline-flex items-center gap-2 rounded-lg bg-[#d1060f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#b00310] disabled:opacity-60">
+              <FaLayerGroup className="text-xs" />
+              {isBulking ? 'Creating…' : `Create ${students.filter((s) => s.feeStatus === 'not_created').length} fees`}
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {/* ── Edit fee modal ── */}
+      {editModal && (
+        <Modal title={<><FaEdit className="inline -mt-0.5 mr-2 text-[#ee2435]" />Edit fee — {editModal.student_name}</>} onClose={() => setEditModal(null)}>
+          <div className="space-y-4">
+            <Grid2>
+              <Field label="Amount (CAD)" required>
+                <div className="relative">
+                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-white/45">$</span>
+                  <input type="number" min="0" step="0.01" value={editData.amount}
+                    onChange={(e) => setEditData((p) => ({ ...p, amount: e.target.value }))}
+                    className={`${inputCls} pl-7`} />
+                </div>
+              </Field>
+              <Field label="Due date">
+                <input type="date" value={editData.due_date}
+                  onChange={(e) => setEditData((p) => ({ ...p, due_date: e.target.value }))}
+                  className={`${inputCls} [color-scheme:dark]`} />
+              </Field>
+            </Grid2>
+            <Field label="Fee type">
+              <select value={editData.fee_type}
+                onChange={(e) => setEditData((p) => ({ ...p, fee_type: e.target.value }))}
+                className={`${inputCls} ${selectChevron}`}>
+                <option value="Monthly fee">Monthly fee</option>
+                <option value="Registration fee">Registration fee</option>
+                <option value="Annual fee">Annual fee</option>
+                <option value="Costume deposit">Costume deposit</option>
+                <option value="Workshop fee">Workshop fee</option>
+                <option value="Other">Other</option>
+              </select>
+            </Field>
+            <Field label="Notes (optional)">
+              <input type="text" value={editData.notes}
+                onChange={(e) => setEditData((p) => ({ ...p, notes: e.target.value }))}
+                placeholder="Any notes…" className={inputCls} />
+            </Field>
+          </div>
+          <div className="mt-6 flex items-center justify-end gap-3 border-t border-white/8 pt-4">
+            <button type="button" onClick={() => setEditModal(null)}
+              className="rounded-lg border border-white/15 bg-white/5 px-4 py-2 text-sm font-medium text-white/85 hover:border-white/30">
+              Cancel
+            </button>
+            <button type="button" onClick={submitEdit}
+              className="inline-flex items-center gap-2 rounded-lg bg-[#d1060f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#b00310]">
+              <FaCheckCircle className="text-xs" /> Save changes
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {/* ── Overdue reminders modal ── */}
+      {reminderModal && (
+        <Modal title={<><FaBell className="inline -mt-0.5 mr-2 text-[#ee2435]" />Send overdue reminders</>} onClose={() => setReminderModal(false)}>
+          <p className="mb-4 text-sm text-white/70">
+            This will send a payment reminder email to <strong className="text-white">{overdueStudents.length} parent{overdueStudents.length === 1 ? '' : 's'}</strong> with overdue fees.
+          </p>
+          <div className="mb-5 overflow-hidden rounded-lg border border-white/8">
+            {overdueStudents.map((s, i) => (
+              <div key={s.id} className={`flex items-center justify-between px-4 py-2.5 text-sm ${i < overdueStudents.length - 1 ? 'border-b border-white/8' : ''}`}>
+                <div>
+                  <span className="font-medium text-white">{s.student_name}</span>
+                  <span className="ml-2 text-xs text-white/45">{s.email || 'no email'}</span>
+                </div>
+                <span className="font-semibold tabular-nums text-[#ee2435]">{formatCurrency(s.amount)}</span>
+              </div>
+            ))}
+          </div>
+          <div className="flex items-center justify-end gap-3 border-t border-white/8 pt-4">
+            <button type="button" onClick={() => setReminderModal(false)}
+              className="rounded-lg border border-white/15 bg-white/5 px-4 py-2 text-sm font-medium text-white/85 hover:border-white/30">
+              Cancel
+            </button>
+            <button type="button" onClick={sendOverdueReminders} disabled={isSendingReminders}
+              className="inline-flex items-center gap-2 rounded-lg bg-[#d1060f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#b00310] disabled:opacity-60">
+              <FaBell className="text-xs" />
+              {isSendingReminders ? 'Sending…' : 'Send reminders'}
             </button>
           </div>
         </Modal>

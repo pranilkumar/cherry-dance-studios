@@ -484,16 +484,16 @@ function KV({ k, v }) {
 }
 
 function FeeModal({ registration, converting, onConfirm, onCancel }) {
-  const firstOfNextMonth = () => {
+  const fifteenthOfNextMonth = () => {
     const now = new Date();
-    return new Date(now.getFullYear(), now.getMonth() + 1, 1)
+    return new Date(now.getFullYear(), now.getMonth() + 1, 15)
       .toISOString()
       .split('T')[0];
   };
 
   const [amount, setAmount] = useState('100');
   const [feeType, setFeeType] = useState('Monthly fee');
-  const [dueDate, setDueDate] = useState(firstOfNextMonth());
+  const [dueDate, setDueDate] = useState(fifteenthOfNextMonth());
   const [notes, setNotes] = useState('');
 
   const handleSubmit = (e) => {

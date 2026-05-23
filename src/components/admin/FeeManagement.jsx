@@ -48,10 +48,10 @@ export default function FeeManagement() {
       if (sErr) throw sErr;
 
       const startOfMonth = `${monthFilter}-01`;
-      const endOfMonth = new Date(monthFilter + '-01');
-      endOfMonth.setMonth(endOfMonth.getMonth() + 1);
-      endOfMonth.setDate(0);
-      const endDate = endOfMonth.toISOString().split('T')[0];
+      // Compute last day using local-time Date constructor (avoids UTC-parse timezone shift).
+      const [y, m] = monthFilter.split('-').map(Number);
+      const lastDay = new Date(y, m, 0).getDate(); // new Date(y, m, 0) = last day of month m in local time
+      const endDate = `${monthFilter}-${String(lastDay).padStart(2, '0')}`;
 
       const { data: feesData, error: fErr } = await supabase
         .from('fees').select('*').gte('due_date', startOfMonth).lte('due_date', endDate);

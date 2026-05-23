@@ -428,6 +428,7 @@ function DetailModal({ registration, converting, onClose, onConvert }) {
           <div className="grid grid-cols-1 gap-x-8 gap-y-3 text-sm md:grid-cols-2">
             <KV k="Parent / guardian" v={registration.parent_name} />
             <KV k="Email" v={registration.email} />
+            <KV k="Second email" v={registration.email_secondary} />
             <KV k="Phone" v={registration.phone} />
             <KV k="Date of birth" v={registration.date_of_birth} />
             <KV k="Preferred class" v={registration.preferred_class} />

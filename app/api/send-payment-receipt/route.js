@@ -148,11 +148,13 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
   }
 
-  const { email, studentName, parentName, amount, feeType, paymentDate, paymentMethod } = body;
+  const { email, emailSecondary, studentName, parentName, amount, feeType, paymentDate, paymentMethod } = body;
 
   if (!email || !studentName || !amount || !paymentDate) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
+
+  const recipients = [email, ...(emailSecondary ? [emailSecondary] : [])];
 
   const html = buildHtml({ studentName, parentName, amount, feeType, paymentDate, paymentMethod });
 
@@ -164,7 +166,7 @@ export async function POST(request) {
     },
     body: JSON.stringify({
       from: FROM,
-      to: [email],
+      to: recipients,
       subject: `Payment received — ${studentName}`,
       html,
     }),

@@ -79,6 +79,7 @@ const EMPTY = {
   childDob: '',
   parentName: '',
   email: '',
+  emailSecondary: '',
   phone: '',
   preferredClass: '',
   preferredDays: [],
@@ -175,6 +176,8 @@ export default function Register() {
     if (!form.parentName.trim()) e.parentName = "Parent / guardian name is required.";
     if (!form.email.trim()) e.email = 'Email is required.';
     else if (!EMAIL_RE.test(form.email)) e.email = 'Please enter a valid email address.';
+    if (form.emailSecondary.trim() && !EMAIL_RE.test(form.emailSecondary))
+      e.emailSecondary = 'Please enter a valid email address.';
     if (!form.phone || form.phone.length < 7) e.phone = 'A valid phone number is required.';
     if (!form.preferredClass) e.preferredClass = 'Please select a dance style.';
     if (!form.flexibleDays && form.preferredDays.length === 0) {
@@ -197,6 +200,7 @@ export default function Register() {
       parent_name:           form.parentName.trim(),
       student_name:          form.childName.trim(),
       email:                 form.email.trim(),
+      email_secondary:       form.emailSecondary.trim() || null,
       phone:                 form.phone,
       date_of_birth:         form.childDob,
       preferred_class:       form.preferredClass,
@@ -429,6 +433,26 @@ export default function Register() {
                     buttonClass="reg-phone-btn"
                     enableSearch
                   />
+                </Field>
+              </div>
+
+              <div className="mt-5">
+                <Field
+                  label="Second parent / guardian email"
+                  hint="Optional"
+                  error={errors.emailSecondary}
+                >
+                  <input
+                    type="email"
+                    value={form.emailSecondary}
+                    onChange={(e) => set('emailSecondary', e.target.value)}
+                    placeholder="partner@email.com"
+                    autoComplete="off"
+                    className={`${inputBase} ${errors.emailSecondary ? inputErr : ''}`}
+                  />
+                  <p className="mt-1.5 text-xs text-[#0a0a0f]/45">
+                    Both parents will receive fee receipts and updates.
+                  </p>
                 </Field>
               </div>
             </div>

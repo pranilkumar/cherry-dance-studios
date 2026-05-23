@@ -143,6 +143,7 @@ export default function FeeManagement() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               email: paymentModal.email,
+              emailSecondary: paymentModal.email_secondary || null,
               studentName: paymentModal.student_name,
               parentName: paymentModal.parent_name,
               amount: parseFloat(paymentData.amount),

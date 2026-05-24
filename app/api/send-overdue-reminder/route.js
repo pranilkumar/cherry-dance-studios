@@ -19,6 +19,12 @@ function buildHtml({ studentName, parentName, amount, feeType, dueDate }) {
   <meta name="color-scheme" content="only dark">
   <meta name="supported-color-schemes" content="only dark">
   <title>Fee reminder · Cherry Dance Studios</title>
+  <style type="text/css">
+    .logo-bg { background-color: #0a0a0f !important; }
+    [data-ogsc] .logo-bg { background-color: #0a0a0f !important; }
+    [data-ogsb] .logo-bg { background-color: #0a0a0f !important; }
+    @media (prefers-color-scheme: dark) { .logo-bg { background-color: #0a0a0f !important; } }
+  </style>
 </head>
 <body style="margin:0;padding:0;background-color:#0a0a0f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#ffffff;-webkit-font-smoothing:antialiased;color-scheme:only dark;">
   <div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;">
@@ -36,14 +42,12 @@ function buildHtml({ studentName, parentName, amount, feeType, dueDate }) {
               <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
                 <tr>
                   <td valign="middle" width="46" style="line-height:0;padding-right:14px;">
-                    <table role="presentation" cellpadding="0" cellspacing="0" border="0">
-                      <tr>
-                        <td align="center" bgcolor="#0a0a0f" style="background-color:#0a0a0f;border:1.5px solid rgba(255,255,255,0.25);border-radius:999px;padding:6px;line-height:0;">
-                          <img src="https://cherrydancestudios.com/logo.png" alt="CDS" width="30" height="30"
-                               style="display:block;width:30px;height:30px;border:0;outline:none;background-color:#0a0a0f;">
-                        </td>
-                      </tr>
-                    </table>
+                    <!--[if !mso]><!-->
+                    <div class="logo-bg" style="display:inline-block;background-color:#0a0a0f !important;border:1.5px solid rgba(255,255,255,0.25);border-radius:999px;padding:6px;line-height:0;vertical-align:middle;">
+                      <img src="https://cherrydancestudios.com/logo.png" alt="CDS" width="30" height="30"
+                           style="display:block;width:30px;height:30px;border:0;outline:none;">
+                    </div>
+                    <!--<![endif]-->
                   </td>
                   <td valign="middle">
                     <div style="font-size:11px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:rgba(255,255,255,0.85);">

@@ -9,6 +9,7 @@ import {
   FaUsers,
   FaDollarSign,
   FaHeart,
+  FaMusic,
   FaUserCircle,
   FaSignOutAlt,
   FaBars,
@@ -28,6 +29,7 @@ const NAV = [
   { href: '/portal/attendance', icon: FaUsers,        label: 'Attendance' },
   { href: '/portal/fees',       icon: FaDollarSign,   label: 'Fees' },
   { href: '/portal/workshops',  icon: FaHeart,        label: 'Workshops' },
+  { href: '/portal/audio',      icon: FaMusic,        label: 'Audio' },
   { href: '/portal/profile',    icon: FaUserCircle,   label: 'Profile' },
 ];
 

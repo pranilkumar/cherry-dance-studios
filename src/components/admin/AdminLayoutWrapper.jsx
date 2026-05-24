@@ -12,6 +12,7 @@ import {
   FaUsers,
   FaDollarSign,
   FaLayerGroup,
+  FaMusic,
   FaSignOutAlt,
   FaBars,
   FaExternalLinkAlt,
@@ -35,6 +36,7 @@ const NAV = [
   { href: '/admin/students',      icon: FaUsers,         label: 'Students' },
   { href: '/admin/classes',       icon: FaLayerGroup,    label: 'Classes' },
   { href: '/admin/fees',          icon: FaDollarSign,    label: 'Fees' },
+  { href: '/admin/audio',         icon: FaMusic,         label: 'Audio' },
 ];
 
 export default function AdminLayoutWrapper({ children }) {

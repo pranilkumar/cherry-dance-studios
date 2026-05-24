@@ -90,25 +90,36 @@ export default function ClassesAdmin() {
     if (!form.start_time) return showAlert('error', 'Start time is required.');
 
     setSaving(true);
+
+    // Only include updatable columns — never send id / created_at / updated_at
     const payload = {
-      ...form,
-      name: form.name.trim(),
-      instructor: form.instructor.trim() || null,
-      end_time: form.end_time || null,
-      notes: form.notes.trim() || null,
+      name:       form.name.trim(),
+      tier:       form.tier || null,
+      style:      form.style || null,
+      instructor: form.instructor?.trim() || null,
+      weekdays:   form.weekdays,
+      start_time: form.start_time,
+      end_time:   form.end_time || null,
+      is_active:  form.is_active,
+      notes:      form.notes?.trim() || null,
     };
 
-    let error;
-    if (editing === 'new') {
-      ({ error } = await supabase.from('class_batches').insert([payload]));
-    } else {
-      ({ error } = await supabase.from('class_batches').update(payload).eq('id', editing.id));
+    try {
+      let error;
+      if (editing === 'new') {
+        ({ error } = await supabase.from('class_batches').insert([payload]));
+      } else {
+        ({ error } = await supabase.from('class_batches').update(payload).eq('id', editing.id));
+      }
+      if (error) { showAlert('error', error.message || 'Failed to save.'); return; }
+      showAlert('success', editing === 'new' ? 'Batch created.' : 'Batch updated.');
+      closeModal();
+      fetchAll();
+    } catch (err) {
+      showAlert('error', err?.message || 'Unexpected error. Please try again.');
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
-    if (error) { showAlert('error', error.message || 'Failed to save.'); return; }
-    showAlert('success', editing === 'new' ? 'Batch created.' : 'Batch updated.');
-    closeModal();
-    fetchAll();
   };
 
   const handleDelete = async () => {

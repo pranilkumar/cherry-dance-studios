@@ -62,11 +62,12 @@ export default function PortalFees() {
   }, []);
 
   const today = new Date(); today.setHours(0, 0, 0, 0);
-  const unpaid      = fees.filter((f) => f.payment_status !== 'paid');
+  // Only pending fees are relevant to the parent — paid = history, waived = hide entirely
+  const pending     = fees.filter((f) => f.payment_status === 'pending');
   // Due today or earlier (or no due date) → actually owed now
-  const outstanding = unpaid.filter((f) => !f.due_date || new Date(f.due_date + 'T00:00:00') <= today);
+  const outstanding = pending.filter((f) => !f.due_date || new Date(f.due_date + 'T00:00:00') <= today);
   // Due in the future → show as upcoming, not alarming
-  const upcoming    = unpaid.filter((f) => f.due_date && new Date(f.due_date + 'T00:00:00') > today);
+  const upcoming    = pending.filter((f) => f.due_date && new Date(f.due_date + 'T00:00:00') > today);
   const history     = fees.filter((f) => f.payment_status === 'paid');
   const totalOwed   = outstanding.reduce((s, f) => s + parseFloat(f.amount || 0), 0);
   const totalPaid   = history.reduce((s, f) => s + parseFloat(f.amount || 0), 0);

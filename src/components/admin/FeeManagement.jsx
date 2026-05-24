@@ -5,7 +5,7 @@ import { supabase } from '../../lib/supabaseClient';
 import {
   FaDollarSign, FaCheckCircle, FaClock, FaExclamationTriangle,
   FaCalendarAlt, FaSearch, FaMoneyBillWave, FaHistory, FaTimes,
-  FaEdit, FaBell, FaLayerGroup, FaUndo,
+  FaEdit, FaBell, FaLayerGroup, FaUndo, FaBan,
 } from 'react-icons/fa';
 
 const inputCls =
@@ -262,6 +262,23 @@ export default function FeeManagement() {
     }
   };
 
+  // ── Waive fee (not applicable this month) ───────────────────────────
+  const markWaived = async (student) => {
+    if (!student?.fee?.id) return;
+    try {
+      const { error } = await supabase.from('fees').update({
+        payment_status: 'waived',
+        payment_date: null,
+        payment_method: null,
+      }).eq('id', student.fee.id);
+      if (error) throw error;
+      showAlert('success', `${student.student_name} — fee waived for this month.`);
+      fetchData();
+    } catch (err) {
+      showAlert('error', err.message || 'Failed to waive fee.');
+    }
+  };
+
   // ── Overdue reminders ────────────────────────────────────────────────
   const overdueStudents = students.filter(
     (s) => s.feeStatus === 'pending' && s.dueDate && new Date(s.dueDate + 'T00:00:00') < new Date()
@@ -308,6 +325,9 @@ export default function FeeManagement() {
   const getStatusInfo = (student) => {
     if (student.feeStatus === 'paid') {
       return { label: 'Paid', bg: '#ffffff', fg: '#0a0a0f', icon: FaCheckCircle };
+    }
+    if (student.feeStatus === 'waived') {
+      return { label: 'Waived', bg: 'rgba(255,255,255,0.07)', fg: 'rgba(255,255,255,0.4)', icon: FaBan };
     }
     if (student.feeStatus === 'pending') {
       const overdue = student.dueDate && new Date(student.dueDate) < new Date();
@@ -474,7 +494,7 @@ export default function FeeManagement() {
                       </td>
                       <td className="px-5 py-3">
                         <div className="flex items-center justify-end gap-1.5">
-                          {student.feeStatus !== 'paid' && (
+                          {student.feeStatus !== 'paid' && student.feeStatus !== 'waived' && (
                             <button
                               type="button"
                               onClick={() => openPayment(student)}
@@ -483,7 +503,17 @@ export default function FeeManagement() {
                               <FaCheckCircle className="text-[10px]" /> Mark paid
                             </button>
                           )}
-                          {student.feeStatus === 'paid' && (
+                          {student.feeStatus === 'pending' && student.fee && (
+                            <button
+                              type="button"
+                              onClick={() => markWaived(student)}
+                              title="Waive — fee not applicable this month"
+                              className="inline-flex items-center gap-1 rounded-md border border-white/15 bg-white/[0.04] px-2.5 py-1 text-xs font-medium text-white/50 hover:border-white/30 hover:text-white/70"
+                            >
+                              <FaBan className="text-[10px]" /> Waive
+                            </button>
+                          )}
+                          {(student.feeStatus === 'paid' || student.feeStatus === 'waived') && (
                             <button
                               type="button"
                               onClick={() => markUnpaid(student)}

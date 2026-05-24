@@ -16,10 +16,11 @@ function buildHtml({ studentName, parentName, amount, feeType, dueDate }) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="color-scheme" content="dark light">
+  <meta name="color-scheme" content="only dark">
+  <meta name="supported-color-schemes" content="only dark">
   <title>Fee reminder · Cherry Dance Studios</title>
 </head>
-<body style="margin:0;padding:0;background-color:#0a0a0f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#ffffff;-webkit-font-smoothing:antialiased;">
+<body style="margin:0;padding:0;background-color:#0a0a0f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#ffffff;-webkit-font-smoothing:antialiased;color-scheme:only dark;">
   <div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;">
     A payment of ${formattedAmount} for ${studentName} is overdue. Please arrange payment at your earliest convenience.
   </div>

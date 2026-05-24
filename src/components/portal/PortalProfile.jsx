@@ -362,7 +362,7 @@ function PasswordPanel({ hasPassword, onChange }) {
           <p className="mt-1 text-xs text-white/50">
             {hasPassword
               ? 'You can sign in with email + password, or keep using a code — both work.'
-              : 'Add a password if you'd rather not check email for a code each time.'}
+              : "Add a password if you'd rather not check email for a code each time."}
           </p>
         </div>
         {phase === 'idle' && (

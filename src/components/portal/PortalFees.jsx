@@ -61,10 +61,15 @@ export default function PortalFees() {
     return () => { cancelled = true; };
   }, []);
 
-  const outstanding = fees.filter((f) => f.payment_status !== 'paid');
-  const history    = fees.filter((f) => f.payment_status === 'paid');
-  const totalOwed  = outstanding.reduce((s, f) => s + parseFloat(f.amount || 0), 0);
-  const totalPaid  = history.reduce((s, f) => s + parseFloat(f.amount || 0), 0);
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const unpaid      = fees.filter((f) => f.payment_status !== 'paid');
+  // Due today or earlier (or no due date) → actually owed now
+  const outstanding = unpaid.filter((f) => !f.due_date || new Date(f.due_date + 'T00:00:00') <= today);
+  // Due in the future → show as upcoming, not alarming
+  const upcoming    = unpaid.filter((f) => f.due_date && new Date(f.due_date + 'T00:00:00') > today);
+  const history     = fees.filter((f) => f.payment_status === 'paid');
+  const totalOwed   = outstanding.reduce((s, f) => s + parseFloat(f.amount || 0), 0);
+  const totalPaid   = history.reduce((s, f) => s + parseFloat(f.amount || 0), 0);
 
   return (
     <div className="p-6 md:p-8">
@@ -109,8 +114,8 @@ export default function PortalFees() {
               </p>
               <p className="mt-1 text-xs text-white/45">
                 {outstanding.length === 0
-                  ? "You're all caught up 🎉"
-                  : `${outstanding.length} payment${outstanding.length === 1 ? '' : 's'} pending`}
+                  ? upcoming.length > 0 ? `${upcoming.length} upcoming` : "You're all caught up 🎉"
+                  : `${outstanding.length} payment${outstanding.length === 1 ? '' : 's'} due`}
               </p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur-md">
@@ -158,6 +163,39 @@ export default function PortalFees() {
                     </div>
                   );
                 })}
+              </div>
+            </section>
+          )}
+
+          {/* Upcoming fees */}
+          {upcoming.length > 0 && (
+            <section className="mb-8">
+              <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-white/55">
+                Upcoming
+              </h2>
+              <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]">
+                {upcoming.map((fee, i) => (
+                  <div
+                    key={fee.id}
+                    className={`flex items-center justify-between gap-4 px-5 py-4 ${
+                      i < upcoming.length - 1 ? 'border-b border-white/8' : ''
+                    }`}
+                  >
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <FaClock className="shrink-0 text-[10px] text-white/35" />
+                        <span className="text-sm font-medium text-white/70">{fee.fee_type}</span>
+                        {studentNames[fee.student_id] && (
+                          <span className="text-xs text-white/35">· {studentNames[fee.student_id]}</span>
+                        )}
+                      </div>
+                      <p className="mt-0.5 text-xs text-white/40">Due {formatDate(fee.due_date)}</p>
+                    </div>
+                    <span className="shrink-0 font-[family-name:var(--font-display)] text-lg font-bold tabular-nums text-white/55">
+                      {formatCurrency(fee.amount)}
+                    </span>
+                  </div>
+                ))}
               </div>
             </section>
           )}

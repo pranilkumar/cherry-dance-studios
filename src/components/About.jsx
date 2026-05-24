@@ -16,11 +16,10 @@ const highlights = ['Ages 4 & up', 'Bollywood', 'Hip-hop', 'Freestyle', 'Indian'
 
 export default function About() {
   return (
-    <section
-      id="about"
-      className="relative bg-white py-24 text-[#0a0a0f] md:py-32"
-    >
-      <div className="mx-auto max-w-5xl px-6">
+    <section id="about" className="relative bg-white text-[#0a0a0f]">
+
+      {/* ── Text content — white section ── */}
+      <div className="mx-auto max-w-5xl px-6 pb-20 pt-24 md:pb-24 md:pt-32">
         {/* Eyebrow */}
         <motion.span
           initial={{ opacity: 0, y: 12 }}
@@ -89,30 +88,62 @@ export default function About() {
             </span>
           ))}
         </motion.div>
+      </div>
 
-        {/* Video grid */}
-        <div className="mt-20">
-          <motion.h3
+      {/* ── Video section — full-bleed dark panel ── */}
+      {/* Sits at the bottom of the About section and bleeds into the dark
+          Classes section beneath it, creating a seamless transition. */}
+      <div className="bg-[#0a0a0f] py-16 md:py-20">
+        <div className="mx-auto max-w-5xl px-6">
+
+          {/* Section heading */}
+          <motion.div
             initial={{ opacity: 0, y: 12 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
             viewport={{ once: true }}
-            className="mb-8 font-[family-name:var(--font-display)] text-2xl font-bold tracking-tight md:text-3xl"
+            className="mb-8 flex items-end justify-between gap-4"
           >
-            Performances on tape.
-          </motion.h3>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/35">
+                {youtubeVideos.length} performances
+              </p>
+              <h3 className="mt-2 font-[family-name:var(--font-display)] text-2xl font-bold tracking-tight text-white md:text-3xl">
+                Performances on tape.
+              </h3>
+            </div>
+            {/* Subtle divider accent */}
+            <div className="hidden h-px flex-1 bg-white/8 md:block" />
+          </motion.div>
 
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {/*
+            Asymmetric grid — featured first video spans 2 columns on desktop,
+            remaining four fill the second row evenly.
+
+            lg (3-col):  [─────── V1 ───────][  V2  ]
+                         [  V3  ][  V4  ][  V5  ]
+
+            sm (2-col):  [───── V1 ─────]
+                         [  V2  ][  V3  ]
+                         [  V4  ][  V5  ]
+
+            mobile:      stacked 1-col
+          */}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {youtubeVideos.map((video, i) => (
               <motion.div
                 key={video.id}
-                initial={{ opacity: 0, y: 16 }}
+                initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: i * 0.08 }}
-                viewport={{ once: true, margin: '-50px' }}
-                className="overflow-hidden rounded-2xl border border-[#0a0a0f]/8 bg-[#0a0a0f]/[0.02] shadow-[0_4px_24px_rgba(10,10,15,0.06)] transition hover:shadow-[0_12px_40px_rgba(10,10,15,0.12)]"
+                transition={{ duration: 0.55, delay: i * 0.07 }}
+                viewport={{ once: true, margin: '-60px' }}
+                className={i === 0 ? 'sm:col-span-2 lg:col-span-2' : ''}
               >
-                <VideoEmbed videoId={video.id} title={video.title} />
+                <VideoEmbed
+                  videoId={video.id}
+                  title={video.title}
+                  featured={i === 0}
+                />
               </motion.div>
             ))}
           </div>

@@ -124,22 +124,18 @@ export default function FeeManagement() {
       const feeType = paymentModal.fee?.fee_type || 'Monthly Fee';
 
       if (!paymentModal.fee) {
-        const { data: insertedFee, error } = await supabase.from('fees').insert([{
+        const { error } = await supabase.from('fees').insert([{
           student_id: paymentModal.id, fee_type: feeType, amount: paymentData.amount,
           due_date: `${monthFilter}-15`, payment_status: 'paid', payment_date: paymentData.payment_date,
           payment_method: paymentData.payment_method, notes: paymentData.notes,
-        }]).select();
+        }]);
         if (error) throw error;
-        if (!insertedFee || insertedFee.length === 0) throw new Error('Insert returned no data.');
       } else {
-        const { data: updatedFee, error } = await supabase.from('fees').update({
+        const { error } = await supabase.from('fees').update({
           payment_status: 'paid', payment_date: paymentData.payment_date,
           payment_method: paymentData.payment_method, amount: paymentData.amount, notes: paymentData.notes,
-        }).eq('id', paymentModal.fee.id).select();
+        }).eq('id', paymentModal.fee.id);
         if (error) throw error;
-        if (!updatedFee || updatedFee.length === 0) {
-          throw new Error('Update matched 0 rows — fee ID may be wrong or RLS is blocking the write.');
-        }
       }
 
       // Send receipt email if the parent has an email and the checkbox is on.

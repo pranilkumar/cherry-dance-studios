@@ -69,7 +69,9 @@ export default function FeeManagement() {
       if (fErr) throw fErr;
 
       const studentsWithFees = (studentsData || []).map((student) => {
-        const fee = feesData?.find((f) => f.student_id === student.id);
+        const allFees = feesData?.filter((f) => f.student_id === student.id) || [];
+        // If duplicates exist, prefer the paid record so the row reflects reality.
+        const fee = allFees.find((f) => f.payment_status === 'paid') ?? allFees[0];
         return {
           ...student, fee,
           feeStatus: fee ? fee.payment_status : 'not_created',

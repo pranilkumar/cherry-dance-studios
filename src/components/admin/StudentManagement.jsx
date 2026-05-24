@@ -36,11 +36,13 @@ const emptyForm = () => ({
   experience_level: '',
   status: 'active',
   break_until: '',
+  class_batch_id: '',
   notes: '',
 });
 
 export default function StudentManagement() {
   const [students, setStudents] = useState([]);
+  const [batches, setBatches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null);
   const [detailStudent, setDetailStudent] = useState(null);
@@ -52,17 +54,26 @@ export default function StudentManagement() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [alert, setAlert] = useState(null);
 
-  useEffect(() => { fetchStudents(); }, []);
+  useEffect(() => { fetchStudents(); fetchBatches(); }, []);
 
   const fetchStudents = async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from('students')
-      .select('*')
+      .select('*, class_batch:class_batches(id, name, weekdays, start_time, end_time)')
       .order('enrollment_date', { ascending: false });
     if (error) showAlert('error', 'Failed to load students');
     else setStudents(data || []);
     setLoading(false);
+  };
+
+  const fetchBatches = async () => {
+    const { data } = await supabase
+      .from('class_batches')
+      .select('id, name, tier, weekdays, start_time, end_time')
+      .eq('is_active', true)
+      .order('name');
+    setBatches(data || []);
   };
 
   const openDetail = async (student) => {
@@ -90,6 +101,7 @@ export default function StudentManagement() {
       experience_level: s.experience_level || '',
       status: s.status || 'active',
       break_until: s.break_until || '',
+      class_batch_id: s.class_batch_id || '',
       notes: s.notes || '',
     });
     setEditing(s);
@@ -104,6 +116,7 @@ export default function StudentManagement() {
     const payload = {
       ...formData,
       break_until: formData.status === 'on_break' ? (formData.break_until || null) : null,
+      class_batch_id: formData.class_batch_id || null,
     };
     if (editing === 'new') {
       const { error } = await supabase.from('students').insert([payload]);
@@ -302,8 +315,19 @@ export default function StudentManagement() {
                       <div className="text-white/85">{s.email}</div>
                       <div className="text-white/55">{s.phone}</div>
                     </td>
-                    <td className="px-5 py-3 text-white/80">
-                      {s.preferred_class || <span className="text-white/35">—</span>}
+                    <td className="px-5 py-3">
+                      {s.class_batch ? (
+                        <div>
+                          <div className="text-sm font-medium text-white">{s.class_batch.name}</div>
+                          {s.preferred_class && (
+                            <div className="text-xs text-white/45">{s.preferred_class}</div>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-sm text-white/35">
+                          {s.preferred_class || '—'}
+                        </span>
+                      )}
                     </td>
                     <td className="px-5 py-3">
                       <StatusSelect
@@ -440,6 +464,34 @@ export default function StudentManagement() {
                 </p>
               </Field>
             )}
+
+            <Field label="Class batch" hint="Assign to a recurring class group">
+              <select
+                value={formData.class_batch_id}
+                onChange={(e) => setField('class_batch_id', e.target.value)}
+                className={`${inputCls} ${selectChevron}`}
+              >
+                <option value="">Not assigned</option>
+                {batches.map((b) => {
+                  const days = (b.weekdays || []).map((d) => d.slice(0, 3)).join(' & ');
+                  const [h, m] = (b.start_time || '00:00').split(':').map(Number);
+                  const ampm = h >= 12 ? 'PM' : 'AM';
+                  const h12 = h % 12 || 12;
+                  const time = `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
+                  return (
+                    <option key={b.id} value={b.id}>
+                      {b.name} ({days} · {time})
+                    </option>
+                  );
+                })}
+              </select>
+              {batches.length === 0 && (
+                <p className="mt-1.5 text-xs text-white/40">
+                  No active batches yet.{' '}
+                  <a href="/admin/classes" target="_blank" className="text-[#ee2435] hover:underline">Create one in Classes →</a>
+                </p>
+              )}
+            </Field>
 
             <Field label="Notes">
               <textarea rows={3} value={formData.notes} onChange={(e) => setField('notes', e.target.value)} placeholder="Anything else…" className={`${inputCls} resize-none`} />

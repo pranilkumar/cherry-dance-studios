@@ -23,12 +23,17 @@ import {
 const formatCurrency = (amount) =>
   new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' }).format(amount || 0);
 
-const formatDate = (dateString) =>
-  new Date(dateString).toLocaleDateString('en-CA', {
+const formatDate = (dateString) => {
+  if (!dateString) return '—';
+  // Append T00:00:00 so the date is parsed as local time, not UTC midnight
+  // (avoids the "day before" shift in EDT/other negative-offset timezones)
+  const local = dateString.split('T')[0] + 'T00:00:00';
+  return new Date(local).toLocaleDateString('en-CA', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
   });
+};
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState({
@@ -45,13 +50,19 @@ export default function AdminDashboard() {
   useEffect(() => {
     (async () => {
       try {
-        const { data: students, error: sErr } = await supabase.from('students').select('*');
+        const { data: students, error: sErr } = await supabase
+          .from('students')
+          .select('*')
+          .order('created_at', { ascending: false });
         if (sErr) throw sErr;
 
+        // "Pending payments" = fees that are actually due (not future-scheduled fees)
+        const todayStr = new Date().toISOString().split('T')[0];
         const { data: pendingFees, error: pfErr } = await supabase
           .from('fees')
           .select('*')
-          .eq('payment_status', 'pending');
+          .eq('payment_status', 'pending')
+          .or(`due_date.is.null,due_date.lte.${todayStr}`);
         if (pfErr) throw pfErr;
 
         const currentMonth = new Date().toISOString().slice(0, 7);
@@ -82,7 +93,7 @@ export default function AdminDashboard() {
           activeStudents,
           pendingPayments: pendingFees?.length || 0,
           monthlyRevenue,
-          recentStudents: (students || []).slice(-5).reverse(),
+          recentStudents: (students || []).slice(0, 5),
           upcomingDues: upcomingDues || [],
         });
       } catch (err) {
@@ -180,14 +191,14 @@ export default function AdminDashboard() {
         {/* Two-column data */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <DataPanel
-            title="Recent registrations"
+            title="Recent students"
             actionHref="/admin/registrations"
             actionLabel="See all"
             loading={loading}
             empty={!loading && stats.recentStudents.length === 0}
             emptyIcon={FaUsers}
-            emptyTitle="No recent registrations"
-            emptyText="New student registrations will appear here."
+            emptyTitle="No students yet"
+            emptyText="Students will appear here once they're added."
           >
             {stats.recentStudents.length > 0 && (
               <table className="w-full text-sm">

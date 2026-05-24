@@ -80,7 +80,7 @@ export default function PortalDashboard() {
         { data: regs },
         { data: workshops },
       ] = await Promise.all([
-        supabase.from('students').select('*').eq('email', email),
+        supabase.from('students').select('*, class_batch:class_batches(id, name, weekdays, start_time, end_time)').eq('email', email),
         supabase.from('registrations').select('*').eq('email', email).order('created_at', { ascending: false }),
         supabase
           .from('workshop_bookings')
@@ -96,14 +96,17 @@ export default function PortalDashboard() {
       setRegistrations(regs || []);
       setWorkshopBookings(workshops || []);
 
-      // Fetch pending fees across the parent's students
+      // Fetch outstanding fees (pending and due today or earlier, or no due date)
+      // Excludes future-scheduled fees so the count matches what PortalFees shows as "outstanding"
       if (studentList.length > 0) {
         const ids = studentList.map((s) => s.id);
+        const todayStr = new Date().toISOString().split('T')[0];
         const { data: fees } = await supabase
           .from('fees')
           .select('*')
           .in('student_id', ids)
           .eq('payment_status', 'pending')
+          .or(`due_date.is.null,due_date.lte.${todayStr}`)
           .order('due_date', { ascending: true });
         if (!cancelled) setPendingFees(fees || []);
       }
@@ -273,8 +276,47 @@ export default function PortalDashboard() {
             <SummaryCard
               icon={FaCalendarAlt}
               label="Next class"
-              value="—"
-              sub="Class scheduling coming soon."
+              value={(() => {
+                const active = students.find((s) => s.status === 'active');
+                if (!active) return '—';
+                const batch = active.class_batch;
+                if (batch?.weekdays?.length && batch.start_time) {
+                  // Calculate next occurrence
+                  const DAY_NUM = { Sunday:0,Monday:1,Tuesday:2,Wednesday:3,Thursday:4,Friday:5,Saturday:6 };
+                  const [h, m] = batch.start_time.split(':').map(Number);
+                  const now = new Date();
+                  const dow = now.getDay();
+                  let min = null;
+                  for (const day of batch.weekdays) {
+                    let d = (DAY_NUM[day] - dow + 7) % 7;
+                    if (d === 0) {
+                      const t = new Date(now); t.setHours(h, m, 0, 0);
+                      if (t <= now) d = 7;
+                    }
+                    if (min === null || d < min) min = d;
+                  }
+                  if (min !== null) {
+                    const next = new Date(now);
+                    next.setDate(now.getDate() + min);
+                    next.setHours(h, m, 0, 0);
+                    const ampm = h >= 12 ? 'PM' : 'AM';
+                    const h12 = h % 12 || 12;
+                    const time = `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
+                    if (min === 0) return `Today ${time}`;
+                    if (min === 1) return `Tomorrow ${time}`;
+                    return `${next.toLocaleDateString('en-CA', { weekday: 'short' })} ${time}`;
+                  }
+                }
+                return active.preferred_class || '—';
+              })()}
+              sub={(() => {
+                const active = students.find((s) => s.status === 'active');
+                if (!active) return 'No active dancer yet.';
+                const batch = active.class_batch;
+                if (batch) return batch.name;
+                const day = active.preferred_weekday;
+                return day ? `Preferred: ${day}` : 'See Classes for schedule';
+              })()}
               href="/portal/classes"
             />
           </div>

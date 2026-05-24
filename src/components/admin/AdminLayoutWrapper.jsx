@@ -11,6 +11,7 @@ import {
   FaHeart,
   FaUsers,
   FaDollarSign,
+  FaLayerGroup,
   FaSignOutAlt,
   FaBars,
   FaExternalLinkAlt,
@@ -32,6 +33,7 @@ const NAV = [
   { href: '/admin/registrations', icon: FaClipboardList, label: 'Registrations' },
   { href: '/admin/workshop',      icon: FaHeart,         label: 'Workshops' },
   { href: '/admin/students',      icon: FaUsers,         label: 'Students' },
+  { href: '/admin/classes',       icon: FaLayerGroup,    label: 'Classes' },
   { href: '/admin/fees',          icon: FaDollarSign,    label: 'Fees' },
 ];
 

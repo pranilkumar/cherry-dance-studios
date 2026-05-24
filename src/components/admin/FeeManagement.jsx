@@ -18,7 +18,15 @@ const formatCurrency = (amount) =>
 
 const formatDate = (dateString) => {
   if (!dateString) return '—';
-  return new Date(dateString).toLocaleDateString('en-CA', { year: 'numeric', month: 'short', day: 'numeric' });
+  // Append T00:00:00 so the string is parsed as local time, not UTC midnight
+  // (which would shift the date back by 4-5 hours in Eastern time zones).
+  return new Date(dateString.split('T')[0] + 'T00:00:00').toLocaleDateString('en-CA', { year: 'numeric', month: 'short', day: 'numeric' });
+};
+
+const formatMethod = (method) => {
+  if (!method) return '—';
+  const map = { cash: 'Cash', card: 'Card', bank_transfer: 'Bank transfer', 'e-transfer': 'E-transfer', cheque: 'Cheque' };
+  return map[method] || method;
 };
 
 export default function FeeManagement() {
@@ -70,8 +78,10 @@ export default function FeeManagement() {
 
       const studentsWithFees = (studentsData || []).map((student) => {
         const allFees = feesData?.filter((f) => f.student_id === student.id) || [];
-        // If duplicates exist, prefer the paid record so the row reflects reality.
-        const fee = allFees.find((f) => f.payment_status === 'paid') ?? allFees[0];
+        // If duplicates exist, priority: paid > waived > pending/other
+        const fee = allFees.find((f) => f.payment_status === 'paid')
+          ?? allFees.find((f) => f.payment_status === 'waived')
+          ?? allFees[0];
         return {
           ...student, fee,
           feeStatus: fee ? fee.payment_status : 'not_created',
@@ -123,19 +133,20 @@ export default function FeeManagement() {
     }
     setIsSubmitting(true);
     try {
-      const feeType = paymentModal.fee?.fee_type || 'Monthly Fee';
+      const feeType = paymentModal.fee?.fee_type || 'Monthly fee';
+      const amount  = parseFloat(paymentData.amount);
 
       if (!paymentModal.fee) {
         const { error } = await supabase.from('fees').insert([{
-          student_id: paymentModal.id, fee_type: feeType, amount: paymentData.amount,
+          student_id: paymentModal.id, fee_type: feeType, amount,
           due_date: `${monthFilter}-15`, payment_status: 'paid', payment_date: paymentData.payment_date,
-          payment_method: paymentData.payment_method, notes: paymentData.notes,
+          payment_method: paymentData.payment_method, notes: paymentData.notes || null,
         }]);
         if (error) throw error;
       } else {
         const { error } = await supabase.from('fees').update({
           payment_status: 'paid', payment_date: paymentData.payment_date,
-          payment_method: paymentData.payment_method, amount: paymentData.amount, notes: paymentData.notes,
+          payment_method: paymentData.payment_method, amount, notes: paymentData.notes || null,
         }).eq('id', paymentModal.fee.id);
         if (error) throw error;
       }
@@ -330,7 +341,7 @@ export default function FeeManagement() {
       return { label: 'Waived', bg: 'rgba(255,255,255,0.07)', fg: 'rgba(255,255,255,0.4)', icon: FaBan };
     }
     if (student.feeStatus === 'pending') {
-      const overdue = student.dueDate && new Date(student.dueDate) < new Date();
+      const overdue = student.dueDate && new Date(student.dueDate + 'T00:00:00') < new Date();
       return overdue
         ? { label: 'Overdue', bg: '#d1060f', fg: '#ffffff', icon: FaExclamationTriangle }
         : { label: 'Pending', bg: 'rgba(209,6,15,0.18)', fg: '#ee2435', icon: FaClock };
@@ -418,9 +429,10 @@ export default function FeeManagement() {
         </div>
         <div className="flex flex-wrap gap-2">
           {[
-            { v: 'all', label: `All (${students.length})` },
-            { v: 'paid', label: `Paid (${monthlyStats.paidCount})` },
-            { v: 'pending', label: `Pending (${monthlyStats.pendingCount})` },
+            { v: 'all',         label: `All (${students.length})` },
+            { v: 'paid',        label: `Paid (${monthlyStats.paidCount})` },
+            { v: 'pending',     label: `Pending (${monthlyStats.pendingCount})` },
+            { v: 'waived',      label: `Waived (${students.filter(s => s.feeStatus === 'waived').length})` },
             { v: 'not_created', label: 'Not set' },
           ].map((f) => (
             <button
@@ -776,9 +788,13 @@ export default function FeeManagement() {
                 <tbody className="divide-y divide-white/8">
                   {paymentHistory.map((fee) => {
                     const month = fee.due_date
-                      ? new Date(fee.due_date).toLocaleDateString('en-CA', { year: 'numeric', month: 'short' })
+                      ? new Date(fee.due_date.split('T')[0] + 'T00:00:00').toLocaleDateString('en-CA', { year: 'numeric', month: 'short' })
                       : '—';
-                    const isPaid = fee.payment_status === 'paid';
+                    const statusStyle = fee.payment_status === 'paid'
+                      ? { background: '#ffffff', color: '#0a0a0f' }
+                      : fee.payment_status === 'waived'
+                        ? { background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.4)' }
+                        : { background: 'rgba(209,6,15,0.18)', color: '#ee2435' };
                     return (
                       <tr key={fee.id} className="hover:bg-white/[0.04]">
                         <td className="px-4 py-3 font-medium text-white">{month}</td>
@@ -786,16 +802,13 @@ export default function FeeManagement() {
                         <td className="px-4 py-3">
                           <span
                             className="inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
-                            style={{
-                              background: isPaid ? '#ffffff' : 'rgba(209,6,15,0.18)',
-                              color: isPaid ? '#0a0a0f' : '#ee2435',
-                            }}
+                            style={statusStyle}
                           >
                             {fee.payment_status}
                           </span>
                         </td>
                         <td className="px-4 py-3 text-xs text-white/65">{formatDate(fee.payment_date)}</td>
-                        <td className="px-4 py-3 text-xs capitalize text-white/65">{fee.payment_method || '—'}</td>
+                        <td className="px-4 py-3 text-xs text-white/65">{formatMethod(fee.payment_method)}</td>
                       </tr>
                     );
                   })}

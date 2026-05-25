@@ -228,8 +228,18 @@ function StudentContactCard({ student, onSave, onError }) {
 
   const handleAvatarRemove = async () => {
     setAvatarUploading(true);
+    // Storage remove is best-effort — a leftover file is harmless; a DB
+    // record that still points to a deleted file causes a broken image.
     await supabase.storage.from('student-avatars').remove([student.id]);
-    await supabase.from('students').update({ avatar_url: null }).eq('id', student.id);
+    const { error: dbErr } = await supabase
+      .from('students')
+      .update({ avatar_url: null })
+      .eq('id', student.id);
+    if (dbErr) {
+      onError('Could not remove photo — please try again.');
+      setAvatarUploading(false);
+      return;
+    }
     setAvatarUrl(null);
     onSave({ ...student, avatar_url: null });
     // Notify the sidebar shell to clear its avatar

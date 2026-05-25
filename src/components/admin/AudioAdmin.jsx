@@ -195,7 +195,9 @@ export default function AudioAdmin() {
       const urlParts = confirmDelete.file_url.split('/audio-mixes/');
       if (urlParts.length > 1) {
         const storagePath = decodeURIComponent(urlParts[1].split('?')[0]);
-        await supabase.storage.from('audio-mixes').remove([storagePath]);
+        // storage.remove returns {data, error} and never throws — check explicitly.
+        const { error: storErr } = await supabase.storage.from('audio-mixes').remove([storagePath]);
+        if (storErr) console.warn('Storage remove failed (orphaned file):', storErr.message);
       }
       const { error } = await supabase.from('audio_mixes').delete().eq('id', confirmDelete.id);
       if (error) throw new Error(error.message);

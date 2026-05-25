@@ -104,11 +104,17 @@ export default function AttendanceSystem() {
     const ids = students.map((s) => s.id);
 
     // Replace existing records for this date + roster
-    await supabase
+    const { error: deleteErr } = await supabase
       .from('attendance')
       .delete()
       .eq('class_date', date)
       .in('student_id', ids);
+
+    if (deleteErr) {
+      setSaving(false);
+      showAlert('error', 'Failed to clear existing records — please try again.');
+      return;
+    }
 
     const rows = students.map((s) => ({
       student_id: s.id,

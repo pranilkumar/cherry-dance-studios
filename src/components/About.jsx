@@ -10,6 +10,8 @@ const youtubeVideos = [
   { id: 'rM1RA0EpXmg', title: 'Cherry Dance Studios — Performance 3' },
   { id: '9WHHmYyYs2k', title: 'Cherry Dance Studios — Performance 4' },
   { id: 'elTMH3JatwI', title: 'Cherry Dance Studios — Performance 5' },
+  { id: 'g0qEr9scAqg', title: 'Cherry Dance Studios — Performance 6' },
+  { id: 'oVPpJOhOHSA', title: 'Cherry Dance Studios — Performance 7' },
 ];
 
 const highlights = ['Ages 4 & up', 'Bollywood', 'Hip-hop', 'Freestyle', 'Indian'];

@@ -56,7 +56,7 @@ export default function FeeManagement() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchData();
-    setBulkData((p) => ({ ...p, dueDate: `${monthFilter}-15` }));
+    setBulkData((p) => ({ ...p, dueDate: `${monthFilter}-10` }));
   }, [monthFilter]);
 
   const fetchData = async () => {
@@ -139,7 +139,7 @@ export default function FeeManagement() {
       if (!paymentModal.fee) {
         const { error } = await supabase.from('fees').insert([{
           student_id: paymentModal.id, fee_type: feeType, amount,
-          due_date: `${monthFilter}-15`, payment_status: 'paid', payment_date: paymentData.payment_date,
+          due_date: `${monthFilter}-10`, payment_status: 'paid', payment_date: paymentData.payment_date,
           payment_method: paymentData.payment_method, notes: paymentData.notes || null,
         }]);
         if (error) throw error;

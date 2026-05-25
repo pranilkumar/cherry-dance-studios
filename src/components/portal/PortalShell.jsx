@@ -39,6 +39,7 @@ export default function PortalShell({ children }) {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [primaryStudent, setPrimaryStudent] = useState(null); // { student_name, avatar_url }
 
   // Skip the shell entirely on /portal/login and /portal/auth/* routes —
   // they should render bare (no sidebar, no auth gate).
@@ -90,6 +91,32 @@ export default function PortalShell({ children }) {
     document.body.style.overflow = mobileOpen ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
   }, [mobileOpen]);
+
+  // Fetch the first student's name + avatar for the sidebar user block.
+  // Lightweight single-row query — runs once after the session is confirmed.
+  useEffect(() => {
+    if (!session?.user?.email) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from('students')
+        .select('student_name, avatar_url')
+        .eq('email', session.user.email)
+        .limit(1)
+        .maybeSingle();
+      if (!cancelled && data) setPrimaryStudent(data);
+    })();
+    return () => { cancelled = true; };
+  }, [session]);
+
+  // Listen for avatar uploads/removals from PortalProfile and refresh the sidebar instantly.
+  useEffect(() => {
+    const handler = (e) => {
+      setPrimaryStudent((prev) => prev ? { ...prev, avatar_url: e.detail?.url ?? null } : prev);
+    };
+    window.addEventListener('cds:avatar-updated', handler);
+    return () => window.removeEventListener('cds:avatar-updated', handler);
+  }, []);
 
   // Render auth pages bare
   if (isAuthRoute) return <>{children}</>;
@@ -211,11 +238,17 @@ export default function PortalShell({ children }) {
         {/* User block */}
         <div className="border-t border-white/8 p-3">
           {email && (
-            <div className="mb-2 rounded-lg bg-white/[0.04] px-3 py-2.5">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">
-                Signed in
+            <div className="mb-2 flex items-center gap-3 rounded-lg bg-white/[0.04] px-3 py-2.5">
+              <SidebarAvatar
+                name={primaryStudent?.student_name}
+                url={primaryStudent?.avatar_url}
+              />
+              <div className="min-w-0 flex-1">
+                <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">
+                  Signed in
+                </div>
+                <div className="mt-0.5 truncate text-xs font-medium text-white/90">{email}</div>
               </div>
-              <div className="mt-1 truncate text-xs font-medium text-white/90">{email}</div>
             </div>
           )}
           <button
@@ -248,6 +281,22 @@ export default function PortalShell({ children }) {
 
         <main className="flex-1 min-w-0">{children}</main>
       </div>
+    </div>
+  );
+}
+
+/* ── Sidebar avatar — shows dancer photo or email/name initials ── */
+
+function SidebarAvatar({ name, url }) {
+  const initials = name
+    ? name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase()
+    : '?';
+  return (
+    <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full bg-gradient-to-br from-[#d1060f] to-[#780f17]">
+      {url
+        ? <img src={url} alt={name || ''} className="h-full w-full object-cover" />
+        : <span className="absolute inset-0 flex items-center justify-center text-[11px] font-bold text-white">{initials}</span>
+      }
     </div>
   );
 }

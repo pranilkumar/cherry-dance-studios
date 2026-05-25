@@ -1,58 +1,33 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { FaClock, FaPalette, FaTheaterMasks, FaBolt, FaCalendarAlt, FaInfoCircle, FaArrowRight } from 'react-icons/fa';
+import {
+  FaClock, FaCalendarAlt, FaInfoCircle, FaArrowRight, FaUser, FaCheckCircle,
+} from 'react-icons/fa';
 import { supabase } from '../../lib/supabaseClient';
 
-/**
- * Portal — classes view.
- *
- * Primary: shows each dancer's confirmed class details from the DB
- *   (preferred_class, preferred_weekday, preferred_time_slot).
- * Secondary: studio weekly schedule with the student's tier highlighted.
- */
+/* ── Helpers ── */
 
-const TIERS = {
-  'Little Stars': {
-    icon: FaPalette,
-    description: 'Ages 4–7 · A nurturing intro to dance.',
-    slots: [{ days: 'Tue & Thu', time: '5:45 – 6:30 PM' }],
-    duration: '45 min',
-  },
-  'The Crew': {
-    icon: FaTheaterMasks,
-    description: 'Ages 7–10 · Structured choreography + rhythm.',
-    slots: [
-      { days: 'Mon & Wed', time: '6:00 – 7:00 PM' },
-      { days: 'Tue & Thu', time: '6:30 – 7:30 PM' },
-    ],
-    duration: '60 min',
-  },
-  'Slay Squad': {
-    icon: FaBolt,
-    description: 'Ages 10+ · Intensive Bollywood, hip-hop & freestyle.',
-    slots: [{ days: 'Mon & Wed', time: '7:00 – 8:00 PM' }],
-    duration: '2 hrs',
-  },
-};
-
-/** Format "18:00" → "6:00 PM" */
 function fmt24(t) {
   if (!t) return '';
   const [h, m] = t.split(':').map(Number);
-  const ampm = h >= 12 ? 'PM' : 'AM';
-  const h12 = h % 12 || 12;
-  return `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
+  return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`;
 }
 
-/* ── Next class calculation ── */
+function fmtDuration(start, end) {
+  if (!start || !end) return null;
+  const [sh, sm] = start.split(':').map(Number);
+  const [eh, em] = end.split(':').map(Number);
+  const mins = (eh * 60 + em) - (sh * 60 + sm);
+  if (mins <= 0) return null;
+  if (mins < 60) return `${mins} min`;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return m ? `${h}h ${m}min` : `${h}h`;
+}
 
 const DAY_NUM = { Sunday: 0, Monday: 1, Tuesday: 2, Wednesday: 3, Thursday: 4, Friday: 5, Saturday: 6 };
 
-/**
- * Given a class_batch, return the next Date this class occurs.
- * start_time is stored as "HH:MM" (24-hour).
- */
 function getNextClassDate(batch) {
   if (!batch?.weekdays?.length || !batch.start_time) return null;
   const [hStr, mStr] = batch.start_time.split(':');
@@ -60,21 +35,18 @@ function getNextClassDate(batch) {
   const minutes = parseInt(mStr, 10);
   const now = new Date();
   const todayDow = now.getDay();
-
   let minDaysAway = null;
   for (const day of batch.weekdays) {
     const dow = DAY_NUM[day];
     if (dow == null) continue;
     let daysAway = (dow - todayDow + 7) % 7;
     if (daysAway === 0) {
-      // Same day — check if class time has already passed
       const classTime = new Date(now);
       classTime.setHours(hours, minutes, 0, 0);
-      if (classTime <= now) daysAway = 7; // next week
+      if (classTime <= now) daysAway = 7;
     }
     if (minDaysAway === null || daysAway < minDaysAway) minDaysAway = daysAway;
   }
-
   if (minDaysAway === null) return null;
   const next = new Date(now);
   next.setDate(now.getDate() + minDaysAway);
@@ -83,15 +55,15 @@ function getNextClassDate(batch) {
   return next;
 }
 
-/** Format a next-class Date into a human-friendly label. */
 function formatNextClass(date) {
   if (!date) return null;
-  const now = new Date();
-  now.setHours(0, 0, 0, 0);
-  const day = new Date(date);
-  day.setHours(0, 0, 0, 0);
+  const now = new Date(); now.setHours(0, 0, 0, 0);
+  const day = new Date(date); day.setHours(0, 0, 0, 0);
   const diffDays = Math.round((day - now) / (1000 * 60 * 60 * 24));
-  const dayLabel = diffDays === 0 ? 'Today' : diffDays === 1 ? 'Tomorrow' : date.toLocaleDateString('en-CA', { weekday: 'long' });
+  const dayLabel =
+    diffDays === 0 ? 'Today' :
+    diffDays === 1 ? 'Tomorrow' :
+    date.toLocaleDateString('en-CA', { weekday: 'long' });
   const timeLabel = date.toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit', hour12: true });
   return { dayLabel, timeLabel, diffDays };
 }
@@ -113,34 +85,13 @@ function calcAge(dobIso) {
   return age;
 }
 
-function suggestTier(age) {
-  if (age == null) return null;
-  if (age <= 7) return 'Little Stars';
-  if (age <= 10) return 'The Crew';
-  return 'Slay Squad';
-}
-
-/**
- * preferred_weekday is stored as a comma-separated string (e.g. "Monday, Wednesday")
- * after the convert RPC runs array_to_string(). Handle both string and array just in case.
- */
 function formatDays(val) {
   if (!val) return null;
-  if (Array.isArray(val)) {
-    if (val.length === 0) return null;
-    if (val[0] === 'Flexible') return 'Flexible — any day';
-    return val.join(', ');
-  }
+  if (Array.isArray(val)) return val.filter(Boolean).join(', ') || null;
   const s = String(val).trim();
-  if (!s) return null;
-  if (s === 'Flexible') return 'Flexible — any day';
-  return s;
+  return s || null;
 }
 
-/**
- * preferred_time_slot is stored as a comma-separated string (e.g. "6:00pm-7:00pm, 7:00pm-8:00pm").
- * Format each slot for readability.
- */
 function formatTimes(val) {
   if (!val) return null;
   const parts = Array.isArray(val) ? val : String(val).split(',').map((t) => t.trim());
@@ -150,32 +101,52 @@ function formatTimes(val) {
   return formatted.length ? formatted.join('  ·  ') : null;
 }
 
+const STATUS_META = {
+  active:   { label: 'Active',   cls: 'bg-white text-[#0a0a0f]' },
+  on_break: { label: 'On break', cls: 'bg-amber-400/20 text-amber-300 border border-amber-400/30' },
+  pending:  { label: 'Pending',  cls: 'bg-[#d1060f]/20 text-[#ee2435] border border-[#d1060f]/30' },
+};
+
+/* ── Component ── */
+
 export default function PortalClasses() {
-  const [students, setStudents] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [students, setStudents]     = useState([]);
+  const [allBatches, setAllBatches] = useState([]);
+  const [loading, setLoading]       = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user || cancelled) return;
-      const { data } = await supabase
-        .from('students')
-        .select('id, student_name, date_of_birth, status, preferred_class, preferred_weekday, preferred_time_slot, experience_level, class_batch:class_batches(id, name, tier, style, instructor, weekdays, start_time, end_time)')
-        .eq('email', user.email);
+
+      const [{ data: stuData }, { data: batchData }] = await Promise.all([
+        supabase
+          .from('students')
+          .select('id, student_name, date_of_birth, status, preferred_class, preferred_weekday, preferred_time_slot, experience_level, class_batch:class_batches(id, name, tier, style, instructor, weekdays, start_time, end_time, notes)')
+          .eq('email', user.email)
+          .in('status', ['active', 'on_break', 'pending']),
+        supabase
+          .from('class_batches')
+          .select('id, name, tier, style, instructor, weekdays, start_time, end_time, notes')
+          .eq('is_active', true)
+          .order('start_time'),
+      ]);
+
       if (!cancelled) {
-        setStudents(data || []);
+        setStudents(stuData || []);
+        setAllBatches(batchData || []);
         setLoading(false);
       }
     })();
     return () => { cancelled = true; };
   }, []);
 
-  const myTiers = new Set(
-    students.map((s) => suggestTier(calcAge(s.date_of_birth))).filter(Boolean),
-  );
+  // Batches this parent's dancers are actually enrolled in
+  const myBatchIds = new Set(students.map((s) => s.class_batch?.id).filter(Boolean));
 
-  const activeStudents = students.filter((s) => s.status === 'active');
+  // Show enrolled students in their class cards (active + on_break)
+  const enrolledStudents = students.filter((s) => s.status === 'active' || s.status === 'on_break');
 
   return (
     <div className="p-6 md:p-8">
@@ -189,25 +160,24 @@ export default function PortalClasses() {
         <p className="mt-2 text-sm text-white/55">
           {loading
             ? 'Loading…'
-            : activeStudents.length > 0
-            ? "Your dancer's confirmed class details are shown below."
-            : 'Browse the schedule. Once your dancer is enrolled, their class will be highlighted.'}
+            : enrolledStudents.length > 0
+            ? "Your dancer's confirmed class details, plus the full studio schedule."
+            : 'Browse the studio schedule below.'}
         </p>
       </header>
 
-      {/* ── Per-dancer class card ── */}
-      {!loading && activeStudents.length > 0 && (
-        <section className="mb-8">
+      {/* ── Per-dancer cards (active + on_break) ── */}
+      {!loading && enrolledStudents.length > 0 && (
+        <section className="mb-10">
           <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-white/55">
-            {activeStudents.length === 1 ? 'Your dancer' : 'Your dancers'}
+            {enrolledStudents.length === 1 ? 'Your dancer' : 'Your dancers'}
           </h2>
           <div className="space-y-3">
-            {activeStudents.map((s) => {
+            {enrolledStudents.map((s) => {
               const batch = s.class_batch;
               const nextDate = getNextClassDate(batch);
               const next = formatNextClass(nextDate);
-              // Fall back to registration preferences if no batch assigned yet
-              const days = batch
+              const days  = batch
                 ? (batch.weekdays || []).join(', ')
                 : formatDays(s.preferred_weekday);
               const times = batch
@@ -215,13 +185,19 @@ export default function PortalClasses() {
                     ? `${fmt24(batch.start_time)} – ${fmt24(batch.end_time)}`
                     : fmt24(batch.start_time))
                 : formatTimes(s.preferred_time_slot);
-              const age = calcAge(s.date_of_birth);
-              const tier = batch?.tier || suggestTier(age);
+              const age  = calcAge(s.date_of_birth);
+              const tier = batch?.tier || batch?.name;
+              const sm   = STATUS_META[s.status] || STATUS_META.active;
+              const isOnBreak = s.status === 'on_break';
 
               return (
                 <div
                   key={s.id}
-                  className="rounded-2xl border border-[#d1060f]/30 bg-[#d1060f]/[0.06] p-5 backdrop-blur-md"
+                  className={`rounded-2xl border p-5 backdrop-blur-md ${
+                    isOnBreak
+                      ? 'border-amber-400/20 bg-amber-400/[0.04]'
+                      : 'border-[#d1060f]/30 bg-[#d1060f]/[0.06]'
+                  }`}
                 >
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
@@ -230,22 +206,29 @@ export default function PortalClasses() {
                       </p>
                       <div className="mt-0.5 flex flex-wrap items-center gap-2">
                         {tier && (
-                          <span className="text-xs font-semibold uppercase tracking-[0.15em] text-[#ee2435]">
+                          <span className="text-xs font-semibold uppercase tracking-[0.15em] text-white/55">
                             {tier}
                           </span>
                         )}
-                        {batch && (
-                          <span className="text-xs text-white/40">· {batch.name}</span>
+                        {batch && tier !== batch.name && (
+                          <span className="text-xs text-white/35">· {batch.name}</span>
                         )}
                       </div>
                     </div>
-                    <span className="rounded-full bg-white px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#0a0a0f]">
-                      Active
+                    <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${sm.cls}`}>
+                      {sm.label}
                     </span>
                   </div>
 
-                  {/* Next class callout — only when batch is assigned */}
-                  {next && (
+                  {/* On-break notice */}
+                  {isOnBreak && (
+                    <p className="mt-3 text-xs text-amber-300/80">
+                      This dancer is on a break. Class details are shown for reference.
+                    </p>
+                  )}
+
+                  {/* Next class callout */}
+                  {next && !isOnBreak && (
                     <div className="mt-4 flex items-center gap-3 rounded-xl border border-white/15 bg-white/[0.06] px-4 py-3">
                       <FaArrowRight className="shrink-0 text-[#ee2435]" />
                       <div>
@@ -264,7 +247,8 @@ export default function PortalClasses() {
                     </div>
                   )}
 
-                  <dl className="mt-4 grid grid-cols-1 gap-3 border-t border-white/10 pt-4 sm:grid-cols-3">
+                  {/* Class details grid */}
+                  <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-white/10 pt-4 sm:grid-cols-4">
                     <div>
                       <dt className="text-[10px] font-semibold uppercase tracking-[0.15em] text-white/45">Style</dt>
                       <dd className="mt-0.5 text-sm font-medium text-white">
@@ -287,7 +271,23 @@ export default function PortalClasses() {
                         {times || <span className="text-white/35">—</span>}
                       </dd>
                     </div>
+                    {batch?.instructor && (
+                      <div>
+                        <dt className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.15em] text-white/45">
+                          <FaUser className="text-[8px]" /> Instructor
+                        </dt>
+                        <dd className="mt-0.5 text-sm font-medium text-white">{batch.instructor}</dd>
+                      </div>
+                    )}
                   </dl>
+
+                  {/* Admin class notes */}
+                  {batch?.notes && (
+                    <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-xs text-white/75">
+                      <span className="font-semibold text-white/55 uppercase tracking-[0.12em]">Note: </span>
+                      {batch.notes}
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -300,58 +300,84 @@ export default function PortalClasses() {
         </section>
       )}
 
-      {/* ── Studio schedule ── */}
-      <section>
-        <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-white/55">
-          Studio schedule
-        </h2>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          {Object.entries(TIERS).map(([name, tier]) => {
-            const Icon = tier.icon;
-            const isMine = myTiers.has(name);
-            return (
-              <div
-                key={name}
-                className={`relative overflow-hidden rounded-2xl border p-5 backdrop-blur-md transition ${
-                  isMine
-                    ? 'border-white/20 bg-white/[0.06]'
-                    : 'border-white/8 bg-white/[0.02]'
-                }`}
-              >
-                {isMine && (
-                  <span className="absolute right-4 top-4 rounded-full border border-white/20 bg-white/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white/70">
-                    Your tier
-                  </span>
-                )}
+      {/* ── Studio schedule — live from DB ── */}
+      {!loading && (
+        <section>
+          <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-white/55">
+            Studio schedule
+          </h2>
 
-                <div className="grid h-10 w-10 place-items-center rounded-xl bg-white/10 text-white">
-                  <Icon className="text-base" />
-                </div>
+          {allBatches.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02] p-8 text-center text-sm text-white/40">
+              No classes published yet.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {allBatches.map((b) => {
+                const isMine = myBatchIds.has(b.id);
+                const days     = (b.weekdays || []).join(', ');
+                const timeStr  = b.end_time
+                  ? `${fmt24(b.start_time)} – ${fmt24(b.end_time)}`
+                  : fmt24(b.start_time);
+                const duration = fmtDuration(b.start_time, b.end_time);
 
-                <h3 className={`mt-4 font-[family-name:var(--font-display)] text-xl font-bold tracking-tight ${isMine ? 'text-white' : 'text-white/70'}`}>
-                  {name}
-                </h3>
-                <p className="mt-1 text-xs text-white/55">{tier.description}</p>
-
-                <div className="mt-4 space-y-1.5 border-t border-white/10 pt-4">
-                  {tier.slots.map((slot, i) => (
-                    <div key={i} className="flex items-center justify-between text-xs">
-                      <span className={`font-semibold ${isMine ? 'text-white/85' : 'text-white/55'}`}>
-                        {slot.days}
+                return (
+                  <div
+                    key={b.id}
+                    className={`relative overflow-hidden rounded-2xl border p-5 backdrop-blur-md transition ${
+                      isMine
+                        ? 'border-[#d1060f]/40 bg-[#d1060f]/[0.08]'
+                        : 'border-white/8 bg-white/[0.02]'
+                    }`}
+                  >
+                    {isMine && (
+                      <span className="absolute right-4 top-4 inline-flex items-center gap-1 rounded-full border border-[#d1060f]/30 bg-[#d1060f]/15 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#ee2435]">
+                        <FaCheckCircle className="text-[8px]" /> Your class
                       </span>
-                      <span className="font-mono text-white/45">{slot.time}</span>
+                    )}
+
+                    <h3 className={`font-[family-name:var(--font-display)] text-lg font-bold tracking-tight ${isMine ? 'text-white' : 'text-white/75'}`}>
+                      {b.name}
+                    </h3>
+                    {b.tier && b.tier !== b.name && (
+                      <p className="mt-0.5 text-xs font-semibold uppercase tracking-[0.15em] text-white/40">
+                        {b.tier}
+                      </p>
+                    )}
+
+                    <div className="mt-4 space-y-2 border-t border-white/10 pt-4 text-xs">
+                      {days && (
+                        <div className="flex items-center gap-2 text-white/65">
+                          <FaCalendarAlt className="text-[10px] shrink-0 text-white/35" />
+                          <span>{days}</span>
+                        </div>
+                      )}
+                      {timeStr && (
+                        <div className="flex items-center gap-2 text-white/65">
+                          <FaClock className="text-[10px] shrink-0 text-white/35" />
+                          <span>{timeStr}{duration && <span className="ml-1.5 text-white/35">· {duration}</span>}</span>
+                        </div>
+                      )}
+                      {b.instructor && (
+                        <div className="flex items-center gap-2 text-white/65">
+                          <FaUser className="text-[10px] shrink-0 text-white/35" />
+                          <span>{b.instructor}</span>
+                        </div>
+                      )}
                     </div>
-                  ))}
-                  <div className="flex items-center gap-1.5 pt-1 text-[10px] text-white/40">
-                    <FaClock className="text-[8px]" />
-                    {tier.duration} per session
+
+                    {b.notes && (
+                      <p className="mt-3 rounded-lg border border-white/8 bg-white/[0.03] px-3 py-2 text-xs text-white/60 italic">
+                        {b.notes}
+                      </p>
+                    )}
                   </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      )}
 
       <p className="mt-6 text-xs text-white/35">
         Questions about the schedule?{' '}

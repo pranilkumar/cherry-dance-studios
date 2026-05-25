@@ -27,6 +27,7 @@ const emptyForm = () => ({
   parent_name: '',
   student_name: '',
   email: '',
+  email_secondary: '',
   phone: '',
   date_of_birth: '',
   gender: '',
@@ -92,6 +93,7 @@ export default function StudentManagement() {
       parent_name: s.parent_name || '',
       student_name: s.student_name || '',
       email: s.email || '',
+      email_secondary: s.email_secondary || '',
       phone: s.phone || '',
       date_of_birth: s.date_of_birth || '',
       gender: s.gender || '',
@@ -383,14 +385,17 @@ export default function StudentManagement() {
               </Field>
             </Grid2>
 
-            <Grid2>
+            <div className="grid gap-4 md:grid-cols-3">
               <Field label="Email" required>
                 <input type="email" value={formData.email} onChange={(e) => setField('email', e.target.value)} required className={inputCls} />
+              </Field>
+              <Field label="Secondary email">
+                <input type="email" value={formData.email_secondary} onChange={(e) => setField('email_secondary', e.target.value)} placeholder="Optional" className={inputCls} />
               </Field>
               <Field label="Phone" required>
                 <input type="tel" value={formData.phone} onChange={(e) => setField('phone', e.target.value)} required className={inputCls} />
               </Field>
-            </Grid2>
+            </div>
 
             <Grid2>
               <Field label="Date of birth">
@@ -556,6 +561,7 @@ export default function StudentManagement() {
               )}
             </InfoRow>
             <InfoRow label="Email" value={detailStudent.email} />
+            <InfoRow label="Secondary email" value={detailStudent.email_secondary} />
             <InfoRow label="Phone" value={detailStudent.phone} />
             <InfoRow label="Class" value={detailStudent.preferred_class} />
             <InfoRow label="Day / time" value={[detailStudent.preferred_weekday, detailStudent.preferred_time_slot].filter(Boolean).join(' · ')} />

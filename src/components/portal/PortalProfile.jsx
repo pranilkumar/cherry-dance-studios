@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   FaCheckCircle, FaLock, FaKey, FaExclamationCircle,
-  FaEdit, FaTimes, FaUser, FaPhone, FaShieldAlt,
+  FaEdit, FaTimes, FaUser, FaPhone, FaShieldAlt, FaCamera,
 } from 'react-icons/fa';
 import { supabase } from '../../lib/supabaseClient';
 
@@ -37,7 +37,7 @@ export default function PortalProfile() {
 
       const { data } = await supabase
         .from('students')
-        .select('id, student_name, parent_name, phone, allergies, emergency_contact, photo_consent, preferred_class, experience_level, status')
+        .select('id, student_name, parent_name, avatar_url, phone, allergies, emergency_contact, photo_consent, preferred_class, experience_level, status')
         .eq('email', user.email);
       if (!cancelled) {
         setStudents(data || []);
@@ -97,6 +97,9 @@ export default function PortalProfile() {
         <p className="mt-1.5 text-base font-medium text-white">
           {loadingUser ? 'Loading…' : email || '—'}
         </p>
+        <p className="mt-1 text-xs text-white/35">
+          To update your email address, contact Cherry or Pranil.
+        </p>
       </section>
 
       {/* Per-dancer contact info */}
@@ -137,23 +140,29 @@ export default function PortalProfile() {
 /* ── Student contact card with inline editing ── */
 
 function StudentContactCard({ student, onSave, onError }) {
-  const [editing, setEditing] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const [editing, setEditing]             = useState(false);
+  const [saving, setSaving]               = useState(false);
+  const [avatarUrl, setAvatarUrl]         = useState(student.avatar_url || null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const fileInputRef                      = useRef(null);
+
   const [form, setForm] = useState({
-    phone: student.phone || '',
-    allergies: student.allergies || '',
+    parent_name:       student.parent_name || '',
+    phone:             student.phone || '',
+    allergies:         student.allergies || '',
     emergency_contact: student.emergency_contact || '',
-    photo_consent: student.photo_consent ?? true,
+    photo_consent:     student.photo_consent ?? true,
   });
 
   const set = (field, value) => setForm((p) => ({ ...p, [field]: value }));
 
   const cancel = () => {
     setForm({
-      phone: student.phone || '',
-      allergies: student.allergies || '',
+      parent_name:       student.parent_name || '',
+      phone:             student.phone || '',
+      allergies:         student.allergies || '',
       emergency_contact: student.emergency_contact || '',
-      photo_consent: student.photo_consent ?? true,
+      photo_consent:     student.photo_consent ?? true,
     });
     setEditing(false);
   };
@@ -164,35 +173,134 @@ function StudentContactCard({ student, onSave, onError }) {
     const { error } = await supabase
       .from('students')
       .update({
+        parent_name:       form.parent_name.trim() || null,
         phone:             form.phone.trim() || null,
         allergies:         form.allergies.trim() || null,
         emergency_contact: form.emergency_contact.trim() || null,
         photo_consent:     form.photo_consent,
       })
       .eq('id', student.id);
-
     setSaving(false);
-    if (error) {
-      onError('Couldn\'t save — please try again.');
-      return;
-    }
+    if (error) { onError('Couldn\'t save — please try again.'); return; }
     onSave({ ...student, ...form });
     setEditing(false);
   };
+
+  /* ── Avatar upload / remove ── */
+
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      onError('Photo must be under 5 MB.');
+      return;
+    }
+    setAvatarUploading(true);
+    // Reuse student.id as the storage key so every upload overwrites the last.
+    const path = student.id;
+    const { error: uploadErr } = await supabase.storage
+      .from('student-avatars')
+      .upload(path, file, { upsert: true, contentType: file.type });
+    if (uploadErr) {
+      onError('Upload failed — please try again.');
+      setAvatarUploading(false);
+      return;
+    }
+    const { data: { publicUrl } } = supabase.storage
+      .from('student-avatars')
+      .getPublicUrl(path);
+    // Append a cache-buster so the browser doesn't serve the stale version
+    // after the user swaps their photo at the same storage path.
+    const freshUrl = `${publicUrl}?v=${Date.now()}`;
+    const { error: dbErr } = await supabase
+      .from('students')
+      .update({ avatar_url: freshUrl })
+      .eq('id', student.id);
+    if (!dbErr) {
+      setAvatarUrl(freshUrl);
+      onSave({ ...student, avatar_url: freshUrl });
+      // Notify the sidebar shell so it refreshes its avatar without a page reload
+      window.dispatchEvent(new CustomEvent('cds:avatar-updated', { detail: { url: freshUrl } }));
+    }
+    setAvatarUploading(false);
+    e.target.value = ''; // allow re-selecting the same file
+  };
+
+  const handleAvatarRemove = async () => {
+    setAvatarUploading(true);
+    await supabase.storage.from('student-avatars').remove([student.id]);
+    await supabase.from('students').update({ avatar_url: null }).eq('id', student.id);
+    setAvatarUrl(null);
+    onSave({ ...student, avatar_url: null });
+    // Notify the sidebar shell to clear its avatar
+    window.dispatchEvent(new CustomEvent('cds:avatar-updated', { detail: { url: null } }));
+    setAvatarUploading(false);
+  };
+
+  const initials = student.student_name
+    .split(' ')
+    .map((w) => w[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
 
   return (
     <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-md">
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-4">
-        <div>
-          <p className="font-[family-name:var(--font-display)] text-base font-bold tracking-tight text-white">
-            {student.student_name}
-          </p>
-          <p className="mt-0.5 text-xs text-white/45">
-            {student.preferred_class || 'No style assigned'}
-            {student.experience_level && ` · ${student.experience_level}`}
-          </p>
+        <div className="flex items-center gap-3">
+
+          {/* Avatar — always clickable, no need to enter edit mode */}
+          <div className="relative shrink-0">
+            <div className="relative h-12 w-12 overflow-hidden rounded-full bg-gradient-to-br from-[#d1060f] to-[#780f17]">
+              {avatarUrl
+                ? <img src={avatarUrl} alt={student.student_name} className="h-full w-full object-cover" />
+                : <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white">{initials}</span>
+              }
+            </div>
+            {/* Camera hover overlay */}
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={avatarUploading}
+              title="Change photo"
+              aria-label="Change profile photo"
+              className="absolute inset-0 flex items-center justify-center rounded-full bg-black/55 opacity-0 transition hover:opacity-100 disabled:cursor-wait"
+            >
+              {avatarUploading
+                ? <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                : <FaCamera className="text-xs text-white" />
+              }
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              onChange={handleAvatarChange}
+              className="sr-only"
+            />
+          </div>
+
+          <div>
+            <p className="font-[family-name:var(--font-display)] text-base font-bold tracking-tight text-white">
+              {student.student_name}
+            </p>
+            <p className="mt-0.5 text-xs text-white/45">
+              {student.preferred_class || 'No style assigned'}
+              {student.experience_level && ` · ${student.experience_level}`}
+            </p>
+            {avatarUrl && !avatarUploading && (
+              <button
+                type="button"
+                onClick={handleAvatarRemove}
+                className="mt-0.5 text-[10px] text-white/30 transition hover:text-white/65"
+              >
+                Remove photo
+              </button>
+            )}
+          </div>
         </div>
+
         {!editing ? (
           <button
             type="button"
@@ -215,15 +323,14 @@ function StudentContactCard({ student, onSave, onError }) {
       {/* View mode */}
       {!editing && (
         <dl className="grid grid-cols-1 gap-0 border-t border-white/8">
+          <InfoRow icon={FaUser} label="Parent / guardian name" value={student.parent_name} />
           <InfoRow icon={FaPhone} label="Phone / WhatsApp" value={student.phone} />
           <InfoRow icon={FaShieldAlt} label="Allergies / medical notes" value={student.allergies} />
           <InfoRow label="Emergency contact" value={student.emergency_contact} />
           <div className="flex items-center justify-between px-5 py-3">
-            <div>
-              <dt className="text-[10px] font-semibold uppercase tracking-[0.15em] text-white/45">
-                Photo &amp; video consent
-              </dt>
-            </div>
+            <dt className="text-[10px] font-semibold uppercase tracking-[0.15em] text-white/45">
+              Photo &amp; video consent
+            </dt>
             <dd>
               {student.photo_consent
                 ? <span className="text-xs font-semibold text-white/70">Consented ✓</span>
@@ -236,6 +343,19 @@ function StudentContactCard({ student, onSave, onError }) {
       {/* Edit mode */}
       {editing && (
         <form onSubmit={save} className="border-t border-white/8 px-5 py-5 space-y-4">
+          <div>
+            <label className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.15em] text-white/55">
+              <FaUser className="text-[9px]" /> Parent / guardian name
+            </label>
+            <input
+              type="text"
+              value={form.parent_name}
+              onChange={(e) => set('parent_name', e.target.value)}
+              placeholder="e.g. Priya Sharma"
+              className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm text-white placeholder:text-white/25 transition focus:border-[#ee2435] focus:bg-white/[0.06] focus:outline-none focus:ring-4 focus:ring-[#d1060f]/20"
+            />
+          </div>
+
           <div>
             <label className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.15em] text-white/55">
               <FaPhone className="text-[9px]" /> Phone / WhatsApp

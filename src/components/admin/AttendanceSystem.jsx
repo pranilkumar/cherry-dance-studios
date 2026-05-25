@@ -1,107 +1,158 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   FaQrcode, FaCheckCircle, FaClock, FaUsers, FaCalendarDay,
-  FaCamera, FaDownload, FaMobileAlt, FaBolt, FaTimes,
+  FaSave, FaTimes, FaDownload, FaChevronRight,
 } from 'react-icons/fa';
-import toast from 'react-hot-toast';
+import { supabase } from '../../lib/supabaseClient';
 
-const DEMO_CLASSES = [
-  { id: 1, name: 'Little Stars', time: '5:45 PM – 6:30 PM', instructor: 'Cherry',          capacity: 15, enrolled: 12, status: 'active'   },
-  { id: 2, name: 'The Crew',     time: '6:00 PM – 7:00 PM', instructor: 'Pranil',          capacity: 18, enrolled: 16, status: 'upcoming' },
-  { id: 3, name: 'Slay Squad',   time: '7:00 PM – 8:00 PM', instructor: 'Cherry & Pranil', capacity: 20, enrolled: 14, status: 'upcoming' },
-];
-
-const DEMO_ATTENDANCE = [
-  { id: 1, studentName: 'Aanya Sharma',   className: 'Little Stars', time: '5:42 PM', status: 'on-time', method: 'QR Scan' },
-  { id: 2, studentName: 'Maria Garcia',   className: 'Little Stars', time: '5:48 PM', status: 'late',    method: 'QR Scan' },
-  { id: 3, studentName: 'Jaden Thompson', className: 'Little Stars', time: '5:40 PM', status: 'on-time', method: 'Manual' },
-];
-
-const STATUS_BADGE = {
-  'on-time': { bg: '#ffffff', fg: '#0a0a0f', label: 'On time' },
-  late:      { bg: 'rgba(209,6,15,0.18)', fg: '#ee2435', label: 'Late' },
-  absent:    { bg: '#d1060f', fg: '#ffffff', label: 'Absent' },
-};
-
-const CLASS_STATUS_BADGE = {
-  active:   { bg: '#d1060f', fg: '#ffffff', label: 'Live now' },
-  upcoming: { bg: 'rgba(209,6,15,0.18)', fg: '#ee2435', label: 'Upcoming' },
-  done:     { bg: 'rgba(255,255,255,0.08)', fg: 'rgba(255,255,255,0.55)', label: 'Finished' },
+const MARKS = {
+  present: { label: 'Present', short: 'P', activeBg: 'bg-white',     activeText: 'text-[#0a0a0f]' },
+  late:    { label: 'Late',    short: 'L', activeBg: 'bg-amber-400',  activeText: 'text-[#0a0a0f]' },
+  absent:  { label: 'Absent',  short: 'A', activeBg: 'bg-[#d1060f]',  activeText: 'text-white'     },
 };
 
 export default function AttendanceSystem() {
-  const [showQRModal, setShowQRModal] = useState(false);
-  const [selectedClass, setSelectedClass] = useState(null);
-  const [scannerActive, setScannerActive] = useState(false);
-  const [attendanceData, setAttendanceData] = useState([]);
-  const [todayStats, setTodayStats] = useState({ present: 0, absent: 0, late: 0, totalClasses: 0 });
-  const videoRef = useRef(null);
+  const today = new Date().toISOString().split('T')[0];
+
+  const [date, setDate]                   = useState(today);
+  const [batches, setBatches]             = useState([]);
+  const [selectedBatch, setSelectedBatch] = useState(null);
+  const [students, setStudents]           = useState([]);
+  const [marks, setMarks]                 = useState({}); // { student_id: 'present'|'late'|'absent' }
+  const [loadingRoster, setLoadingRoster] = useState(false);
+  const [saving, setSaving]               = useState(false);
+  const [todayStats, setTodayStats]       = useState({ present: 0, late: 0, absent: 0 });
+  const [qrBatch, setQrBatch]             = useState(null);
+  const [alert, setAlert]                 = useState(null);
 
   useEffect(() => {
-    setAttendanceData(DEMO_ATTENDANCE);
-    setTodayStats({ present: 28, late: 3, absent: 5, totalClasses: 3 });
+    fetchBatches();
+    fetchTodayStats();
   }, []);
 
-  const generateQRCode = (classData) =>
-    JSON.stringify({
-      classId: classData.id,
-      className: classData.name,
-      timestamp: new Date().toISOString(),
-      sessionId: `CLS-${classData.id}-${Date.now()}`,
+  const fetchBatches = async () => {
+    const { data } = await supabase
+      .from('class_batches')
+      .select('id, name, weekdays, start_time, end_time, instructor, tier')
+      .eq('is_active', true)
+      .order('name');
+    setBatches(data || []);
+  };
+
+  const fetchTodayStats = async () => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const { data } = await supabase
+      .from('attendance')
+      .select('status')
+      .eq('class_date', todayStr);
+    const rows = data || [];
+    setTodayStats({
+      present: rows.filter((r) => r.status === 'present').length,
+      late:    rows.filter((r) => r.status === 'late').length,
+      absent:  rows.filter((r) => r.status === 'absent').length,
     });
-
-  const handleGenerateQR = (c) => {
-    setSelectedClass(c);
-    setShowQRModal(true);
-    toast.success(`QR generated for ${c.name}`);
   };
 
-  const handleDownloadQR = () => {
-    const svg = document.getElementById('attendance-qr');
-    if (!svg) return;
-    const svgData = new XMLSerializer().serializeToString(svg);
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    const img = new Image();
-    img.onload = () => {
-      canvas.width = img.width;
-      canvas.height = img.height;
-      ctx.drawImage(img, 0, 0);
-      const pngFile = canvas.toDataURL('image/png');
-      const downloadLink = document.createElement('a');
-      downloadLink.download = `QR-${selectedClass.name}-${Date.now()}.png`;
-      downloadLink.href = pngFile;
-      downloadLink.click();
-      toast.success('QR Code downloaded.');
-    };
-    img.src = 'data:image/svg+xml;base64,' + btoa(svgData);
+  // Reload the roster whenever the selected batch or date changes
+  useEffect(() => {
+    if (!selectedBatch) { setStudents([]); setMarks({}); return; }
+    loadRoster(selectedBatch.id, date);
+  }, [selectedBatch, date]);
+
+  const loadRoster = async (batchId, targetDate) => {
+    setLoadingRoster(true);
+
+    // 1. Students enrolled in this batch (active + on_break)
+    const { data: studentData } = await supabase
+      .from('students')
+      .select('id, student_name')
+      .eq('class_batch_id', batchId)
+      .in('status', ['active', 'on_break'])
+      .order('student_name');
+
+    const studs = studentData || [];
+    setStudents(studs);
+
+    if (studs.length === 0) { setMarks({}); setLoadingRoster(false); return; }
+
+    // 2. Existing attendance records for this date + these students
+    const ids = studs.map((s) => s.id);
+    const { data: attData } = await supabase
+      .from('attendance')
+      .select('student_id, status')
+      .eq('class_date', targetDate)
+      .in('student_id', ids);
+
+    // Default everyone to 'present'; overwrite with any saved records
+    const newMarks = {};
+    for (const s of studs) newMarks[s.id] = 'present';
+    for (const row of (attData || [])) newMarks[row.student_id] = row.status;
+    setMarks(newMarks);
+    setLoadingRoster(false);
   };
 
-  const startScanner = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        setScannerActive(true);
-      }
-    } catch {
-      toast.error('Camera access denied.');
+  const toggleMark = (studentId, status) =>
+    setMarks((prev) => ({ ...prev, [studentId]: status }));
+
+  const handleSave = async () => {
+    if (!selectedBatch || students.length === 0) return;
+    setSaving(true);
+
+    const ids = students.map((s) => s.id);
+
+    // Replace existing records for this date + roster
+    await supabase
+      .from('attendance')
+      .delete()
+      .eq('class_date', date)
+      .in('student_id', ids);
+
+    const rows = students.map((s) => ({
+      student_id: s.id,
+      class_date: date,
+      class_type: selectedBatch.name,
+      status:     marks[s.id] || 'present',
+    }));
+
+    const { error } = await supabase.from('attendance').insert(rows);
+    setSaving(false);
+
+    if (error) {
+      showAlert('error', error.message || 'Failed to save attendance.');
+    } else {
+      showAlert('success', `Attendance saved for ${selectedBatch.name} — ${fmtDate(date)}.`);
+      fetchTodayStats();
     }
   };
 
-  const stopScanner = () => {
-    if (videoRef.current?.srcObject) {
-      videoRef.current.srcObject.getTracks().forEach((t) => t.stop());
-    }
-    setScannerActive(false);
+  const showAlert = (type, message) => {
+    setAlert({ type, message });
+    setTimeout(() => setAlert(null), 3500);
   };
+
+  const rosterStats = useMemo(() => {
+    const c = { present: 0, late: 0, absent: 0 };
+    Object.values(marks).forEach((v) => { if (c[v] != null) c[v]++; });
+    return c;
+  }, [marks]);
+
+  const fmtTime = (t) => {
+    if (!t) return '';
+    const [h, m] = t.split(':').map(Number);
+    return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`;
+  };
+
+  const fmtDate = (iso) =>
+    new Date(iso + 'T00:00').toLocaleDateString('en-CA', {
+      weekday: 'short', month: 'short', day: 'numeric',
+    });
 
   return (
     <div className="p-6 md:p-8">
+      {/* Header */}
       <header className="mb-8 flex flex-wrap items-end justify-between gap-3">
         <div>
           <span className="inline-block rounded-full border border-white/15 bg-white/[0.04] px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-white/70 backdrop-blur">
@@ -111,237 +162,275 @@ export default function AttendanceSystem() {
             Class check-in.
           </h1>
           <p className="mt-2 text-sm text-white/55">
-            Generate per-class QR codes for contactless check-in.
+            Mark attendance for any class, any date.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={startScanner}
-          className="inline-flex items-center gap-2 rounded-lg border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-white/90 hover:border-white/30"
-        >
-          <FaCamera className="text-xs" />
-          Open scanner
-        </button>
+        <input
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          className="rounded-lg border border-white/15 bg-white/[0.04] px-3 py-2 text-sm text-white focus:border-[#ee2435] focus:outline-none focus:ring-2 focus:ring-[#d1060f]/25"
+        />
       </header>
 
-      <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-3 py-1 text-xs font-medium text-white/65 backdrop-blur">
-        <span className="h-1.5 w-1.5 rounded-full bg-[#d1060f]" />
-        Demo data — not yet wired to real classes / attendance tables.
-      </div>
+      {/* Alert */}
+      {alert && (
+        <div
+          className={`mb-6 flex items-center justify-between rounded-xl border px-4 py-3 text-sm backdrop-blur-md ${
+            alert.type === 'success'
+              ? 'border-white/15 bg-white/[0.06] text-white'
+              : 'border-[#d1060f]/30 bg-[#d1060f]/10 text-[#ee2435]'
+          }`}
+        >
+          <span>{alert.message}</span>
+          <button onClick={() => setAlert(null)} className="ml-3 opacity-65 hover:opacity-100">
+            <FaTimes className="text-xs" />
+          </button>
+        </div>
+      )}
 
+      {/* Today's summary */}
       <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-4">
         <StatCard icon={FaCheckCircle} label="Present today" value={todayStats.present} />
-        <StatCard icon={FaClock}       label="Late arrivals"  value={todayStats.late}    featured />
-        <StatCard icon={FaUsers}       label="Absent"         value={todayStats.absent}  featured />
-        <StatCard icon={FaCalendarDay} label="Classes today"  value={todayStats.totalClasses} />
+        <StatCard icon={FaClock}       label="Late today"    value={todayStats.late}    featured />
+        <StatCard icon={FaUsers}       label="Absent today"  value={todayStats.absent}  featured />
+        <StatCard icon={FaCalendarDay} label="Active classes" value={batches.length} />
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <section className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-md">
-          <header className="flex items-center justify-between border-b border-white/8 px-5 py-4">
-            <h2 className="flex items-center gap-2 font-[family-name:var(--font-display)] text-base font-bold tracking-tight text-white">
-              <FaBolt className="text-[#ee2435]" /> Today&rsquo;s classes
-            </h2>
-          </header>
-          <div className="divide-y divide-white/8">
-            {DEMO_CLASSES.map((c, i) => (
-              <motion.div
-                key={c.id}
-                initial={{ opacity: 0, x: -8 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.05 }}
-                className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 hover:bg-white/[0.04]"
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-semibold text-white">{c.name}</h3>
-                    <ClassStatusBadge status={c.status} />
+      {/* Two-column layout: batch list + roster */}
+      <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
+
+        {/* Batch list */}
+        <div>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-white/45">
+            Classes
+          </p>
+          {batches.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02] p-6 text-center text-sm text-white/40">
+              No active classes.{' '}
+              <a href="/admin/classes" className="text-[#ee2435] hover:underline">Create one →</a>
+            </div>
+          ) : (
+            <ul className="space-y-2">
+              {batches.map((b) => {
+                const active = selectedBatch?.id === b.id;
+                const days   = (b.weekdays || []).map((d) => d.slice(0, 3)).join(' & ');
+                return (
+                  <li key={b.id}>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedBatch(b)}
+                      className={`w-full rounded-xl border px-4 py-3 text-left transition ${
+                        active
+                          ? 'border-[#d1060f]/50 bg-[#d1060f]/10'
+                          : 'border-white/10 bg-white/[0.03] hover:border-white/20 hover:bg-white/[0.05]'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className={`text-sm font-medium ${active ? 'text-white' : 'text-white/85'}`}>
+                          {b.name}
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); setQrBatch(b); }}
+                            title="Generate QR code"
+                            className="grid h-6 w-6 place-items-center rounded-md border border-white/15 bg-white/[0.04] text-white/55 hover:border-white/30 hover:text-white"
+                          >
+                            <FaQrcode className="text-[10px]" />
+                          </button>
+                          {active && <FaChevronRight className="text-[10px] text-[#ee2435]" />}
+                        </div>
+                      </div>
+                      <div className="mt-1 text-xs text-white/45">
+                        {days}{b.start_time && ` · ${fmtTime(b.start_time)}`}
+                        {b.instructor && ` · ${b.instructor}`}
+                      </div>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+
+        {/* Attendance roster */}
+        <div>
+          {!selectedBatch ? (
+            <div className="flex h-48 items-center justify-center rounded-2xl border border-dashed border-white/10 bg-white/[0.02]">
+              <p className="text-sm text-white/40">← Select a class to mark attendance</p>
+            </div>
+          ) : loadingRoster ? (
+            <div className="flex h-48 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03]">
+              <p className="text-sm text-white/40">Loading roster…</p>
+            </div>
+          ) : students.length === 0 ? (
+            <div className="flex h-48 items-center justify-center rounded-2xl border border-dashed border-white/10 bg-white/[0.02]">
+              <p className="text-sm text-white/40">
+                No students enrolled in {selectedBatch.name} yet.
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]">
+              {/* Stats bar */}
+              <div className="grid grid-cols-3 divide-x divide-white/8 border-b border-white/8 bg-white/[0.02]">
+                {['present', 'late', 'absent'].map((s) => (
+                  <div key={s} className="py-3 text-center">
+                    <p className={`font-[family-name:var(--font-display)] text-xl font-bold tabular-nums ${
+                      s === 'absent' && rosterStats.absent > 0 ? 'text-[#ee2435]' : 'text-white'
+                    }`}>
+                      {rosterStats[s]}
+                    </p>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-white/45">{s}</p>
                   </div>
-                  <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-white/55">
-                    <span className="flex items-center gap-1"><FaClock className="text-[10px]" /> {c.time}</span>
-                    <span className="flex items-center gap-1"><FaUsers className="text-[10px]" /> {c.enrolled} / {c.capacity}</span>
-                    <span>with {c.instructor}</span>
-                  </div>
-                </div>
+                ))}
+              </div>
+
+              {/* Student rows */}
+              <ul className="divide-y divide-white/8">
+                {students.map((s) => {
+                  const current = marks[s.id] || 'present';
+                  return (
+                    <li key={s.id} className="flex items-center justify-between gap-3 px-5 py-3">
+                      <span className="text-sm font-medium text-white">{s.student_name}</span>
+                      <div className="flex items-center gap-1">
+                        {Object.entries(MARKS).map(([status, cfg]) => {
+                          const isActive = current === status;
+                          return (
+                            <button
+                              key={status}
+                              type="button"
+                              onClick={() => toggleMark(s.id, status)}
+                              title={cfg.label}
+                              className={`h-8 min-w-[2.25rem] rounded-lg px-2 text-xs font-bold transition ${
+                                isActive
+                                  ? `${cfg.activeBg} ${cfg.activeText}`
+                                  : 'border border-white/10 bg-white/[0.03] text-white/40 hover:border-white/25 hover:text-white/75'
+                              }`}
+                            >
+                              {cfg.short}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+
+              {/* Save bar */}
+              <div className="flex items-center justify-between border-t border-white/8 px-5 py-4">
+                <p className="text-xs text-white/45">
+                  {students.length} student{students.length !== 1 ? 's' : ''} · {fmtDate(date)}
+                </p>
                 <button
                   type="button"
-                  onClick={() => handleGenerateQR(c)}
-                  className="inline-flex items-center gap-1.5 rounded-md border border-white/15 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white/85 hover:border-[#d1060f] hover:text-[#ee2435]"
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="inline-flex items-center gap-2 rounded-lg bg-[#d1060f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#b00310] disabled:opacity-60"
                 >
-                  <FaQrcode className="text-[10px]" /> QR code
+                  <FaSave className="text-xs" />
+                  {saving ? 'Saving…' : 'Save session'}
                 </button>
-              </motion.div>
-            ))}
-          </div>
-        </section>
-
-        <section className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-md">
-          <header className="flex items-center justify-between border-b border-white/8 px-5 py-4">
-            <h2 className="font-[family-name:var(--font-display)] text-base font-bold tracking-tight text-white">
-              Recent check-ins
-            </h2>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#d1060f]/15 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#ee2435]">
-              <span className="relative flex h-1.5 w-1.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#d1060f] opacity-75" />
-                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#d1060f]" />
-              </span>
-              Live
-            </span>
-          </header>
-          <div className="divide-y divide-white/8">
-            <AnimatePresence>
-              {attendanceData.map((r, i) => (
-                <motion.div
-                  key={r.id}
-                  initial={{ opacity: 0, y: -6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, x: -40 }}
-                  transition={{ delay: i * 0.04 }}
-                  className="flex items-center gap-3 px-5 py-4 hover:bg-white/[0.04]"
-                >
-                  <div className="grid h-10 w-10 flex-shrink-0 place-items-center rounded-full bg-[#d1060f]/15 text-xs font-bold text-[#ee2435]">
-                    {r.studentName.split(' ').map((n) => n[0]).join('').slice(0, 2)}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium text-white">{r.studentName}</p>
-                    <p className="truncate text-xs text-white/55">{r.className}</p>
-                    <p className="mt-0.5 flex items-center gap-1 text-[10px] uppercase tracking-wider text-white/40">
-                      {r.method === 'QR Scan' ? <FaQrcode /> : <FaCheckCircle />}
-                      {r.method}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <AttendanceStatusBadge status={r.status} />
-                    <p className="mt-1 text-xs text-white/55 tabular-nums">{r.time}</p>
-                  </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
-        </section>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-3">
-        <FeatureBox icon={FaQrcode}    title="QR Code check-in" text="Fast contactless attendance via per-session QR codes." />
-        <FeatureBox icon={FaCamera}    title="Camera scanner"   text="Built-in scanner mode for at-the-door check-in." />
-        <FeatureBox icon={FaMobileAlt} title="Mobile-friendly"   text="Parents save QR codes to their phone for one-tap entry." />
-      </div>
-
-      {showQRModal && selectedClass && (
-        <Modal title="Class QR Code" onClose={() => setShowQRModal(false)}>
-          <div className="text-center">
-            <h3 className="font-[family-name:var(--font-display)] text-lg font-bold tracking-tight text-white">
-              {selectedClass.name}
-            </h3>
-            <p className="mt-1 text-sm text-white/55">
-              {selectedClass.time} · {selectedClass.instructor}
-            </p>
-
-            <div className="mx-auto mt-6 inline-block rounded-2xl bg-white p-5">
-              <QRCodeSVG
-                id="attendance-qr"
-                value={generateQRCode(selectedClass)}
-                size={240}
-                level="H"
-                bgColor="#ffffff"
-                fgColor="#0a0a0f"
-                marginSize={0}
-              />
-            </div>
-
-            <div className="mx-auto mt-5 max-w-sm rounded-lg border border-white/15 bg-white/[0.04] px-4 py-3 text-xs text-white/75">
-              Students scan this QR to check in. Code expires in 30 minutes.
-            </div>
-
-            <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
-              <button
-                type="button"
-                onClick={handleDownloadQR}
-                className="inline-flex items-center gap-2 rounded-lg bg-[#d1060f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#b00310]"
-              >
-                <FaDownload className="text-xs" />
-                Download
-              </button>
-            </div>
-          </div>
-        </Modal>
-      )}
-
-      {scannerActive && (
-        <Modal title="Scan QR Code" onClose={stopScanner} size="lg">
-          <div className="relative overflow-hidden rounded-xl bg-black">
-            <video ref={videoRef} autoPlay playsInline className="block w-full" />
-            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-              <div className="h-56 w-56 rounded-2xl border-2 border-[#ee2435] shadow-[0_0_0_999px_rgba(0,0,0,0.5)]" />
-            </div>
-          </div>
-          <p className="mt-4 text-center text-xs text-white/55">
-            Position the QR code within the red frame.
-          </p>
-        </Modal>
-      )}
+      {/* QR Modal */}
+      {qrBatch && <QRModal batch={qrBatch} onClose={() => setQrBatch(null)} />}
     </div>
   );
 }
 
-/* ── primitives ── */
+/* ── QR Modal ── */
 
-function StatCard({ icon: Icon, label, value, featured }) {
-  return (
-    <div className={`rounded-2xl border p-5 backdrop-blur-md ${featured ? 'border-[#d1060f]/30 bg-[#d1060f]/[0.06]' : 'border-white/10 bg-white/[0.03]'}`}>
-      <div className={`grid h-10 w-10 place-items-center rounded-full ${featured ? 'bg-[#d1060f] text-white' : 'bg-white/10 text-white'}`}>
-        <Icon className="text-base" />
-      </div>
-      <p className="mt-4 text-xs font-medium uppercase tracking-[0.15em] text-white/55">{label}</p>
-      <p className={`mt-1 font-[family-name:var(--font-display)] text-3xl font-bold tabular-nums ${featured ? 'text-[#ee2435]' : 'text-white'}`}>{value}</p>
-    </div>
-  );
-}
+function QRModal({ batch, onClose }) {
+  const qrValue = JSON.stringify({
+    classId:   batch.id,
+    className: batch.name,
+    timestamp: new Date().toISOString(),
+  });
 
-function ClassStatusBadge({ status }) {
-  const v = CLASS_STATUS_BADGE[status] || CLASS_STATUS_BADGE.upcoming;
-  return (
-    <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider" style={{ background: v.bg, color: v.fg }}>
-      {v.label}
-    </span>
-  );
-}
+  const handleDownload = () => {
+    const svg = document.getElementById('attendance-qr');
+    if (!svg) return;
+    const data   = new XMLSerializer().serializeToString(svg);
+    const canvas = document.createElement('canvas');
+    canvas.width = 240; canvas.height = 240;
+    const img = new Image();
+    img.onload = () => {
+      canvas.getContext('2d').drawImage(img, 0, 0);
+      const a = document.createElement('a');
+      a.download = `QR-${batch.name}.png`;
+      a.href = canvas.toDataURL('image/png');
+      a.click();
+    };
+    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(data)));
+  };
 
-function AttendanceStatusBadge({ status }) {
-  const v = STATUS_BADGE[status] || STATUS_BADGE['on-time'];
-  return (
-    <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider" style={{ background: v.bg, color: v.fg }}>
-      {v.label}
-    </span>
-  );
-}
-
-function FeatureBox({ icon: Icon, title, text }) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur-md">
-      <div className="grid h-10 w-10 place-items-center rounded-full bg-[#d1060f]/15 text-[#ee2435]">
-        <Icon className="text-base" />
-      </div>
-      <h4 className="mt-4 font-[family-name:var(--font-display)] text-base font-bold tracking-tight text-white">{title}</h4>
-      <p className="mt-1 text-sm text-white/65">{text}</p>
-    </div>
-  );
-}
-
-function Modal({ title, children, onClose, size = 'md' }) {
-  const w = size === 'lg' ? 'max-w-2xl' : 'max-w-md';
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-[#0a0a0f]/80 p-4 backdrop-blur-md sm:items-center">
-      <div className={`w-full ${w} overflow-hidden rounded-2xl border border-white/10 bg-[#12121a] shadow-[0_30px_120px_rgba(0,0,0,0.6)]`}>
+      <div className="w-full max-w-sm overflow-hidden rounded-2xl border border-white/10 bg-[#12121a] shadow-[0_30px_120px_rgba(0,0,0,0.6)]">
         <header className="flex items-center justify-between border-b border-white/8 px-6 py-4">
-          <h2 className="font-[family-name:var(--font-display)] text-lg font-bold tracking-tight text-white">{title}</h2>
-          <button type="button" onClick={onClose}
-            className="grid h-8 w-8 place-items-center rounded-full text-white/45 hover:bg-white/10 hover:text-white">
+          <h2 className="font-[family-name:var(--font-display)] text-lg font-bold tracking-tight text-white">
+            {batch.name}
+          </h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="grid h-8 w-8 place-items-center rounded-full text-white/45 hover:bg-white/10 hover:text-white"
+          >
             <FaTimes className="text-xs" />
           </button>
         </header>
-        <div className="max-h-[75vh] overflow-y-auto px-6 py-5">{children}</div>
+        <div className="flex flex-col items-center gap-4 px-6 py-8">
+          <div className="rounded-2xl bg-white p-4">
+            <QRCodeSVG
+              id="attendance-qr"
+              value={qrValue}
+              size={200}
+              level="M"
+              bgColor="#ffffff"
+              fgColor="#0a0a0f"
+            />
+          </div>
+          <p className="text-center text-sm text-white/55">
+            Students scan this to check in for{' '}
+            <strong className="text-white">{batch.name}</strong>.
+          </p>
+          <button
+            type="button"
+            onClick={handleDownload}
+            className="inline-flex items-center gap-2 rounded-lg border border-white/15 bg-white/5 px-4 py-2 text-sm font-medium text-white/85 hover:border-white/30"
+          >
+            <FaDownload className="text-xs" /> Download PNG
+          </button>
+        </div>
       </div>
+    </div>
+  );
+}
+
+/* ── Primitives ── */
+
+function StatCard({ icon: Icon, label, value, featured }) {
+  return (
+    <div className={`rounded-2xl border p-5 backdrop-blur-md ${
+      featured ? 'border-[#d1060f]/30 bg-[#d1060f]/[0.06]' : 'border-white/10 bg-white/[0.03]'
+    }`}>
+      <div className={`grid h-10 w-10 place-items-center rounded-full ${
+        featured ? 'bg-[#d1060f] text-white' : 'bg-white/10 text-white'
+      }`}>
+        <Icon className="text-base" />
+      </div>
+      <p className="mt-4 text-xs font-medium uppercase tracking-[0.15em] text-white/55">{label}</p>
+      <p className={`mt-1 font-[family-name:var(--font-display)] text-3xl font-bold tabular-nums ${
+        featured ? 'text-[#ee2435]' : 'text-white'
+      }`}>
+        {value}
+      </p>
     </div>
   );
 }

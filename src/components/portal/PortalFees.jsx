@@ -16,10 +16,13 @@ const formatDate = (dateString) => {
   });
 };
 
-const isOverdue = (fee) =>
+// A fee is overdue only if its due date is strictly before today (midnight-to-midnight).
+// Passing `today` (midnight) rather than `new Date()` prevents fees due *today*
+// from being flagged as overdue before the day is even over.
+const isOverdue = (fee, today) =>
   fee.payment_status !== 'paid' &&
   fee.due_date &&
-  new Date(fee.due_date + 'T00:00:00') < new Date();
+  new Date(fee.due_date + 'T00:00:00') < today;
 
 export default function PortalFees() {
   const [fees, setFees] = useState([]);
@@ -136,7 +139,7 @@ export default function PortalFees() {
               </h2>
               <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]">
                 {outstanding.map((fee, i) => {
-                  const overdue = isOverdue(fee);
+                  const overdue = isOverdue(fee, today);
                   return (
                     <div
                       key={fee.id}
@@ -201,34 +204,32 @@ export default function PortalFees() {
             </section>
           )}
 
-          {/* How to pay */}
-          {outstanding.length > 0 && (
-            <section className="mb-8 rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-              <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-white/55">
-                How to pay
-              </h2>
-              <div className="space-y-2 text-sm text-white/75">
-                <p>
-                  <span className="font-semibold text-white">E-transfer</span>{' '}
-                  — send to{' '}
-                  <a href="mailto:cherrydancestudio.cds@gmail.com" className="text-[#ee2435] hover:underline">
-                    cherrydancestudio.cds@gmail.com
-                  </a>
-                  {' '}and include your dancer&rsquo;s name in the message.
-                </p>
-                <p>
-                  <span className="font-semibold text-white">Cash</span>{' '}
-                  — hand it to Cherry or Pranil at the studio.
-                </p>
-                <p>
-                  <span className="font-semibold text-white">Questions?</span>{' '}
-                  <a href="https://wa.me/16138903789" className="text-[#ee2435] hover:underline" target="_blank" rel="noreferrer">
-                    WhatsApp us at 613-890-3789
-                  </a>
-                </p>
-              </div>
-            </section>
-          )}
+          {/* How to pay — always visible so parents know how to reach us */}
+          <section className="mb-8 rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+            <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-white/55">
+              How to pay
+            </h2>
+            <div className="space-y-2 text-sm text-white/75">
+              <p>
+                <span className="font-semibold text-white">E-transfer</span>{' '}
+                — send to{' '}
+                <a href="mailto:cherrydancestudio.cds@gmail.com" className="text-[#ee2435] hover:underline">
+                  cherrydancestudio.cds@gmail.com
+                </a>
+                {' '}and include your dancer&rsquo;s name in the message.
+              </p>
+              <p>
+                <span className="font-semibold text-white">Cash</span>{' '}
+                — hand it to Cherry or Pranil at the studio.
+              </p>
+              <p>
+                <span className="font-semibold text-white">Questions?</span>{' '}
+                <a href="https://wa.me/16138903789" className="text-[#ee2435] hover:underline" target="_blank" rel="noreferrer">
+                  WhatsApp us at 613-890-3789
+                </a>
+              </p>
+            </div>
+          </section>
 
           {/* Payment history */}
           <section>

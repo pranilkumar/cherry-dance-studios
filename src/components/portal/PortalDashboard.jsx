@@ -9,6 +9,7 @@ import {
   FaHeart,
   FaArrowRight,
   FaBirthdayCake,
+  FaMusic,
 } from 'react-icons/fa';
 import { supabase } from '../../lib/supabaseClient';
 
@@ -61,6 +62,7 @@ export default function PortalDashboard() {
   const [registrations, setRegistrations] = useState([]);
   const [pendingFees, setPendingFees] = useState([]);
   const [workshopBookings, setWorkshopBookings] = useState([]);
+  const [audioMixCount, setAudioMixCount] = useState(0);
   const [parentName, setParentName] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -79,14 +81,19 @@ export default function PortalDashboard() {
         { data: stu },
         { data: regs },
         { data: workshops },
+        { count: mixCount },
       ] = await Promise.all([
-        supabase.from('students').select('*, class_batch:class_batches(id, name, weekdays, start_time, end_time)').eq('email', email),
+        supabase.from('students').select('*, avatar_url, class_batch:class_batches(id, name, weekdays, start_time, end_time)').eq('email', email),
         supabase.from('registrations').select('*').eq('email', email).order('created_at', { ascending: false }),
         supabase
           .from('workshop_bookings')
           .select('*, workshop:workshops(slug, title, starts_at, venue_name)')
           .eq('parent_email', email)
           .order('created_at', { ascending: false }),
+        supabase
+          .from('audio_mixes')
+          .select('id', { count: 'exact', head: true })
+          .eq('is_public', true),
       ]);
 
       if (cancelled) return;
@@ -95,6 +102,7 @@ export default function PortalDashboard() {
       setStudents(studentList);
       setRegistrations(regs || []);
       setWorkshopBookings(workshops || []);
+      setAudioMixCount(mixCount ?? 0);
 
       // Fetch outstanding fees (pending and due today or earlier, or no due date)
       // Excludes future-scheduled fees so the count matches what PortalFees shows as "outstanding"
@@ -201,22 +209,33 @@ export default function PortalDashboard() {
                     className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-md"
                   >
                     <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <h3 className="font-[family-name:var(--font-display)] text-2xl font-bold tracking-tight text-white">
-                          {s.student_name}
-                        </h3>
-                        <p className="mt-1 text-xs uppercase tracking-[0.15em] text-white/55">
-                          {age != null && `${age} years old`}
-                          {tier && (
-                            <>
-                              <span className="mx-2 text-[#ee2435]">●</span>
-                              {tier}
-                            </>
-                          )}
-                        </p>
+                      <div className="flex items-center gap-3">
+                        {/* Avatar */}
+                        <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full bg-gradient-to-br from-[#d1060f] to-[#780f17]">
+                          {s.avatar_url
+                            ? <img src={s.avatar_url} alt={s.student_name} className="h-full w-full object-cover" />
+                            : <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white">
+                                {s.student_name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase()}
+                              </span>
+                          }
+                        </div>
+                        <div>
+                          <h3 className="font-[family-name:var(--font-display)] text-2xl font-bold tracking-tight text-white">
+                            {s.student_name}
+                          </h3>
+                          <p className="mt-1 text-xs uppercase tracking-[0.15em] text-white/55">
+                            {age != null && `${age} years old`}
+                            {tier && (
+                              <>
+                                <span className="mx-2 text-[#ee2435]">●</span>
+                                {tier}
+                              </>
+                            )}
+                          </p>
+                        </div>
                       </div>
                       <span
-                        className="rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
+                        className="shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
                         style={{
                           background: s.status === 'active' ? '#ffffff' : 'rgba(209,6,15,0.18)',
                           color: s.status === 'active' ? '#0a0a0f' : '#ee2435',
@@ -253,7 +272,7 @@ export default function PortalDashboard() {
 
         {/* Quick links + summary stats */}
         {students.length > 0 && (
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
             <SummaryCard
               icon={FaDollarSign}
               label="Pending fees"
@@ -272,6 +291,17 @@ export default function PortalDashboard() {
                   : `Latest: ${workshopBookings[0]?.workshop?.title ?? 'Workshop'}`
               }
               href="/portal/workshops"
+            />
+            <SummaryCard
+              icon={FaMusic}
+              label="Audio mixes"
+              value={audioMixCount}
+              sub={
+                audioMixCount === 0
+                  ? 'No mixes uploaded yet.'
+                  : `${audioMixCount} track${audioMixCount === 1 ? '' : 's'} available`
+              }
+              href="/portal/audio"
             />
             <SummaryCard
               icon={FaCalendarAlt}

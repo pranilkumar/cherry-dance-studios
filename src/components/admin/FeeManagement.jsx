@@ -278,15 +278,28 @@ export default function FeeManagement() {
   };
 
   // ── Waive fee (not applicable this month) ───────────────────────────
+  // Works for both pending fees (update) and students with no fee yet (insert).
   const markWaived = async (student) => {
-    if (!student?.fee?.id) return;
     try {
-      const { error } = await supabase.from('fees').update({
-        payment_status: 'waived',
-        payment_date: null,
-        payment_method: null,
-      }).eq('id', student.fee.id);
-      if (error) throw error;
+      if (student.fee?.id) {
+        // Existing fee record — just update its status
+        const { error } = await supabase.from('fees').update({
+          payment_status: 'waived',
+          payment_date: null,
+          payment_method: null,
+        }).eq('id', student.fee.id);
+        if (error) throw error;
+      } else {
+        // No fee record yet — create one directly as waived
+        const { error } = await supabase.from('fees').insert([{
+          student_id: student.id,
+          fee_type: 'Monthly fee',
+          amount: 0,
+          due_date: `${monthFilter}-10`,
+          payment_status: 'waived',
+        }]);
+        if (error) throw error;
+      }
       showAlert('success', `${student.student_name} — fee waived for this month.`);
       fetchData();
     } catch (err) {
@@ -520,7 +533,7 @@ export default function FeeManagement() {
                               <FaCheckCircle className="text-[10px]" /> Mark paid
                             </button>
                           )}
-                          {student.feeStatus === 'pending' && student.fee && (
+                          {(student.feeStatus === 'pending' || student.feeStatus === 'not_created') && (
                             <button
                               type="button"
                               onClick={() => markWaived(student)}

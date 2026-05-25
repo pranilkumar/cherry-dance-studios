@@ -57,6 +57,34 @@ function suggestTier(age) {
   return 'Slay Squad';
 }
 
+const DAY_NUM = { Sunday:0, Monday:1, Tuesday:2, Wednesday:3, Thursday:4, Friday:5, Saturday:6 };
+
+/**
+ * Returns the next scheduled class time for a student, or null if unknown.
+ * { next: Date, daysAway: number, h: number, m: number, batchName: string }
+ */
+function calcNextClass(student) {
+  const batch = student.class_batch;
+  if (!batch?.weekdays?.length || !batch.start_time) return null;
+  const [h, m] = batch.start_time.split(':').map(Number);
+  const now = new Date();
+  const dow = now.getDay();
+  let minDays = null;
+  for (const day of batch.weekdays) {
+    let d = (DAY_NUM[day] - dow + 7) % 7;
+    if (d === 0) {
+      const t = new Date(now); t.setHours(h, m, 0, 0);
+      if (t <= now) d = 7;
+    }
+    if (minDays === null || d < minDays) minDays = d;
+  }
+  if (minDays === null) return null;
+  const next = new Date(now);
+  next.setDate(now.getDate() + minDays);
+  next.setHours(h, m, 0, 0);
+  return { next, daysAway: minDays, h, m, batchName: batch.name };
+}
+
 export default function PortalDashboard() {
   const [students, setStudents] = useState([]);
   const [registrations, setRegistrations] = useState([]);
@@ -76,13 +104,8 @@ export default function PortalDashboard() {
       const fallbackName = email.split('@')[0];
       setParentName(user.user_metadata?.full_name || fallbackName);
 
-      // Pull students linked to this parent's email (existing roster)
-      const [
-        { data: stu },
-        { data: regs },
-        { data: workshops },
-        { count: mixCount },
-      ] = await Promise.all([
+      // Phase 1: parallel fetch — students, registrations, workshops
+      const [{ data: stu }, { data: regs }, { data: workshops }] = await Promise.all([
         supabase.from('students').select('*, avatar_url, class_batch:class_batches(id, name, weekdays, start_time, end_time)').eq('email', email),
         supabase.from('registrations').select('*').eq('email', email).order('created_at', { ascending: false }),
         supabase
@@ -90,10 +113,6 @@ export default function PortalDashboard() {
           .select('*, workshop:workshops(slug, title, starts_at, venue_name)')
           .eq('parent_email', email)
           .order('created_at', { ascending: false }),
-        supabase
-          .from('audio_mixes')
-          .select('id', { count: 'exact', head: true })
-          .eq('is_public', true),
       ]);
 
       if (cancelled) return;
@@ -102,21 +121,41 @@ export default function PortalDashboard() {
       setStudents(studentList);
       setRegistrations(regs || []);
       setWorkshopBookings(workshops || []);
-      setAudioMixCount(mixCount ?? 0);
 
-      // Fetch outstanding fees (pending and due today or earlier, or no due date)
-      // Excludes future-scheduled fees so the count matches what PortalFees shows as "outstanding"
+      // Phase 2: queries that depend on knowing this parent's students/batches
       if (studentList.length > 0) {
-        const ids = studentList.map((s) => s.id);
-        const todayStr = new Date().toISOString().split('T')[0];
-        const { data: fees } = await supabase
-          .from('fees')
-          .select('*')
-          .in('student_id', ids)
-          .eq('payment_status', 'pending')
-          .or(`due_date.is.null,due_date.lte.${todayStr}`)
-          .order('due_date', { ascending: true });
-        if (!cancelled) setPendingFees(fees || []);
+        const ids        = studentList.map((s) => s.id);
+        const todayStr   = new Date().toISOString().split('T')[0];
+
+        // Audio count: filter to public mixes visible to this parent's batches
+        // (same logic as PortalAudio so the count matches what they'll actually see)
+        const batchIds = studentList
+          .filter((s) => s.status === 'active' || s.status === 'on_break')
+          .map((s) => s.class_batch?.id)
+          .filter(Boolean);
+        let audioQ = supabase
+          .from('audio_mixes')
+          .select('id', { count: 'exact', head: true })
+          .eq('is_public', true);
+        audioQ = batchIds.length > 0
+          ? audioQ.or(`batch_id.is.null,batch_id.in.(${batchIds.join(',')})`)
+          : audioQ.is('batch_id', null);
+
+        const [{ data: fees }, { count: mixCount }] = await Promise.all([
+          supabase
+            .from('fees')
+            .select('*')
+            .in('student_id', ids)
+            .eq('payment_status', 'pending')
+            .or(`due_date.is.null,due_date.lte.${todayStr}`)
+            .order('due_date', { ascending: true }),
+          audioQ,
+        ]);
+
+        if (!cancelled) {
+          setPendingFees(fees || []);
+          setAudioMixCount(mixCount ?? 0);
+        }
       }
 
       setLoading(false);
@@ -307,44 +346,37 @@ export default function PortalDashboard() {
               icon={FaCalendarAlt}
               label="Next class"
               value={(() => {
-                const active = students.find((s) => s.status === 'active');
-                if (!active) return '—';
-                const batch = active.class_batch;
-                if (batch?.weekdays?.length && batch.start_time) {
-                  // Calculate next occurrence
-                  const DAY_NUM = { Sunday:0,Monday:1,Tuesday:2,Wednesday:3,Thursday:4,Friday:5,Saturday:6 };
-                  const [h, m] = batch.start_time.split(':').map(Number);
-                  const now = new Date();
-                  const dow = now.getDay();
-                  let min = null;
-                  for (const day of batch.weekdays) {
-                    let d = (DAY_NUM[day] - dow + 7) % 7;
-                    if (d === 0) {
-                      const t = new Date(now); t.setHours(h, m, 0, 0);
-                      if (t <= now) d = 7;
-                    }
-                    if (min === null || d < min) min = d;
-                  }
-                  if (min !== null) {
-                    const next = new Date(now);
-                    next.setDate(now.getDate() + min);
-                    next.setHours(h, m, 0, 0);
-                    const ampm = h >= 12 ? 'PM' : 'AM';
-                    const h12 = h % 12 || 12;
-                    const time = `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
-                    if (min === 0) return `Today ${time}`;
-                    if (min === 1) return `Tomorrow ${time}`;
-                    return `${next.toLocaleDateString('en-CA', { weekday: 'short' })} ${time}`;
-                  }
+                const active = students.filter((s) => s.status === 'active');
+                if (!active.length) return '—';
+                // Find the soonest upcoming class across ALL active dancers
+                let earliest = null;
+                for (const s of active) {
+                  const c = calcNextClass(s);
+                  if (c && (!earliest || c.next < earliest.next)) earliest = c;
                 }
-                return active.preferred_class || '—';
+                if (!earliest) return active[0].preferred_class || '—';
+                const { daysAway, h, m, next } = earliest;
+                const ampm = h >= 12 ? 'PM' : 'AM';
+                const h12  = h % 12 || 12;
+                const time = `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
+                if (daysAway === 0) return `Today ${time}`;
+                if (daysAway === 1) return `Tomorrow ${time}`;
+                return `${next.toLocaleDateString('en-CA', { weekday: 'short' })} ${time}`;
               })()}
               sub={(() => {
-                const active = students.find((s) => s.status === 'active');
-                if (!active) return 'No active dancer yet.';
-                const batch = active.class_batch;
-                if (batch) return batch.name;
-                const day = active.preferred_weekday;
+                const active = students.filter((s) => s.status === 'active');
+                if (!active.length) return 'No active dancer yet.';
+                let earliest = null; let earliestStudent = null;
+                for (const s of active) {
+                  const c = calcNextClass(s);
+                  if (c && (!earliest || c.next < earliest.next)) { earliest = c; earliestStudent = s; }
+                }
+                if (earliest) {
+                  return active.length > 1
+                    ? `${earliest.batchName} · ${earliestStudent.student_name}`
+                    : earliest.batchName;
+                }
+                const day = active[0].preferred_weekday;
                 return day ? `Preferred: ${day}` : 'See Classes for schedule';
               })()}
               href="/portal/classes"

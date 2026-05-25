@@ -1,8 +1,15 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { FaCheckCircle, FaTimes, FaClock, FaFire } from 'react-icons/fa';
+import { FaCheckCircle, FaTimes, FaClock, FaFire, FaChevronDown } from 'react-icons/fa';
 import { supabase } from '../../lib/supabaseClient';
+
+// Default: show the last 3 months of records
+function defaultFromDate() {
+  const d = new Date();
+  d.setMonth(d.getMonth() - 3);
+  return d.toISOString().split('T')[0];
+}
 
 const STATUS_META = {
   present: { icon: FaCheckCircle, color: 'text-emerald-400',  bg: 'bg-emerald-400/10',  label: 'Present' },
@@ -11,9 +18,11 @@ const STATUS_META = {
 };
 
 export default function PortalAttendance() {
-  const [students, setStudents]   = useState([]);
+  const [students, setStudents]     = useState([]);
   const [attendance, setAttendance] = useState({}); // keyed by student_id
-  const [loading, setLoading]     = useState(true);
+  const [loading, setLoading]       = useState(true);
+  const [fromDate, setFromDate]     = useState(defaultFromDate);
+  const [showAll, setShowAll]       = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -31,14 +40,18 @@ export default function PortalAttendance() {
       setStudents(studentData);
 
       const ids = studentData.map((s) => s.id);
-      const { data: attData } = await supabase
+      const query = supabase
         .from('attendance')
         .select('*')
         .in('student_id', ids)
         .order('class_date', { ascending: false });
 
+      // Limit to selected window unless "Show all" is active
+      if (!showAll) query.gte('class_date', fromDate);
+
+      const { data: attData } = await query;
+
       if (!cancelled) {
-        // Group records by student_id
         const grouped = {};
         for (const row of (attData || [])) {
           if (!grouped[row.student_id]) grouped[row.student_id] = [];
@@ -49,7 +62,7 @@ export default function PortalAttendance() {
       }
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [fromDate, showAll]);
 
   return (
     <div className="p-6 md:p-8">
@@ -67,6 +80,40 @@ export default function PortalAttendance() {
           <span className="mt-0.5 shrink-0 text-[#ee2435]">ℹ</span>
           Attendance is marked by Cherry or Pranil at the start of each class — you don&rsquo;t need to check in yourself.
         </div>
+
+        {/* Date range filter */}
+        {!loading && !showAll && (
+          <div className="mt-5 flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2 text-xs text-white/45">
+              <span>From</span>
+              <input
+                type="date"
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
+                className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs text-white focus:border-[#ee2435] focus:outline-none"
+              />
+              <span>to today</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowAll(true)}
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs text-white/55 hover:text-white"
+            >
+              <FaChevronDown className="text-[9px]" /> Show all time
+            </button>
+          </div>
+        )}
+        {!loading && showAll && (
+          <div className="mt-5">
+            <button
+              type="button"
+              onClick={() => { setShowAll(false); setFromDate(defaultFromDate()); }}
+              className="text-xs text-white/40 hover:text-white/70 underline underline-offset-2"
+            >
+              Show last 3 months only
+            </button>
+          </div>
+        )}
       </header>
 
       {loading ? (

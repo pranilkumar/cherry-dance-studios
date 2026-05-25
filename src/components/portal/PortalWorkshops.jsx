@@ -135,8 +135,10 @@ export default function PortalWorkshops() {
     (b) => b.workshop?.starts_at && new Date(b.workshop.starts_at) >= now,
   );
   const past = bookings.filter(
-    (b) => !b.workshop?.starts_at || new Date(b.workshop.starts_at) < now,
+    (b) => b.workshop?.starts_at && new Date(b.workshop.starts_at) < now,
   );
+  // Bookings whose workshop was deleted or has missing data
+  const orphaned = bookings.filter((b) => !b.workshop?.starts_at && !b.workshop?.title);
 
   return (
     <div className="p-6 md:p-8">
@@ -197,6 +199,25 @@ export default function PortalWorkshops() {
           <div className="space-y-3">
             {past.map((b) => (
               <BookingCard key={b.id} booking={b} past />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Orphaned bookings — workshop record was deleted */}
+      {!loading && orphaned.length > 0 && (
+        <section className="mb-8">
+          <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-white/55">
+            Incomplete bookings
+          </h2>
+          <div className="space-y-3">
+            {orphaned.map((b) => (
+              <div key={b.id} className="rounded-2xl border border-white/8 bg-white/[0.02] px-5 py-4">
+                <p className="text-sm text-white/55">Workshop data unavailable.</p>
+                <p className="mt-0.5 text-xs text-white/30">
+                  Contact Cherry or Pranil if you believe this booking is valid.
+                </p>
+              </div>
             ))}
           </div>
         </section>

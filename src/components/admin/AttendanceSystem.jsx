@@ -32,10 +32,10 @@ export default function AttendanceSystem() {
     fetchBatches();
   }, []);
 
-  // Re-fetch stats whenever the selected date changes
+  // Re-fetch stats whenever the selected date or batch changes
   useEffect(() => {
-    fetchDateStats(date);
-  }, [date]);
+    fetchDateStats(date, selectedBatch?.id ?? null);
+  }, [date, selectedBatch]);
 
   const fetchBatches = async () => {
     const { data } = await supabase
@@ -46,11 +46,27 @@ export default function AttendanceSystem() {
     setBatches(data || []);
   };
 
-  const fetchDateStats = async (targetDate) => {
-    const { data } = await supabase
+  const fetchDateStats = async (targetDate, batchId = null) => {
+    let query = supabase
       .from('attendance')
       .select('status')
       .eq('class_date', targetDate);
+
+    // When a batch is selected, scope stats to that batch's students only.
+    if (batchId) {
+      const { data: batchStudents } = await supabase
+        .from('students')
+        .select('id')
+        .eq('class_batch_id', batchId);
+      const ids = (batchStudents || []).map((s) => s.id);
+      if (ids.length) query = query.in('student_id', ids);
+      else {
+        setTodayStats({ present: 0, late: 0, absent: 0 });
+        return;
+      }
+    }
+
+    const { data } = await query;
     const rows = data || [];
     setTodayStats({
       present: rows.filter((r) => r.status === 'present').length,
@@ -68,15 +84,22 @@ export default function AttendanceSystem() {
   const loadRoster = async (batchId, targetDate) => {
     setLoadingRoster(true);
 
+    // Determine the weekday for the selected date so we can filter by batch_days.
+    const dayOfWeek = new Date(targetDate + 'T00:00').toLocaleDateString('en-US', { weekday: 'long' });
+
     // 1. Students enrolled in this batch (active + on_break)
     const { data: studentData } = await supabase
       .from('students')
-      .select('id, student_name')
+      .select('id, student_name, batch_days')
       .eq('class_batch_id', batchId)
       .in('status', ['active', 'on_break'])
       .order('student_name');
 
-    const studs = studentData || [];
+    // Filter to students who attend on this specific day of week.
+    // null / empty batch_days = attends every day the batch runs.
+    const studs = (studentData || []).filter(
+      (s) => !s.batch_days?.length || s.batch_days.includes(dayOfWeek)
+    );
     setStudents(studs);
 
     if (studs.length === 0) { setMarks({}); setLoadingRoster(false); return; }

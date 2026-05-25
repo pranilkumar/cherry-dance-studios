@@ -2,7 +2,15 @@ import { NextResponse } from 'next/server';
 
 const FROM = 'Cherry Dance Studios <noreply@cherrydancestudios.com>';
 
+/** Escape characters that are special in HTML to prevent injection in emails. */
+const ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#x27;' };
+const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ESC[c]);
+
 function buildHtml({ studentName, parentName, amount, feeType, dueDate }) {
+  const sName   = esc(studentName);
+  const pFirst  = esc(parentName ? parentName.split(' ')[0] : '');
+  const sFeeType = esc(feeType);
+
   const formattedAmount = new Intl.NumberFormat('en-CA', {
     style: 'currency', currency: 'CAD',
   }).format(amount);
@@ -28,7 +36,7 @@ function buildHtml({ studentName, parentName, amount, feeType, dueDate }) {
 </head>
 <body style="margin:0;padding:0;background-color:#0a0a0f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#ffffff;-webkit-font-smoothing:antialiased;color-scheme:only dark;">
   <div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;">
-    A payment of ${formattedAmount} for ${studentName} is overdue. Please arrange payment at your earliest convenience.
+    A payment of ${formattedAmount} for ${sName} is overdue. Please arrange payment at your earliest convenience.
   </div>
 
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#0a0a0f;padding:32px 16px;">
@@ -66,7 +74,7 @@ function buildHtml({ studentName, parentName, amount, feeType, dueDate }) {
           <tr>
             <td style="padding:28px 28px 20px;">
               <p style="margin:0 0 20px;font-size:15px;line-height:1.6;color:rgba(255,255,255,0.78);">
-                Hi ${parentName ? parentName.split(' ')[0] : 'there'}, just a friendly reminder that a payment for <strong style="color:#ffffff;">${studentName}</strong> is overdue.
+                Hi ${pFirst || 'there'}, just a friendly reminder that a payment for <strong style="color:#ffffff;">${sName}</strong> is overdue.
               </p>
 
               <!-- Fee box -->
@@ -81,11 +89,11 @@ function buildHtml({ studentName, parentName, amount, feeType, dueDate }) {
                       </tr>
                       <tr>
                         <td style="padding:5px 0;font-size:12px;color:rgba(255,255,255,0.45);">For</td>
-                        <td style="padding:5px 0;font-size:14px;color:rgba(255,255,255,0.85);">${feeType}</td>
+                        <td style="padding:5px 0;font-size:14px;color:rgba(255,255,255,0.85);">${sFeeType}</td>
                       </tr>
                       <tr>
                         <td style="padding:5px 0;font-size:12px;color:rgba(255,255,255,0.45);">Student</td>
-                        <td style="padding:5px 0;font-size:14px;color:rgba(255,255,255,0.85);">${studentName}</td>
+                        <td style="padding:5px 0;font-size:14px;color:rgba(255,255,255,0.85);">${sName}</td>
                       </tr>
                       <tr>
                         <td style="padding:5px 0;font-size:12px;color:rgba(255,255,255,0.45);">Was due</td>
@@ -102,7 +110,7 @@ function buildHtml({ studentName, parentName, amount, feeType, dueDate }) {
                   <td style="background-color:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:18px 20px;">
                     <div style="font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:10px;">How to pay</div>
                     <p style="margin:0 0 8px;font-size:13px;color:rgba(255,255,255,0.75);">
-                      <strong style="color:#ffffff;">E-transfer</strong> to <a href="mailto:cherrydancestudio.cds@gmail.com" style="color:#ee2435;text-decoration:none;">cherrydancestudio.cds@gmail.com</a> — include ${studentName}&rsquo;s name in the message.
+                      <strong style="color:#ffffff;">E-transfer</strong> to <a href="mailto:cherrydancestudio.cds@gmail.com" style="color:#ee2435;text-decoration:none;">cherrydancestudio.cds@gmail.com</a> — include ${sName}&rsquo;s name in the message.
                     </p>
                     <p style="margin:0;font-size:13px;color:rgba(255,255,255,0.75);">
                       <strong style="color:#ffffff;">Cash</strong> — hand it to Cherry or Pranil at the studio.
@@ -163,7 +171,7 @@ export async function POST(request) {
     body: JSON.stringify({
       from: FROM,
       to: recipients,
-      subject: `Payment reminder — ${studentName}`,
+      subject: `Payment reminder — ${esc(studentName)}`,
       html,
     }),
   });

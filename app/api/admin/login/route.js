@@ -19,6 +19,28 @@ import { signAdminToken, cookieOptions, ADMIN_COOKIE } from '../../../../src/lib
 const DEFAULT_EMAIL    = 'admin@cherrydance.com';
 const DEFAULT_PASSWORD = 'cherry123';
 
+/**
+ * Simple in-memory rate limiter — 10 attempts per IP per 15-minute window.
+ * Resets on cold start (acceptable for a single-admin studio app).
+ */
+const attempts = new Map(); // ip → { count, resetAt }
+const WINDOW_MS = 15 * 60 * 1000;
+const MAX_ATTEMPTS = 10;
+
+function checkRateLimit(ip) {
+  const now = Date.now();
+  const entry = attempts.get(ip);
+  if (!entry || now > entry.resetAt) {
+    attempts.set(ip, { count: 1, resetAt: now + WINDOW_MS });
+    return { allowed: true };
+  }
+  if (entry.count >= MAX_ATTEMPTS) {
+    return { allowed: false, retryAfter: Math.ceil((entry.resetAt - now) / 1000) };
+  }
+  entry.count++;
+  return { allowed: true };
+}
+
 /** Constant-time string comparison that also handles length differences. */
 function safeEqual(a, b) {
   // Pad to the same length so timingSafeEqual doesn't throw on mismatched sizes,
@@ -34,6 +56,16 @@ function safeEqual(a, b) {
 }
 
 export async function POST(request) {
+  // Rate-limit by IP — 10 attempts per 15 minutes.
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+  const rl = checkRateLimit(ip);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { ok: false, error: 'Too many login attempts. Please try again later.' },
+      { status: 429, headers: { 'Retry-After': String(rl.retryAfter) } }
+    );
+  }
+
   // In production, refuse to operate if login credentials are not explicitly configured.
   // (ADMIN_JWT_SECRET is optional — adminAuth.js derives a fallback from the password —
   //  but relying on defaults for the email/password itself is a security risk.)

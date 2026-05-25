@@ -2,27 +2,21 @@ import { NextResponse } from 'next/server';
 
 const FROM = 'Cherry Dance Studios <noreply@cherrydancestudios.com>';
 
+/** Escape characters that are special in HTML to prevent injection in emails. */
+const ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#x27;' };
+const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ESC[c]);
+
 function buildHtml({ studentName, parentName, amount, feeType, paymentDate, paymentMethod }) {
-  const formattedAmount = new Intl.NumberFormat('en-CA', {
-    style: 'currency',
-    currency: 'CAD',
-  }).format(amount);
+  const sName   = esc(studentName);
+  const pFirst  = esc(parentName ? parentName.split(' ')[0] : '');
+  const sFeeType = esc(feeType);
+  const sMethod = esc({
+    cash: 'Cash', card: 'Card', bank_transfer: 'Bank Transfer',
+    'e-transfer': 'E-Transfer', cheque: 'Cheque',
+  }[paymentMethod] ?? paymentMethod ?? 'Not specified');
+  const formattedAmount = new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' }).format(amount);
+  const formattedDate   = new Date(paymentDate).toLocaleDateString('en-CA', { year: 'numeric', month: 'long', day: 'numeric' });
 
-  const formattedDate = new Date(paymentDate).toLocaleDateString('en-CA', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
-
-  const methodLabel = {
-    cash: 'Cash',
-    card: 'Card',
-    bank_transfer: 'Bank Transfer',
-    'e-transfer': 'E-Transfer',
-    cheque: 'Cheque',
-  }[paymentMethod] || paymentMethod || 'Not specified';
-
-  return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -40,7 +34,7 @@ function buildHtml({ studentName, parentName, amount, feeType, paymentDate, paym
 </head>
 <body style="margin:0;padding:0;background-color:#0a0a0f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#ffffff;-webkit-font-smoothing:antialiased;color-scheme:only dark;">
   <div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;">
-    We received your payment of ${formattedAmount} for ${studentName}. Thank you!
+    We received your payment of ${formattedAmount} for ${sName}. Thank you!
   </div>
 
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#0a0a0f;padding:32px 16px;">
@@ -80,7 +74,7 @@ function buildHtml({ studentName, parentName, amount, feeType, paymentDate, paym
           <tr>
             <td style="padding:28px 28px 20px;">
               <p style="margin:0 0 22px;font-size:15px;line-height:1.6;color:rgba(255,255,255,0.78);">
-                Hi ${parentName ? parentName.split(' ')[0] : 'there'}, we&rsquo;ve received your payment for <strong style="color:#ffffff;">${studentName}</strong>. Here&rsquo;s your receipt.
+                Hi ${pFirst || 'there'}, we&rsquo;ve received your payment for <strong style="color:#ffffff;">${sName}</strong>. Here&rsquo;s your receipt.
               </p>
 
               <!-- Receipt box -->
@@ -101,11 +95,11 @@ function buildHtml({ studentName, parentName, amount, feeType, paymentDate, paym
                     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                       <tr>
                         <td style="padding:5px 0;font-size:12px;color:rgba(255,255,255,0.45);width:120px;">For</td>
-                        <td style="padding:5px 0;font-size:13px;font-weight:600;color:#ffffff;">${feeType}</td>
+                        <td style="padding:5px 0;font-size:13px;font-weight:600;color:#ffffff;">${sFeeType}</td>
                       </tr>
                       <tr>
                         <td style="padding:5px 0;font-size:12px;color:rgba(255,255,255,0.45);">Student</td>
-                        <td style="padding:5px 0;font-size:13px;color:rgba(255,255,255,0.85);">${studentName}</td>
+                        <td style="padding:5px 0;font-size:13px;color:rgba(255,255,255,0.85);">${sName}</td>
                       </tr>
                       <tr>
                         <td style="padding:5px 0;font-size:12px;color:rgba(255,255,255,0.45);">Date</td>
@@ -113,7 +107,7 @@ function buildHtml({ studentName, parentName, amount, feeType, paymentDate, paym
                       </tr>
                       <tr>
                         <td style="padding:5px 0 16px;font-size:12px;color:rgba(255,255,255,0.45);">Method</td>
-                        <td style="padding:5px 0 16px;font-size:13px;color:rgba(255,255,255,0.85);">${methodLabel}</td>
+                        <td style="padding:5px 0 16px;font-size:13px;color:rgba(255,255,255,0.85);">${sMethod}</td>
                       </tr>
                     </table>
                   </td>
@@ -179,7 +173,7 @@ export async function POST(request) {
     body: JSON.stringify({
       from: FROM,
       to: recipients,
-      subject: `Payment received — ${studentName}`,
+      subject: `Payment received — ${esc(studentName)}`,
       html,
     }),
   });

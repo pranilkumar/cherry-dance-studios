@@ -98,7 +98,11 @@ export default function FeeManagement() {
           .reduce((sum, f) => sum + parseFloat(f.amount || 0), 0) || 0,
         paidCount: feesData?.filter((f) => f.payment_status === 'paid').length || 0,
         pendingCount: feesData?.filter((f) => f.payment_status === 'pending').length || 0,
-        overdueCount: feesData?.filter((f) => f.payment_status === 'pending' && f.due_date && new Date(f.due_date) < new Date()).length || 0,
+        overdueCount: feesData?.filter((f) => {
+          if (f.payment_status !== 'pending' || !f.due_date) return false;
+          const today = new Date(); today.setHours(0, 0, 0, 0);
+          return new Date(f.due_date + 'T00:00:00') < today;
+        }).length || 0,
       });
     } catch (err) {
       showAlert('error', err.message || 'Failed to load fee data');

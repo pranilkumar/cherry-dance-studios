@@ -75,6 +75,11 @@ export default function NavigationBar() {
     return () => { document.body.style.overflow = ''; };
   }, [mobileOpen]);
 
+  // Prefetch all route-based nav items so clicks feel instant
+  useEffect(() => {
+    navItems.filter((i) => i.route).forEach((i) => router.prefetch(i.route));
+  }, [router]);
+
   const handleNav = (item) => {
     setMobileOpen(false);
 

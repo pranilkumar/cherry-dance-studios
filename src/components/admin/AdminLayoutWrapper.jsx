@@ -62,7 +62,7 @@ export default function AdminLayoutWrapper({ children }) {
         }
       })
       .catch(() => router.replace('/admin'));
-  }, [router, pathname]);
+  }, [router]);
 
   // Lock body scroll when mobile drawer is open
   useEffect(() => {

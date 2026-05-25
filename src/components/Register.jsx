@@ -218,6 +218,24 @@ export default function Register() {
       const result = await supabase.from('registrations').insert([payload]).select();
       if (result.error) throw result.error;
       setStatus('success');
+      // Fire-and-forget admin notification — failure must not affect the user's UX.
+      fetch('/api/notify-admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type:          'registration',
+          studentName:   payload.student_name,
+          parentName:    payload.parent_name,
+          email:         payload.email,
+          phone:         payload.phone,
+          dob:           payload.date_of_birth,
+          preferredClass: payload.preferred_class,
+          preferredDays:  payload.preferred_weekdays,
+          preferredTimes: payload.preferred_time_slots,
+          experience:    payload.experience_level,
+          notes:         payload.notes,
+        }),
+      }).catch(() => {});
     } catch (err) {
       console.error('[register] insert failed:', err);
       const detail = err?.message || err?.details || err?.hint || 'Unknown error';

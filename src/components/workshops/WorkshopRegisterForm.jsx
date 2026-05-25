@@ -148,6 +148,22 @@ export default function WorkshopRegisterForm({ workshop }) {
       if (error) throw error;
       if (!data?.qr_token) throw new Error('No token returned.');
 
+      // Fire-and-forget admin notification — failure must not affect the user's UX.
+      fetch('/api/notify-admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type:          'workshop',
+          workshopTitle: workshop.title ?? workshop.name ?? 'Workshop',
+          parentName:    form.parentName.trim(),
+          email:         form.email.trim(),
+          phone:         form.phone,
+          children:      form.children.map((c) => ({ name: c.name.trim(), age: String(c.age) })),
+          packageLabel:  selectedPkg?.label ?? null,
+          dietaryNotes:  form.dietaryNotes.trim() || null,
+        }),
+      }).catch(() => {});
+
       router.push(`/workshops/${workshop.slug}/ticket/${data.qr_token}`);
     } catch (err) {
       console.error('[workshop register] insert failed:', err);

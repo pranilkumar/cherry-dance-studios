@@ -138,6 +138,11 @@ export default function AudioAdmin() {
 
   const handleFileChange = (e) => {
     const f = e.target.files?.[0] ?? null;
+    if (f && f.size > 50 * 1024 * 1024) {
+      showMsg('error', 'File must be under 50 MB. Please compress or trim the audio first.');
+      e.target.value = '';
+      return;
+    }
     setFile(f);
     setFileSize(f?.size ?? 0);
   };

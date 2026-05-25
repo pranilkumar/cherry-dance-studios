@@ -295,8 +295,9 @@ export default function FeeManagement() {
   };
 
   // ── Overdue reminders ────────────────────────────────────────────────
+  const feeToday = new Date(); feeToday.setHours(0, 0, 0, 0);
   const overdueStudents = students.filter(
-    (s) => s.feeStatus === 'pending' && s.dueDate && new Date(s.dueDate + 'T00:00:00') < new Date()
+    (s) => s.feeStatus === 'pending' && s.dueDate && new Date(s.dueDate + 'T00:00:00') < feeToday
   );
 
   const sendOverdueReminders = async () => {
@@ -345,7 +346,7 @@ export default function FeeManagement() {
       return { label: 'Waived', bg: 'rgba(255,255,255,0.07)', fg: 'rgba(255,255,255,0.4)', icon: FaBan };
     }
     if (student.feeStatus === 'pending') {
-      const overdue = student.dueDate && new Date(student.dueDate + 'T00:00:00') < new Date();
+      const overdue = student.dueDate && new Date(student.dueDate + 'T00:00:00') < feeToday;
       return overdue
         ? { label: 'Overdue', bg: '#d1060f', fg: '#ffffff', icon: FaExclamationTriangle }
         : { label: 'Pending', bg: 'rgba(209,6,15,0.18)', fg: '#ee2435', icon: FaClock };

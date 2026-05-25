@@ -30,8 +30,12 @@ export default function AttendanceSystem() {
 
   useEffect(() => {
     fetchBatches();
-    fetchTodayStats();
   }, []);
+
+  // Re-fetch stats whenever the selected date changes
+  useEffect(() => {
+    fetchDateStats(date);
+  }, [date]);
 
   const fetchBatches = async () => {
     const { data } = await supabase
@@ -42,12 +46,11 @@ export default function AttendanceSystem() {
     setBatches(data || []);
   };
 
-  const fetchTodayStats = async () => {
-    const todayStr = new Date().toISOString().split('T')[0];
+  const fetchDateStats = async (targetDate) => {
     const { data } = await supabase
       .from('attendance')
       .select('status')
-      .eq('class_date', todayStr);
+      .eq('class_date', targetDate);
     const rows = data || [];
     setTodayStats({
       present: rows.filter((r) => r.status === 'present').length,
@@ -130,7 +133,7 @@ export default function AttendanceSystem() {
       showAlert('error', error.message || 'Failed to save attendance.');
     } else {
       showAlert('success', `Attendance saved for ${selectedBatch.name} — ${fmtDate(date)}.`);
-      fetchTodayStats();
+      fetchDateStats(date);
     }
   };
 
@@ -195,13 +198,18 @@ export default function AttendanceSystem() {
         </div>
       )}
 
-      {/* Today's summary */}
-      <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-4">
-        <StatCard icon={FaCheckCircle} label="Present today" value={todayStats.present} />
-        <StatCard icon={FaClock}       label="Late today"    value={todayStats.late}    featured />
-        <StatCard icon={FaUsers}       label="Absent today"  value={todayStats.absent}  featured />
-        <StatCard icon={FaCalendarDay} label="Active classes" value={batches.length} />
-      </div>
+      {/* Date summary */}
+      {(() => {
+        const suffix = date === today ? 'today' : fmtDate(date);
+        return (
+          <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-4">
+            <StatCard icon={FaCheckCircle} label={`Present ${suffix}`} value={todayStats.present} />
+            <StatCard icon={FaClock}       label={`Late ${suffix}`}    value={todayStats.late}    featured />
+            <StatCard icon={FaUsers}       label={`Absent ${suffix}`}  value={todayStats.absent}  featured />
+            <StatCard icon={FaCalendarDay} label="Active classes"      value={batches.length} />
+          </div>
+        );
+      })()}
 
       {/* Two-column layout: batch list + roster */}
       <div className="grid gap-6 lg:grid-cols-[280px_1fr]">

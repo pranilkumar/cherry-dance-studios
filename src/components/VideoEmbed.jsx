@@ -33,6 +33,9 @@ export default function VideoEmbed({ videoId, title, featured = false }) {
           <img
             src={thumbMax}
             alt={title}
+            loading="lazy"
+            width={480}
+            height={360}
             onError={(e) => { e.currentTarget.src = thumbFb; }}
             className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]"
           />

@@ -708,6 +708,7 @@ export default function Register() {
                 type="submit"
                 variant="primary"
                 size="lg"
+                disabled={status === 'submitting'}
                 icon={status === 'submitting' ? null : <FaArrowRight />}
                 className={status === 'submitting' ? 'pointer-events-none opacity-60' : ''}
               >

@@ -39,6 +39,10 @@ export default function AnalyticsDashboard() {
       supabase.from('attendance').select('status, class_date'),
       supabase.from('class_batches').select('id, name').eq('is_active', true),
     ]).then(([stu, fee, att, bat]) => {
+      if (stu.error) console.error('Analytics: students fetch failed', stu.error.message);
+      if (fee.error) console.error('Analytics: fees fetch failed', fee.error.message);
+      if (att.error) console.error('Analytics: attendance fetch failed', att.error.message);
+      if (bat.error) console.error('Analytics: batches fetch failed', bat.error.message);
       setStudents(stu.data || []);
       setFees(fee.data || []);
       setAttendance(att.data || []);
@@ -63,7 +67,7 @@ export default function AnalyticsDashboard() {
 
   const pendingRevenue = useMemo(
     () => fees
-      .filter((f) => f.payment_status !== 'paid')
+      .filter((f) => f.payment_status === 'pending') // exclude waived — that money was forgiven
       .reduce((sum, f) => sum + parseFloat(f.amount || 0), 0),
     [fees],
   );
@@ -81,7 +85,7 @@ export default function AnalyticsDashboard() {
     const paidFees = fees.filter((f) => f.payment_status === 'paid' && f.payment_date);
     const byMonth = {};
     for (const f of paidFees) {
-      const key = f.payment_date.slice(0, 7);
+      const key = f.payment_date.split('T')[0].slice(0, 7);
       byMonth[key] = (byMonth[key] || 0) + parseFloat(f.amount || 0);
     }
     return Object.entries(byMonth)

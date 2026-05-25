@@ -528,6 +528,9 @@ export default function StudentManagement() {
             <strong className="text-white">{confirmDelete.student_name}</strong>?
             This action can&rsquo;t be undone.
           </p>
+          <p className="mt-2 text-xs text-white/50">
+            All associated fees and attendance records will also be permanently deleted.
+          </p>
           <div className="mt-6 flex items-center justify-end gap-3">
             <button
               type="button"

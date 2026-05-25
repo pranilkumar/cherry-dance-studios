@@ -476,7 +476,7 @@ function PasswordPanel({ hasPassword, onChange }) {
     const { error: err } = await supabase.auth.updateUser({ password });
     if (err) { setError(err.message || 'Couldn\'t save password.'); setPhase('editing'); return; }
     setPhase('saved'); onChange(true); setPassword(''); setConfirm('');
-    setTimeout(() => setPhase('idle'), 2200);
+    setTimeout(() => setPhase('idle'), 4000);
   };
 
   return (

@@ -192,7 +192,7 @@ export default function AdminDashboard() {
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <DataPanel
             title="Recent students"
-            actionHref="/admin/registrations"
+            actionHref="/admin/students"
             actionLabel="See all"
             loading={loading}
             empty={!loading && stats.recentStudents.length === 0}

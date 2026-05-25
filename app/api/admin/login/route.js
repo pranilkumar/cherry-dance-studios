@@ -1,18 +1,22 @@
 import { NextResponse } from 'next/server';
+import { signAdminToken, cookieOptions, ADMIN_COOKIE } from '../../../../src/lib/adminAuth';
 
 /**
- * Server-side admin credential check. Reads ADMIN_EMAIL + ADMIN_PASSWORD
- * from non-public env vars (so they're not bundled into the client).
+ * Admin credential check.
+ * On success: signs an HMAC token and sets it as an httpOnly cookie.
+ * The client never sees the token — it's sent automatically by the browser
+ * on every subsequent /admin request and verified server-side.
  *
- * Fallback defaults match the dev creds (admin@cherrydance.com / cherry123)
- * so existing local setups keep working — set ADMIN_EMAIL and ADMIN_PASSWORD
- * in production to override. CHANGE THESE BEFORE LAUNCH.
+ * Set in your hosting environment:
+ *   ADMIN_EMAIL        — login email
+ *   ADMIN_PASSWORD     — login password
+ *   ADMIN_JWT_SECRET   — random secret ≥ 32 chars for signing tokens
  *
- * Not real Supabase Auth — still a localStorage gate on the client side —
- * but at least the credentials aren't shipped to the browser anymore.
+ * Dev fallbacks (admin@cherrydance.com / cherry123) are used when env vars
+ * are absent so local dev keeps working without extra setup.
  */
 
-const DEFAULT_EMAIL = 'admin@cherrydance.com';
+const DEFAULT_EMAIL    = 'admin@cherrydance.com';
 const DEFAULT_PASSWORD = 'cherry123';
 
 export async function POST(request) {
@@ -28,17 +32,37 @@ export async function POST(request) {
     return NextResponse.json({ ok: false, error: 'Email and password are required.' }, { status: 400 });
   }
 
-  const validEmail = (process.env.ADMIN_EMAIL || DEFAULT_EMAIL).toLowerCase();
-  const validPassword = process.env.ADMIN_PASSWORD || DEFAULT_PASSWORD;
+  const validEmail    = (process.env.ADMIN_EMAIL    || DEFAULT_EMAIL).toLowerCase();
+  const validPassword =  process.env.ADMIN_PASSWORD || DEFAULT_PASSWORD;
 
-  if (email.toLowerCase() === validEmail && password === validPassword) {
-    return NextResponse.json({ ok: true, email: validEmail });
+  // Constant-time comparison to resist timing attacks on the password
+  const emailMatch    = email.toLowerCase() === validEmail;
+  const passwordMatch = password.length === validPassword.length &&
+    (() => {
+      try {
+        return require('crypto').timingSafeEqual(
+          Buffer.from(password),
+          Buffer.from(validPassword),
+        );
+      } catch { return false; }
+    })();
+
+  if (emailMatch && passwordMatch) {
+    const token = signAdminToken(validEmail);
+    const opts  = cookieOptions();
+    const res   = NextResponse.json({ ok: true, email: validEmail });
+
+    res.cookies.set(ADMIN_COOKIE, token, {
+      httpOnly: opts.httpOnly,
+      secure:   opts.secure,
+      sameSite: opts.sameSite,
+      path:     opts.path,
+      maxAge:   opts.maxAge,
+    });
+    return res;
   }
 
-  // Constant-ish delay to make brute-forcing slower
-  await new Promise((r) => setTimeout(r, 250));
-  return NextResponse.json(
-    { ok: false, error: 'Invalid credentials.' },
-    { status: 401 }
-  );
+  // Add a small delay to slow brute-force attempts
+  await new Promise((r) => setTimeout(r, 350));
+  return NextResponse.json({ ok: false, error: 'Invalid credentials.' }, { status: 401 });
 }

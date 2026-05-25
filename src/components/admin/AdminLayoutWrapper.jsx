@@ -46,17 +46,23 @@ export default function AdminLayoutWrapper({ children }) {
   const [email, setEmail] = useState('');
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // Auth gate
+  // Auth gate — verify the httpOnly session cookie server-side.
+  // This cannot be bypassed via DevTools because the cookie is httpOnly
+  // and the actual token is verified by the API, not the client.
   useEffect(() => {
-    const auth = localStorage.getItem('admin_auth');
-    const e = localStorage.getItem('admin_email') || '';
-    if (!auth) {
-      router.replace('/admin');
-    } else {
-      setAuthed(true);
-      setEmail(e);
-    }
-  }, [router]);
+    if (pathname === '/admin') return; // login page renders bare
+    fetch('/api/admin/verify')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.ok) {
+          setAuthed(true);
+          setEmail(data.email || '');
+        } else {
+          router.replace('/admin');
+        }
+      })
+      .catch(() => router.replace('/admin'));
+  }, [router, pathname]);
 
   // Lock body scroll when mobile drawer is open
   useEffect(() => {
@@ -64,9 +70,8 @@ export default function AdminLayoutWrapper({ children }) {
     return () => { document.body.style.overflow = ''; };
   }, [mobileOpen]);
 
-  const logout = () => {
-    localStorage.removeItem('admin_auth');
-    localStorage.removeItem('admin_email');
+  const logout = async () => {
+    await fetch('/api/admin/logout', { method: 'POST' });
     router.push('/admin');
   };
 

@@ -30,8 +30,8 @@ export default function AdminLogin() {
       const data = await res.json().catch(() => ({}));
 
       if (res.ok && data.ok) {
-        localStorage.setItem('admin_auth', 'true');
-        localStorage.setItem('admin_email', data.email || credentials.email);
+        // Session is now stored in an httpOnly cookie set by the API route —
+        // no localStorage needed. Just navigate to the dashboard.
         router.push('/admin/dashboard');
       } else {
         setError(data.error || 'Invalid credentials. Please try again.');

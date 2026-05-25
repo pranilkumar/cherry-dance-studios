@@ -1,6 +1,5 @@
 import { Space_Grotesk, Inter, Yatra_One } from 'next/font/google';
 import '../src/index.css';
-import 'bootstrap/dist/css/bootstrap.min.css';
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],

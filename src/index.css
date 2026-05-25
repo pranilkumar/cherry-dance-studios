@@ -205,3 +205,59 @@ img {
   from { background-position: -200% 0; }
   to { background-position: 200% 0; }
 }
+
+/* ──────────────────────────────────────────────────────────────────
+   react-phone-input-2 overrides
+   The library ships its own CSS (imported per-component for the flag
+   dropdown).  These rules override the input / button visual to match
+   our design system so we don't need a separate Register.css.
+   ────────────────────────────────────────────────────────────────── */
+.reg-phone-wrap { width: 100%; }
+
+.reg-phone-input {
+  width: 100% !important;
+  padding: 14px 14px 14px 52px !important;
+  border: 1px solid rgba(10, 10, 15, 0.12) !important;
+  border-radius: 0.75rem !important;
+  font-size: 1rem !important;
+  font-family: var(--font-sans) !important;
+  color: #0a0a0f !important;
+  background: #ffffff !important;
+  height: auto !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+.reg-phone-input:focus {
+  outline: none !important;
+  border-color: #d1060f !important;
+  box-shadow: 0 0 0 4px rgba(209, 6, 15, 0.12) !important;
+}
+
+.reg-phone-input.err {
+  border-color: #d1060f !important;
+  box-shadow: 0 0 0 2px rgba(209, 6, 15, 0.15) !important;
+}
+
+.reg-phone-btn {
+  border: 1px solid rgba(10, 10, 15, 0.12) !important;
+  border-right: none !important;
+  border-radius: 0.75rem 0 0 0.75rem !important;
+  background: #ffffff !important;
+  transition: border-color 0.15s ease !important;
+}
+
+.reg-phone-btn:hover,
+.reg-phone-btn:focus {
+  border-color: rgba(10, 10, 15, 0.25) !important;
+  background: #ffffff !important;
+}
+
+/* Dropdown search box */
+.reg-phone-wrap .search-box {
+  width: 100% !important;
+  border: 1px solid rgba(10, 10, 15, 0.12) !important;
+  border-radius: 0.5rem !important;
+  padding: 8px 12px !important;
+  font-size: 0.875rem !important;
+  font-family: var(--font-sans) !important;
+}

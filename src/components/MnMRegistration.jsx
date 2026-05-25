@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import PhoneInput from 'react-phone-input-2';
 import 'react-phone-input-2/lib/style.css';
-import '../styles/Register.css';
 import { supabase } from '../lib/supabaseClient';
 import { GlowButton, KineticHeading, GradientMesh } from './ui';
 import {

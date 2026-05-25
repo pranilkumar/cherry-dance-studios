@@ -94,7 +94,7 @@ export function cookieOptions(maxAge = TOKEN_MAX_AGE) {
     httpOnly: true,
     secure:   process.env.NODE_ENV === 'production',
     sameSite: 'strict',
-    path:     '/admin',
+    path:     '/',
     maxAge,
   };
 }

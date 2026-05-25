@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import {
   FaDollarSign, FaCheckCircle, FaClock, FaExclamationTriangle,
@@ -53,13 +53,12 @@ export default function FeeManagement() {
   const [alert, setAlert] = useState(null);
   const [monthlyStats, setMonthlyStats] = useState({ totalIncome: 0, paidCount: 0, pendingCount: 0, overdueCount: 0 });
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchData();
     setBulkData((p) => ({ ...p, dueDate: `${monthFilter}-10` }));
-  }, [monthFilter]);
+  }, [fetchData, monthFilter]);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const { data: studentsData, error: sErr } = await supabase
@@ -105,11 +104,11 @@ export default function FeeManagement() {
         }).length || 0,
       });
     } catch (err) {
-      showAlert('error', err.message || 'Failed to load fee data');
+      setAlert({ type: 'error', message: err.message || 'Failed to load fee data' });
     } finally {
       setLoading(false);
     }
-  };
+  }, [monthFilter]);
 
   const filtered = useMemo(() => students.filter((s) => {
     const term = searchTerm.toLowerCase();

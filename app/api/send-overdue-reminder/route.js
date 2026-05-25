@@ -132,6 +132,13 @@ function buildHtml({ studentName, parentName, amount, feeType, dueDate }) {
 }
 
 export async function POST(request) {
+  // Only authenticated admins may trigger outbound emails.
+  const { verifyAdminToken, ADMIN_COOKIE } = await import('../../../src/lib/adminAuth');
+  const token = request.cookies.get(ADMIN_COOKIE)?.value;
+  if (!verifyAdminToken(token)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
     return NextResponse.json({ error: 'RESEND_API_KEY not configured' }, { status: 500 });

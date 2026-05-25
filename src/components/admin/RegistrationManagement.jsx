@@ -30,6 +30,7 @@ const inputCls =
 export default function RegistrationManagement() {
   const [registrations, setRegistrations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [hasMore, setHasMore] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selected, setSelected] = useState(null);
@@ -38,19 +39,24 @@ export default function RegistrationManagement() {
   const [resendingId, setResendingId] = useState(null); // tracks which row's Resend is in-flight
   const [alert, setAlert] = useState(null);
 
+  const PAGE_SIZE = 50;
+
   useEffect(() => { fetchRegistrations(); }, []);
 
-  const fetchRegistrations = async () => {
+  const fetchRegistrations = async (append = false) => {
     setLoading(true);
+    const from = append ? registrations.length : 0;
     const { data, error } = await supabase
       .from('registrations')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .range(from, from + PAGE_SIZE - 1);
     if (error) {
       console.error(error);
       showAlert('error', 'Failed to load registrations');
     } else {
-      setRegistrations(data || []);
+      setRegistrations((prev) => append ? [...prev, ...(data || [])] : (data || []));
+      setHasMore((data?.length ?? 0) === PAGE_SIZE);
     }
     setLoading(false);
   };
@@ -263,6 +269,7 @@ export default function RegistrationManagement() {
             {registrations.length === 0 ? 'No registrations yet.' : 'No registrations match this filter.'}
           </div>
         ) : (
+          <>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="border-b border-white/8 bg-white/[0.04] text-xs uppercase tracking-wider text-white/45">
@@ -328,6 +335,18 @@ export default function RegistrationManagement() {
               </tbody>
             </table>
           </div>
+          {hasMore && (
+            <div className="flex justify-center p-4">
+              <button
+                onClick={() => fetchRegistrations(true)}
+                disabled={loading}
+                className="rounded-lg border border-white/15 bg-white/[0.04] px-5 py-2 text-sm text-white/70 hover:bg-white/[0.08] disabled:opacity-50"
+              >
+                {loading ? 'Loading…' : 'Load more'}
+              </button>
+            </div>
+          )}
+          </>
         )}
       </div>
 

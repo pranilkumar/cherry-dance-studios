@@ -16,11 +16,15 @@ const supabaseKey  =
   process.env.SUPABASE_SERVICE_ROLE_KEY ||
   '';
 
-if (process.env.NODE_ENV !== 'production' && !supabaseKey) {
-  console.warn(
-    '[supabaseAdmin] No SUPABASE_SECRET_KEY found in env. ' +
-      'Server-side workshop ticket fetches will fail.'
-  );
+if (!supabaseKey) {
+  const msg =
+    '[supabaseAdmin] No SUPABASE_SECRET_KEY (or SUPABASE_SERVICE_ROLE_KEY) found. ' +
+    'Server-side database access will fail.';
+  if (process.env.NODE_ENV === 'production') {
+    console.error(msg);
+  } else {
+    console.warn(msg);
+  }
 }
 
 export const supabaseAdmin =

@@ -103,10 +103,26 @@ export default function RegistrationManagement() {
     setConverting(false);
   };
 
-  // Shared welcome-email path used by both initial convert and "Resend".
+  // Shared portal-invite path used by both initial convert and "Resend".
+  // Sends a magic-link login email via Supabase OTP — this creates a
+  // Supabase Auth user if one doesn't exist yet, or just sends a fresh
+  // login link if they already have an account.
   // Returns true on success, false on failure. Writes the success timestamp
   // back to the registrations row so the table can show status.
-  const sendWelcomeEmail = async (email, registrationId) => {
+  const sendWelcomeEmail = async (email, registrationId, { force = false } = {}) => {
+    // Rate-limit guard: don't resend if a link was sent in the last 60 minutes,
+    // unless force=true (used by the explicit "Resend" button).
+    if (!force) {
+      const row = registrations.find((r) => r.id === registrationId);
+      if (row?.welcome_email_sent_at) {
+        const sentAt = new Date(row.welcome_email_sent_at).getTime();
+        if (Date.now() - sentAt < 60 * 60 * 1000) {
+          console.info('[portal-invite] skipped — sent less than 1 hour ago');
+          return true; // treat as success — no need to re-send
+        }
+      }
+    }
+
     const siteUrl = typeof window !== 'undefined' ? window.location.origin : undefined;
     const { error: mailErr } = await supabase.auth.signInWithOtp({
       email: email.trim().toLowerCase(),
@@ -115,11 +131,10 @@ export default function RegistrationManagement() {
       },
     });
     if (mailErr) {
-      console.warn('[welcome-email] failed:', mailErr);
+      console.warn('[portal-invite] failed:', mailErr);
       return false;
     }
-    // Best-effort stamp — if this update fails it's not catastrophic, the
-    // email still went out. We just lose the "Sent" badge in the UI.
+    // Best-effort stamp — if this update fails it's not catastrophic.
     await supabase
       .from('registrations')
       .update({ welcome_email_sent_at: new Date().toISOString() })
@@ -127,17 +142,17 @@ export default function RegistrationManagement() {
     return true;
   };
 
-  // Manual retry from the table row — same email, same destination.
+  // Manual retry from the table row — bypasses the 1-hour cooldown.
   const resendWelcomeEmail = async (reg) => {
     if (!reg?.email) return;
     setResendingId(reg.id);
-    const ok = await sendWelcomeEmail(reg.email, reg.id);
+    const ok = await sendWelcomeEmail(reg.email, reg.id, { force: true });
     setResendingId(null);
     showAlert(
       ok ? 'success' : 'error',
       ok
-        ? `Welcome email sent to ${reg.email}.`
-        : 'Resend failed — likely a Supabase rate limit. Try again in an hour.'
+        ? `Portal access link sent to ${reg.email}.`
+        : 'Send failed — likely a Supabase rate limit. Try again in an hour.'
     );
     if (ok) fetchRegistrations();
   };

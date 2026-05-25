@@ -17,7 +17,7 @@ function buildHtml({ studentName, parentName, amount, feeType, paymentDate, paym
   const formattedAmount = new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' }).format(amount);
   const formattedDate   = new Date(paymentDate).toLocaleDateString('en-CA', { year: 'numeric', month: 'long', day: 'numeric' });
 
-<html lang="en">
+  return `<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">

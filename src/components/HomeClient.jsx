@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Toaster } from 'react-hot-toast';
 import NavigationBar from './NavigationBar';
 import Home from './Home';
@@ -11,11 +11,8 @@ import FAQ from './FAQ';
 import Contact from './Contact';
 import Register from './Register';
 import Footer from './Footer';
-import RegistrationBanner from './RegistrationBanner';
 
 export default function HomeClient() {
-  const [showModalBanner, setShowModalBanner] = useState(false);
-
   // Scroll to a #section anchor when arriving from another page (e.g. /#contact)
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -57,7 +54,6 @@ export default function HomeClient() {
         <Register />
       </main>
       <Footer />
-      <RegistrationBanner show={showModalBanner} onHide={() => setShowModalBanner(false)} />
     </>
   );
 }

@@ -12,30 +12,13 @@ import {
   FaMusic,
 } from 'react-icons/fa';
 import { supabase } from '../../lib/supabaseClient';
+import { parseLocalDate, calcAge, calcNextClass } from '../../lib/dateUtils';
 
 /**
  * Parent portal home — welcome + kid card(s) + quick stats.
  * Fetches students where students.email matches the signed-in user's email.
  * Same email-match strategy as the rest of the portal.
  */
-
-/** Parse "YYYY-MM-DD" as a local-time date (avoids UTC timezone shift). */
-function parseLocalDate(iso) {
-  if (!iso || typeof iso !== 'string') return null;
-  const [y, m, d] = iso.split('-').map(Number);
-  if (!y || !m || !d) return null;
-  return new Date(y, m - 1, d);
-}
-
-function calcAge(dobIso) {
-  const d = parseLocalDate(dobIso);
-  if (!d) return null;
-  const today = new Date();
-  let age = today.getFullYear() - d.getFullYear();
-  const m = today.getMonth() - d.getMonth();
-  if (m < 0 || (m === 0 && today.getDate() < d.getDate())) age--;
-  return age;
-}
 
 function formatNextBirthday(dobIso) {
   const d = parseLocalDate(dobIso);
@@ -55,34 +38,6 @@ function suggestTier(age) {
   if (age <= 7) return 'Little Stars';
   if (age <= 10) return 'The Crew';
   return 'Slay Squad';
-}
-
-const DAY_NUM = { Sunday:0, Monday:1, Tuesday:2, Wednesday:3, Thursday:4, Friday:5, Saturday:6 };
-
-/**
- * Returns the next scheduled class time for a student, or null if unknown.
- * { next: Date, daysAway: number, h: number, m: number, batchName: string }
- */
-function calcNextClass(student) {
-  const batch = student.class_batch;
-  if (!batch?.weekdays?.length || !batch.start_time) return null;
-  const [h, m] = batch.start_time.split(':').map(Number);
-  const now = new Date();
-  const dow = now.getDay();
-  let minDays = null;
-  for (const day of batch.weekdays) {
-    let d = (DAY_NUM[day] - dow + 7) % 7;
-    if (d === 0) {
-      const t = new Date(now); t.setHours(h, m, 0, 0);
-      if (t <= now) d = 7;
-    }
-    if (minDays === null || d < minDays) minDays = d;
-  }
-  if (minDays === null) return null;
-  const next = new Date(now);
-  next.setDate(now.getDate() + minDays);
-  next.setHours(h, m, 0, 0);
-  return { next, daysAway: minDays, h, m, batchName: batch.name };
 }
 
 export default function PortalDashboard() {

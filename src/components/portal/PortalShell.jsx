@@ -40,6 +40,7 @@ export default function PortalShell({ children }) {
   const [loading, setLoading] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [primaryStudent, setPrimaryStudent] = useState(null); // { student_name, avatar_url }
+  const [studentCount, setStudentCount] = useState(0);
 
   // Skip the shell entirely on /portal/login and /portal/auth/* routes —
   // they should render bare (no sidebar, no auth gate).
@@ -101,10 +102,11 @@ export default function PortalShell({ children }) {
       const { data } = await supabase
         .from('students')
         .select('student_name, avatar_url')
-        .eq('email', session.user.email)
-        .limit(1)
-        .maybeSingle();
-      if (!cancelled && data) setPrimaryStudent(data);
+        .eq('email', session.user.email);
+      if (!cancelled && data?.length) {
+        setPrimaryStudent(data[0]);
+        setStudentCount(data.length);
+      }
     })();
     return () => { cancelled = true; };
   }, [session]);
@@ -179,7 +181,7 @@ export default function PortalShell({ children }) {
         {/* Nav */}
         <nav className="flex-1 overflow-y-auto px-3 py-4">
           <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/35">
-            Your dancer
+            Your {studentCount > 1 ? 'dancers' : 'dancer'}
           </p>
           <ul className="space-y-0.5">
             {NAV.map(({ href, icon: Icon, label }) => {

@@ -40,14 +40,14 @@ export default function PortalAttendance() {
       setStudents(studentData);
 
       const ids = studentData.map((s) => s.id);
-      const query = supabase
+      let query = supabase
         .from('attendance')
         .select('*')
         .in('student_id', ids)
         .order('class_date', { ascending: false });
 
       // Limit to selected window unless "Show all" is active
-      if (!showAll) query.gte('class_date', fromDate);
+      if (!showAll) query = query.gte('class_date', fromDate);
 
       const { data: attData } = await query;
 

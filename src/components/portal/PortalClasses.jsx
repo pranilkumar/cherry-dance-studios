@@ -5,14 +5,9 @@ import {
   FaClock, FaCalendarAlt, FaInfoCircle, FaArrowRight, FaUser, FaCheckCircle,
 } from 'react-icons/fa';
 import { supabase } from '../../lib/supabaseClient';
+import { fmt24, parseLocalDate, calcAge, getNextClassDate, formatNextClass } from '../../lib/dateUtils';
 
 /* ── Helpers ── */
-
-function fmt24(t) {
-  if (!t) return '';
-  const [h, m] = t.split(':').map(Number);
-  return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`;
-}
 
 function fmtDuration(start, end) {
   if (!start || !end) return null;
@@ -24,65 +19,6 @@ function fmtDuration(start, end) {
   const h = Math.floor(mins / 60);
   const m = mins % 60;
   return m ? `${h}h ${m}min` : `${h}h`;
-}
-
-const DAY_NUM = { Sunday: 0, Monday: 1, Tuesday: 2, Wednesday: 3, Thursday: 4, Friday: 5, Saturday: 6 };
-
-function getNextClassDate(batch) {
-  if (!batch?.weekdays?.length || !batch.start_time) return null;
-  const [hStr, mStr] = batch.start_time.split(':');
-  const hours = parseInt(hStr, 10);
-  const minutes = parseInt(mStr, 10);
-  const now = new Date();
-  const todayDow = now.getDay();
-  let minDaysAway = null;
-  for (const day of batch.weekdays) {
-    const dow = DAY_NUM[day];
-    if (dow == null) continue;
-    let daysAway = (dow - todayDow + 7) % 7;
-    if (daysAway === 0) {
-      const classTime = new Date(now);
-      classTime.setHours(hours, minutes, 0, 0);
-      if (classTime <= now) daysAway = 7;
-    }
-    if (minDaysAway === null || daysAway < minDaysAway) minDaysAway = daysAway;
-  }
-  if (minDaysAway === null) return null;
-  const next = new Date(now);
-  next.setDate(now.getDate() + minDaysAway);
-  next.setHours(hours, minutes, 0, 0);
-  next.setSeconds(0, 0);
-  return next;
-}
-
-function formatNextClass(date) {
-  if (!date) return null;
-  const now = new Date(); now.setHours(0, 0, 0, 0);
-  const day = new Date(date); day.setHours(0, 0, 0, 0);
-  const diffDays = Math.round((day - now) / (1000 * 60 * 60 * 24));
-  const dayLabel =
-    diffDays === 0 ? 'Today' :
-    diffDays === 1 ? 'Tomorrow' :
-    date.toLocaleDateString('en-CA', { weekday: 'long' });
-  const timeLabel = date.toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit', hour12: true });
-  return { dayLabel, timeLabel, diffDays };
-}
-
-function parseLocalDate(iso) {
-  if (!iso || typeof iso !== 'string') return null;
-  const [y, m, d] = iso.split('-').map(Number);
-  if (!y || !m || !d) return null;
-  return new Date(y, m - 1, d);
-}
-
-function calcAge(dobIso) {
-  const d = parseLocalDate(dobIso);
-  if (!d) return null;
-  const today = new Date();
-  let age = today.getFullYear() - d.getFullYear();
-  const m = today.getMonth() - d.getMonth();
-  if (m < 0 || (m === 0 && today.getDate() < d.getDate())) age--;
-  return age;
 }
 
 function formatDays(val) {

@@ -38,6 +38,7 @@ const emptyForm = () => ({
   status: 'active',
   break_until: '',
   class_batch_id: '',
+  batch_days: [],
   notes: '',
 });
 
@@ -104,6 +105,7 @@ export default function StudentManagement() {
       status: s.status || 'active',
       break_until: s.break_until || '',
       class_batch_id: s.class_batch_id || '',
+      batch_days: s.batch_days || [],
       notes: s.notes || '',
     });
     setEditing(s);
@@ -111,14 +113,35 @@ export default function StudentManagement() {
   const closeModal = () => { setEditing(null); setFormData(emptyForm()); };
   const setField = (name, value) => setFormData((p) => ({ ...p, [name]: value }));
 
+  // When batch changes, pre-fill batch_days with all days of the new batch.
+  const handleBatchChange = (batchId) => {
+    const batch = batches.find((b) => b.id === batchId);
+    setFormData((p) => ({
+      ...p,
+      class_batch_id: batchId,
+      batch_days: batch?.weekdays || [],
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     // break_until only meaningful when the student is on_break — clear it
     // otherwise so it doesn't linger and confuse the table cell.
+    const batchId = formData.class_batch_id || null;
+    const batch = batches.find((b) => b.id === batchId);
+    const allDays = batch?.weekdays || [];
+    const selectedDays = formData.batch_days || [];
+    // Save null when attending all days (or no batch) — keeps the DB clean.
+    const batchDays =
+      batchId && selectedDays.length && selectedDays.length < allDays.length
+        ? selectedDays
+        : null;
+
     const payload = {
       ...formData,
       break_until: formData.status === 'on_break' ? (formData.break_until || null) : null,
-      class_batch_id: formData.class_batch_id || null,
+      class_batch_id: batchId,
+      batch_days: batchDays,
     };
     if (editing === 'new') {
       const { error } = await supabase.from('students').insert([payload]);
@@ -321,6 +344,11 @@ export default function StudentManagement() {
                       {s.class_batch ? (
                         <div>
                           <div className="text-sm font-medium text-white">{s.class_batch.name}</div>
+                          {s.batch_days?.length > 0 && (
+                            <div className="text-[10px] text-[#ee2435]/80">
+                              {s.batch_days.map((d) => d.slice(0, 3)).join(', ')} only
+                            </div>
+                          )}
                           {s.preferred_class && (
                             <div className="text-xs text-white/45">{s.preferred_class}</div>
                           )}
@@ -473,7 +501,7 @@ export default function StudentManagement() {
             <Field label="Class batch" hint="Assign to a recurring class group">
               <select
                 value={formData.class_batch_id}
-                onChange={(e) => setField('class_batch_id', e.target.value)}
+                onChange={(e) => handleBatchChange(e.target.value)}
                 className={`${inputCls} ${selectChevron}`}
               >
                 <option value="">Not assigned</option>
@@ -497,6 +525,46 @@ export default function StudentManagement() {
                 </p>
               )}
             </Field>
+
+            {formData.class_batch_id && (() => {
+              const batch = batches.find((b) => b.id === formData.class_batch_id);
+              if (!batch?.weekdays?.length || batch.weekdays.length < 2) return null;
+              const selected = formData.batch_days || [];
+              const toggleDay = (day) => {
+                const current = formData.batch_days || [];
+                const next = current.includes(day)
+                  ? current.filter((d) => d !== day)
+                  : [...current, day];
+                setField('batch_days', next);
+              };
+              return (
+                <Field key="batch-days" label="Attending days" hint="Uncheck days this student doesn't attend">
+                  <div className="flex flex-wrap gap-2">
+                    {batch.weekdays.map((day) => {
+                      // Empty array = all days checked
+                      const isOn = !selected.length || selected.includes(day);
+                      return (
+                        <button
+                          key={day}
+                          type="button"
+                          onClick={() => toggleDay(day)}
+                          className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition ${
+                            isOn
+                              ? 'border-[#d1060f] bg-[#d1060f]/20 text-white'
+                              : 'border-white/15 bg-white/[0.04] text-white/40 line-through'
+                          }`}
+                        >
+                          {day.slice(0, 3)}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="mt-1.5 text-xs text-white/40">
+                    All days highlighted = attends every scheduled day.
+                  </p>
+                </Field>
+              );
+            })()}
 
             <Field label="Notes">
               <textarea rows={3} value={formData.notes} onChange={(e) => setField('notes', e.target.value)} placeholder="Anything else…" className={`${inputCls} resize-none`} />

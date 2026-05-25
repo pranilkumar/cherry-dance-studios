@@ -53,7 +53,7 @@ export default function ClassesAdmin() {
     setLoading(true);
     const [{ data: b }, { data: s }] = await Promise.all([
       supabase.from('class_batches').select('*').order('name'),
-      supabase.from('students').select('id, student_name, class_batch_id, status'),
+      supabase.from('students').select('id, student_name, class_batch_id, status, batch_days'),
     ]);
     setBatches(b || []);
     setStudents(s || []);
@@ -66,6 +66,18 @@ export default function ClassesAdmin() {
     (students || []).forEach((s) => {
       if (s.class_batch_id && s.status === 'active') {
         map[s.class_batch_id] = (map[s.class_batch_id] || 0) + 1;
+      }
+    });
+    return map;
+  }, [students]);
+
+  // Grouped list of active students per batch (for expandable roster)
+  const studentsByBatch = useMemo(() => {
+    const map = {};
+    (students || []).forEach((s) => {
+      if (s.class_batch_id && s.status === 'active') {
+        if (!map[s.class_batch_id]) map[s.class_batch_id] = [];
+        map[s.class_batch_id].push(s);
       }
     });
     return map;
@@ -205,6 +217,7 @@ export default function ClassesAdmin() {
                 key={b.id}
                 batch={b}
                 studentCount={countByBatch[b.id] || 0}
+                batchStudents={studentsByBatch[b.id] || []}
                 onEdit={() => openEdit(b)}
                 onDelete={() => setConfirmDelete(b)}
               />
@@ -224,6 +237,7 @@ export default function ClassesAdmin() {
                 key={b.id}
                 batch={b}
                 studentCount={countByBatch[b.id] || 0}
+                batchStudents={studentsByBatch[b.id] || []}
                 onEdit={() => openEdit(b)}
                 onDelete={() => setConfirmDelete(b)}
                 dimmed
@@ -386,7 +400,8 @@ export default function ClassesAdmin() {
 
 /* ── Batch card ── */
 
-function BatchCard({ batch, studentCount, onEdit, onDelete, dimmed = false }) {
+function BatchCard({ batch, studentCount, batchStudents, onEdit, onDelete, dimmed = false }) {
+  const [showStudents, setShowStudents] = useState(false);
   const timeLabel = batch.end_time
     ? `${fmt24(batch.start_time)} – ${fmt24(batch.end_time)}`
     : fmt24(batch.start_time);
@@ -437,12 +452,42 @@ function BatchCard({ batch, studentCount, onEdit, onDelete, dimmed = false }) {
           {batch.instructor && (
             <div className="text-white/50">with {batch.instructor}</div>
           )}
-          <div className="flex items-center gap-2 pt-1">
-            <FaUsers className="text-[10px] text-white/35" />
-            <span className="font-semibold text-white/80">{studentCount}</span> active student{studentCount !== 1 ? 's' : ''}
-          </div>
+          <button
+            type="button"
+            onClick={() => setShowStudents((v) => !v)}
+            className="flex w-full items-center gap-2 pt-1 text-left transition hover:text-white/85"
+          >
+            <FaUsers className="text-[10px] text-white/35 shrink-0" />
+            <span className="font-semibold text-white/80">{studentCount}</span>&nbsp;active student{studentCount !== 1 ? 's' : ''}
+            {studentCount > 0 && (
+              <span className="ml-auto text-[9px] text-white/30">{showStudents ? '▲' : '▼'}</span>
+            )}
+          </button>
         </dl>
       </div>
+
+      {showStudents && batchStudents.length > 0 && (
+        <div className="border-t border-white/8 px-5 py-3 space-y-2">
+          {batchStudents
+            .slice()
+            .sort((a, b) => (a.student_name || '').localeCompare(b.student_name || ''))
+            .map((s) => {
+              const days = s.batch_days?.length
+                ? s.batch_days.map((d) => d.slice(0, 3)).join(', ')
+                : null;
+              return (
+                <div key={s.id} className="flex items-center justify-between gap-2 text-xs">
+                  <span className="text-white/80">{s.student_name}</span>
+                  {days && (
+                    <span className="shrink-0 rounded-full border border-white/15 px-2 py-0.5 text-[10px] text-white/45">
+                      {days} only
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+        </div>
+      )}
     </div>
   );
 }

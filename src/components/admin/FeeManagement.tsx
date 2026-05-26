@@ -59,7 +59,7 @@ export default function FeeManagement() {
     setLoading(true);
     try {
       const { data: studentsData, error: sErr } = await supabase
-        .from('students').select('*').eq('status', 'active').order('student_name');
+        .from('students').select('*, class_batch:class_batches(name)').in('status', ['active', 'on_break']).order('student_name');
       if (sErr) throw sErr;
 
       const startOfMonth = `${monthFilter}-01`;
@@ -554,7 +554,10 @@ export default function FeeManagement() {
                     <tr key={student.id} className="hover:bg-white/[0.04]">
                       <td className="px-5 py-3">
                         <div className="font-medium text-white">{student.student_name}</div>
-                        <div className="text-xs text-white/55">{student.preferred_class || 'No class'}</div>
+                        <div className="text-xs text-white/55">
+                          {student.class_batch?.name || student.preferred_class || 'No class'}
+                          {student.status === 'on_break' && <span className="ml-1.5 text-amber-400/80">· On break</span>}
+                        </div>
                       </td>
                       <td className="px-5 py-3 text-white/80">{student.parent_name}</td>
                       <td className="px-5 py-3 text-right tabular-nums">

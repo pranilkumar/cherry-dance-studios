@@ -380,7 +380,11 @@ export default function ClassesAdmin() {
         <Modal title="Delete batch?" onClose={() => setConfirmDelete(null)} size="sm">
           <p className="text-sm text-white/85">
             Delete <strong className="text-white">{confirmDelete.name}</strong>?
-            Students assigned to it won&rsquo;t be deleted — their batch assignment will be cleared.
+            {(countByBatch[confirmDelete.id] || 0) > 0 ? (
+              <> <strong className="text-[#ee2435]">{countByBatch[confirmDelete.id]} student{countByBatch[confirmDelete.id] !== 1 ? 's' : ''}</strong> will have their batch assignment cleared.</>
+            ) : (
+              <> Students assigned to it won&rsquo;t be deleted — their batch assignment will be cleared.</>
+            )}
           </p>
           <div className="mt-6 flex justify-end gap-3">
             <button onClick={() => setConfirmDelete(null)}

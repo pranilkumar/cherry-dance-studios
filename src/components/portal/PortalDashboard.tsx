@@ -253,7 +253,7 @@ export default function PortalDashboard() {
                             {s.class_batch.weekdays?.length > 0 && (
                               <span className="flex items-center gap-1.5">
                                 <FaCalendarAlt className="text-[9px] text-[#ee2435]" />
-                                {s.class_batch.weekdays.join(' & ')}
+                                {(s.batch_days?.length ? s.batch_days : s.class_batch.weekdays).join(' & ')}
                               </span>
                             )}
                             {s.class_batch.start_time && (

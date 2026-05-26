@@ -37,7 +37,7 @@ export default function PortalProfile() {
 
       const { data } = await supabase
         .from('students')
-        .select('id, student_name, parent_name, avatar_url, phone, allergies, emergency_contact, photo_consent, preferred_class, experience_level, status')
+        .select('id, student_name, parent_name, avatar_url, phone, allergies, emergency_contact, photo_consent, preferred_class, experience_level, status, class_batch:class_batches(name)')
         .eq('email', user.email);
       if (!cancelled) {
         setStudents(data || []);
@@ -296,7 +296,7 @@ function StudentContactCard({ student, onSave, onError }) {
               {student.student_name}
             </p>
             <p className="mt-0.5 text-xs text-white/45">
-              {student.preferred_class || 'No style assigned'}
+              {student.class_batch?.name || student.preferred_class || 'No class assigned'}
               {student.experience_level && ` · ${student.experience_level}`}
             </p>
             {avatarUrl && !avatarUploading && (

@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { KineticHeading } from './ui';
 
@@ -77,12 +76,10 @@ export default function Instructors() {
             >
               {/* Image */}
               <div className="relative aspect-[4/5] overflow-hidden md:aspect-[3/4]">
-                <Image
-                  src={inst.image}
+                <img
+                  src={inst.image.src}
                   alt={inst.name}
-                  fill
-                  className="object-cover transition duration-700 group-hover:scale-105"
-                  sizes="(max-width: 768px) 100vw, 50vw"
+                  className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
                 />
                 <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0a0a0f] via-[#0a0a0f]/20 to-transparent" />
 

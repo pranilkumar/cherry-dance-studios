@@ -30,9 +30,17 @@ export default function BentoCard({
   span = {},
   glow = false,
   className = '',
-  href,
-  onClick,
+  href = undefined,
+  onClick = undefined,
   children,
+}: {
+  gradient?: string;
+  span?: any;
+  glow?: boolean;
+  className?: string;
+  href?: string;
+  onClick?: (...args: any[]) => any;
+  children?: any;
 }) {
   const Wrapper = href ? motion.a : motion.div;
   const interactive = !!(href || onClick);

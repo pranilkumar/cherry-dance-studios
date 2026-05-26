@@ -285,7 +285,7 @@ export default function WorkshopDetail({ workshop }) {
   );
 }
 
-function DetailPill({ icon: Icon, text, highlight, muted }) {
+function DetailPill({ icon: Icon = undefined, text, highlight = false, muted = false }: { icon?: any; text: any; highlight?: any; muted?: any }) {
   return (
     <span
       className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm backdrop-blur-md ${

@@ -83,7 +83,7 @@ export default function AnalyticsDashboard() {
   // Monthly paid revenue — last 12 months
   const revenueData = useMemo(() => {
     const paidFees = fees.filter((f) => f.payment_status === 'paid' && f.payment_date);
-    const byMonth = {};
+    const byMonth: Record<string, number> = {};
     for (const f of paidFees) {
       const key = f.payment_date.split('T')[0].slice(0, 7);
       byMonth[key] = (byMonth[key] || 0) + parseFloat(f.amount || 0);
@@ -99,7 +99,7 @@ export default function AnalyticsDashboard() {
 
   // Class preference distribution
   const classPopularity = useMemo(() => {
-    const counts = {};
+    const counts: Record<string, number> = {};
     for (const s of students) {
       const key = s.preferred_class || 'Other';
       counts[key] = (counts[key] || 0) + 1;
@@ -111,7 +111,7 @@ export default function AnalyticsDashboard() {
 
   // Monthly new enrollments — last 12 months
   const enrollmentData = useMemo(() => {
-    const byMonth = {};
+    const byMonth: Record<string, number> = {};
     for (const s of students) {
       if (!s.enrollment_date) continue;
       const key = s.enrollment_date.slice(0, 7);
@@ -128,7 +128,7 @@ export default function AnalyticsDashboard() {
 
   // Active students per batch
   const batchData = useMemo(() => {
-    const counts = {};
+    const counts: Record<string, { name: string; students: number }> = {};
     for (const b of batches) counts[b.id] = { name: b.name, students: 0 };
     for (const s of students.filter((s) => s.status === 'active' && s.class_batch_id)) {
       if (counts[s.class_batch_id]) counts[s.class_batch_id].students++;

@@ -443,7 +443,7 @@ function StudentContactCard({ student, onSave, onError }) {
   );
 }
 
-function InfoRow({ icon: Icon, label, value }) {
+function InfoRow({ icon: Icon = undefined, label, value }: { icon?: any; label: any; value: any }) {
   return (
     <div className="flex items-start justify-between gap-4 border-b border-white/8 px-5 py-3 last:border-0">
       <dt className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-white/45">

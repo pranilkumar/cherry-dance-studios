@@ -21,7 +21,7 @@ export default function AttendanceSystem() {
   const [batches, setBatches]             = useState([]);
   const [selectedBatch, setSelectedBatch] = useState(null);
   const [students, setStudents]           = useState([]);
-  const [marks, setMarks]                 = useState({}); // { student_id: 'present'|'late'|'absent' }
+  const [marks, setMarks]                 = useState<Record<string, string>>({}); // { student_id: 'present'|'late'|'absent' }
   const [loadingRoster, setLoadingRoster] = useState(false);
   const [saving, setSaving]               = useState(false);
   const [todayStats, setTodayStats]       = useState({ present: 0, late: 0, absent: 0 });
@@ -113,7 +113,7 @@ export default function AttendanceSystem() {
       .in('student_id', ids);
 
     // Default everyone to 'present'; overwrite with any saved records
-    const newMarks = {};
+    const newMarks: Record<string, string> = {};
     for (const s of studs) newMarks[s.id] = 'present';
     for (const row of (attData || [])) newMarks[row.student_id] = row.status;
     setMarks(newMarks);
@@ -452,7 +452,7 @@ function QRModal({ batch, onClose }) {
 
 /* ── Primitives ── */
 
-function StatCard({ icon: Icon, label, value, featured }) {
+function StatCard({ icon: Icon, label, value, featured = false }: { icon: any; label: any; value: any; featured?: any }) {
   return (
     <div className={`rounded-2xl border p-5 backdrop-blur-md ${
       featured ? 'border-[#d1060f]/30 bg-[#d1060f]/[0.06]' : 'border-white/10 bg-white/[0.03]'

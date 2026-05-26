@@ -763,7 +763,7 @@ function Grid2({ children }) {
   return <div className="grid gap-4 md:grid-cols-2">{children}</div>;
 }
 
-function Field({ label, required, children }) {
+function Field({ label, required = false, hint, children }: { label: any; required?: any; hint?: any; children: any }) {
   return (
     <div>
       <label className="mb-1.5 block text-xs font-medium text-white/70">
@@ -786,7 +786,7 @@ function StatusBadge({ status }) {
   );
 }
 
-function InfoRow({ label, value, children }) {
+function InfoRow({ label, value, children = null }: { label: any; value?: any; children?: any }) {
   return (
     <div>
       <p className="mb-0.5 text-xs font-medium text-white/45">{label}</p>

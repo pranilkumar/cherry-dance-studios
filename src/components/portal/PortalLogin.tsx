@@ -60,7 +60,7 @@ export default function PortalLogin() {
   }, [mode, step]);
 
   // ── Code mode ────────────────────────────────────────────────────
-  const sendCode = async (e) => {
+  const sendCode = async (e?: any) => {
     if (e) e.preventDefault();
     if (!email.trim()) return;
     setStatus('sending');

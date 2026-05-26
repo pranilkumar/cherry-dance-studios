@@ -62,7 +62,7 @@ export default function ClassesAdmin() {
 
   // Count active students per batch
   const countByBatch = useMemo(() => {
-    const map = {};
+    const map: Record<string, number> = {};
     (students || []).forEach((s) => {
       if (s.class_batch_id && s.status === 'active') {
         map[s.class_batch_id] = (map[s.class_batch_id] || 0) + 1;

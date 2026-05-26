@@ -14,13 +14,25 @@ import { motion } from 'framer-motion';
 export default function GlowButton({
   variant = 'primary',
   size = 'md',
-  href,
-  onClick,
+  href = undefined,
+  onClick = undefined,
   type = 'button',
+  disabled = false,
   icon = null,
   iconPosition = 'right',
   className = '',
   children,
+}: {
+  variant?: string;
+  size?: string;
+  href?: string;
+  onClick?: (...args: any[]) => any;
+  type?: 'button' | 'submit' | 'reset';
+  disabled?: boolean;
+  icon?: any;
+  iconPosition?: string;
+  className?: string;
+  children?: any;
 }) {
   const sizes = {
     sm: 'px-5 py-2.5 text-sm',

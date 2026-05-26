@@ -55,7 +55,7 @@ const empty = (existing = null) => ({
 export default function WorkshopForm({ workshop = null, mode = 'create' }) {
   const router = useRouter();
   const [form, setForm] = useState(empty(workshop));
-  const [errors, setErrors] = useState({});
+  const [errors, setErrors] = useState<Record<string, string | null>>({});
   const [saving, setSaving] = useState(false);
   const [serverError, setServerError] = useState('');
   const [autoSlug, setAutoSlug] = useState(mode === 'create');
@@ -70,7 +70,7 @@ export default function WorkshopForm({ workshop = null, mode = 'create' }) {
   };
 
   const validate = () => {
-    const e = {};
+    const e: Record<string, string> = {};
     if (!form.title.trim()) e.title = 'Required.';
     if (!form.slug.trim()) e.slug = 'Required.';
     else if (!/^[a-z0-9-]+$/.test(form.slug)) e.slug = 'Use lowercase, numbers, dashes only.';
@@ -320,7 +320,7 @@ function Grid2({ children }) {
   return <div className="grid gap-5 md:grid-cols-2">{children}</div>;
 }
 
-function Field({ label, hint, required, error, children }) {
+function Field({ label, hint = undefined, required = false, error = undefined, children }: { label: any; hint?: any; required?: any; error?: any; children: any }) {
   return (
     <div>
       <label className="mb-1.5 flex items-center justify-between text-xs font-medium text-white/70">
@@ -333,7 +333,7 @@ function Field({ label, hint, required, error, children }) {
   );
 }
 
-const inputCls = (err) =>
+const inputCls = (err?: any) =>
   `w-full rounded-lg border ${err ? 'border-[#d1060f] ring-2 ring-[#d1060f]/20' : 'border-white/15'} bg-white/[0.04] px-3 py-2 text-sm text-white placeholder:text-white/35 focus:border-[#ee2435] focus:bg-white/[0.06] focus:outline-none focus:ring-2 focus:ring-[#d1060f]/25`;
 
 const selectChevron =

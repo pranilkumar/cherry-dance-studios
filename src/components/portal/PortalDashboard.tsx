@@ -26,7 +26,7 @@ function formatNextBirthday(dobIso) {
   const today = new Date();
   let next = new Date(today.getFullYear(), d.getMonth(), d.getDate());
   if (next < today) next = new Date(today.getFullYear() + 1, d.getMonth(), d.getDate());
-  const days = Math.ceil((next - today) / (1000 * 60 * 60 * 24));
+  const days = Math.ceil((+next - +today) / (1000 * 60 * 60 * 24));
   return {
     date: new Intl.DateTimeFormat('en-CA', { month: 'long', day: 'numeric' }).format(next),
     daysAway: days,

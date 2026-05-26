@@ -31,7 +31,7 @@ const inputErr = 'border-[#d1060f] ring-2 ring-[#d1060f]/15';
 const selectChevron =
   "appearance-none bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%230a0a0f%22 stroke-width=%221.5%22><path d=%22m6 9 6 6 6-6%22/></svg>')] bg-[length:18px] bg-[right_1rem_center] bg-no-repeat pr-10";
 
-const Field = ({ label, required, error, children }) => (
+const Field = ({ label, required = false, error = undefined, children }: { label: any; required?: any; error?: any; children: any }) => (
   <div>
     <label className="mb-2 block text-sm font-medium text-[#0a0a0f]/75">
       {label}
@@ -59,7 +59,7 @@ export default function MnMRegistration() {
     package: '', child2Name: '', child2Age: '', child3Name: '', child3Age: '',
     allergy: 'no', allergyText: '', source: '',
   });
-  const [errors, setErrors] = useState({});
+  const [errors, setErrors] = useState<Record<string, any>>({});
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
@@ -70,7 +70,7 @@ export default function MnMRegistration() {
   };
 
   const validate = () => {
-    const e = {};
+    const e: Record<string, any> = {};
     if (!form.parentName.trim()) e.parentName = 'Please enter your full name.';
     if (!form.phone || form.phone.length < 7) e.phone = 'Please enter a valid phone number.';
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) e.email = 'Please enter a valid email address.';

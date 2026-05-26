@@ -259,7 +259,7 @@ function StatusBadge({ status }) {
   );
 }
 
-function StatBox({ label, value, featured }) {
+function StatBox({ label, value, featured = false }: { label: any; value: any; featured?: any }) {
   return (
     <div className={`rounded-2xl border p-4 backdrop-blur-md ${featured ? 'border-[#d1060f]/30 bg-[#d1060f]/[0.06]' : 'border-white/10 bg-white/[0.03]'}`}>
       <div className="text-xs font-medium uppercase tracking-[0.15em] text-white/55">{label}</div>

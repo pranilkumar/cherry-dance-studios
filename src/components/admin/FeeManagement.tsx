@@ -44,7 +44,7 @@ export default function FeeManagement() {
   const [sendReceipt, setSendReceipt] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editModal, setEditModal] = useState(null);      // fee object being edited
-  const [editData, setEditData] = useState({});
+  const [editData, setEditData] = useState<{ amount: string; fee_type: string; due_date: string; notes: string }>({ amount: '', fee_type: '', due_date: '', notes: '' });
   const [bulkModal, setBulkModal] = useState(false);
   const [bulkData, setBulkData] = useState({ amount: '100', feeType: 'Monthly fee', dueDate: '' });
   const [isBulking, setIsBulking] = useState(false);
@@ -52,11 +52,6 @@ export default function FeeManagement() {
   const [isSendingReminders, setIsSendingReminders] = useState(false);
   const [alert, setAlert] = useState(null);
   const [monthlyStats, setMonthlyStats] = useState({ totalIncome: 0, paidCount: 0, pendingCount: 0, overdueCount: 0 });
-
-  useEffect(() => {
-    fetchData();
-    setBulkData((p) => ({ ...p, dueDate: `${monthFilter}-10` }));
-  }, [fetchData, monthFilter]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -109,6 +104,11 @@ export default function FeeManagement() {
       setLoading(false);
     }
   }, [monthFilter]);
+
+  useEffect(() => {
+    fetchData();
+    setBulkData((p) => ({ ...p, dueDate: `${monthFilter}-10` }));
+  }, [fetchData, monthFilter]);
 
   const filtered = useMemo(() => students.filter((s) => {
     const term = searchTerm.toLowerCase();
@@ -848,7 +848,7 @@ export default function FeeManagement() {
 
 /* ── tiny primitives ── */
 
-function StatCard({ icon: Icon, label, value, sub, featured }) {
+function StatCard({ icon: Icon, label, value, sub, featured = false }: { icon: any; label: any; value: any; sub: any; featured?: any }) {
   return (
     <div className={`rounded-2xl border p-5 backdrop-blur-md ${featured ? 'border-[#d1060f]/30 bg-[#d1060f]/[0.06]' : 'border-white/10 bg-white/[0.03]'}`}>
       <div className={`grid h-10 w-10 place-items-center rounded-full ${featured ? 'bg-[#d1060f] text-white' : 'bg-white/10 text-white'}`}>
@@ -883,7 +883,7 @@ function Grid2({ children }) {
   return <div className="grid gap-4 md:grid-cols-2">{children}</div>;
 }
 
-function Field({ label, required, children }) {
+function Field({ label, required = false, children }: { label: any; required?: any; children: any }) {
   return (
     <div>
       <label className="mb-1.5 block text-xs font-medium text-white/70">

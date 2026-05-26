@@ -74,7 +74,7 @@ export function formatNextClass(date) {
   if (!date) return null;
   const now = new Date(); now.setHours(0, 0, 0, 0);
   const day = new Date(date); day.setHours(0, 0, 0, 0);
-  const diffDays = Math.round((day - now) / (1000 * 60 * 60 * 24));
+  const diffDays = Math.round((+day - +now) / (1000 * 60 * 60 * 24));
   const dayLabel =
     diffDays === 0 ? 'Today' :
     diffDays === 1 ? 'Tomorrow' :

@@ -19,7 +19,7 @@ const inputErr = 'border-[#d1060f] ring-2 ring-[#d1060f]/15';
 const selectChevron =
   "appearance-none bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%230a0a0f%22 stroke-width=%221.5%22><path d=%22m6 9 6 6 6-6%22/></svg>')] bg-[length:18px] bg-[right_1rem_center] bg-no-repeat pr-10";
 
-function Field({ label, required, error, children }) {
+function Field({ label, required = false, error = undefined, children }: { label: any; required?: any; error?: any; children: any }) {
   return (
     <div>
       <label className="mb-2 block text-sm font-medium text-[#0a0a0f]/75">
@@ -59,7 +59,7 @@ export default function WorkshopRegisterForm({ workshop }) {
     dietaryNotes: '',
     heardFrom: '',
   });
-  const [errors, setErrors] = useState({});
+  const [errors, setErrors] = useState<Record<string, any>>({});
   const [status, setStatus] = useState('idle'); // idle | submitting | error
   const [submitError, setSubmitError] = useState('');
 
@@ -94,7 +94,7 @@ export default function WorkshopRegisterForm({ workshop }) {
   const selectedPkg = packages.find((p) => p.id === form.packageId);
 
   const validate = () => {
-    const e = {};
+    const e: Record<string, any> = {};
     if (!form.parentName.trim()) e.parentName = 'Your name is required.';
     if (!form.email.trim()) e.email = 'Email is required.';
     else if (!EMAIL_RE.test(form.email)) e.email = 'Please enter a valid email address.';
@@ -102,7 +102,7 @@ export default function WorkshopRegisterForm({ workshop }) {
     if (packages.length > 0 && !form.packageId) e.packageId = 'Pick a package.';
 
     const childErrors = form.children.map((c) => {
-      const ce = {};
+      const ce: Record<string, any> = {};
       if (!c.name.trim()) ce.name = "Child's name is required.";
       if (!c.age) ce.age = "Age is required.";
       return ce;

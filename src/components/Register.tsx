@@ -102,7 +102,7 @@ const selectChevron =
    Small UI helpers
    ──────────────────────────────────────────────────────────────── */
 
-function SectionHead({ num, label, icon: Icon }) {
+function SectionHead({ num, label, icon: Icon = undefined }: { num: any; label: any; icon?: any }) {
   return (
     <div className="mb-6 flex items-center gap-3">
       <span className="font-mono text-xs font-semibold tracking-wider text-[#d1060f]">{num}</span>
@@ -115,7 +115,7 @@ function SectionHead({ num, label, icon: Icon }) {
   );
 }
 
-function Field({ label, required, error, hint, children }) {
+function Field({ label, required = false, error = undefined, hint = undefined, children }: { label: any; required?: any; error?: any; hint?: any; children: any }) {
   return (
     <div>
       <label className="mb-2 flex items-center justify-between text-sm font-medium text-[#0a0a0f]/75">
@@ -137,7 +137,7 @@ function Field({ label, required, error, hint, children }) {
 
 export default function Register() {
   const [form, setForm] = useState(EMPTY);
-  const [errors, setErrors] = useState({});
+  const [errors, setErrors] = useState<Record<string, any>>({});
   const [status, setStatus] = useState('idle');
   const [submitError, setSubmitError] = useState('');
 
@@ -161,7 +161,7 @@ export default function Register() {
   const nextBday = useMemo(() => formatNextBirthday(form.childDob), [form.childDob]);
 
   const validate = () => {
-    const e = {};
+    const e: Record<string, any> = {};
     if (!form.childName.trim()) e.childName = "Dancer's name is required.";
     if (!form.childDob) {
       e.childDob = 'Date of birth is required.';

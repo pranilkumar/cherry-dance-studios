@@ -15,10 +15,16 @@ import { motion } from 'framer-motion';
  */
 export default function KineticHeading({
   children,
-  as: Tag = 'h1',
+  as: Tag = 'h1' as any,
   split = 'word',
   gradient = null,
   className = '',
+}: {
+  children?: any;
+  as?: any;
+  split?: string;
+  gradient?: string | null;
+  className?: string;
 }) {
   const text = typeof children === 'string' ? children : '';
   const tokens =

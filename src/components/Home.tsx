@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { FaArrowRight } from 'react-icons/fa';
+import { FaArrowRight, FaChevronDown } from 'react-icons/fa';
 import logo from '../assets/icons/logo.png';
 import { GlowButton } from './ui';
 
@@ -74,19 +74,25 @@ export default function Home() {
       />
 
       <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center px-6 pb-16 pt-28 text-center sm:pt-32 md:pb-24 md:pt-40">
-        {/* Style ticker — what we teach */}
+        {/* Style ticker — animated marquee */}
         <motion.div
           initial={{ opacity: 0, y: -6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 font-[family-name:var(--font-display)] text-[0.75rem] font-semibold uppercase tracking-[0.18em] text-white/90 md:text-sm"
+          className="w-full max-w-xs overflow-hidden sm:max-w-sm md:max-w-md"
         >
-          {STYLES.map((s, i) => (
-            <span key={s} className="flex items-center gap-3">
-              {i > 0 && <span className="text-[#ee2435]">／</span>}
-              <span>{s}</span>
-            </span>
-          ))}
+          <motion.div
+            className="flex w-max items-center gap-8 font-[family-name:var(--font-display)] text-[0.75rem] font-semibold uppercase tracking-[0.18em] text-white/90 md:text-sm"
+            animate={{ x: ['0%', '-50%'] }}
+            transition={{ duration: 10, repeat: Infinity, ease: 'linear' }}
+          >
+            {[...STYLES, ...STYLES].map((s, i) => (
+              <span key={i} className="flex items-center gap-3 whitespace-nowrap">
+                <span className="text-[#ee2435]">／</span>
+                {s}
+              </span>
+            ))}
+          </motion.div>
         </motion.div>
 
         {/* Big logo — the identity mark */}
@@ -152,6 +158,15 @@ export default function Home() {
         </motion.div>
       </div>
 
+      {/* Scroll-down indicator */}
+      <motion.div
+        animate={{ y: [0, 8, 0] }}
+        transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white/30"
+        aria-hidden
+      >
+        <FaChevronDown className="text-xl" />
+      </motion.div>
     </section>
   );
 }

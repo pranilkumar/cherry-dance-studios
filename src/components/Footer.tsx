@@ -11,6 +11,7 @@ const navLinks = [
   { label: 'Gallery', href: '#gallery' },
   { label: 'Instructors', href: '#instructors' },
   { label: 'Contact', href: '#contact' },
+  { label: 'Register', href: '/register' },
 ];
 
 const socials = [

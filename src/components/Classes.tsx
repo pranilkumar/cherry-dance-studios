@@ -142,21 +142,30 @@ export default function Classes() {
                     </p>
                   </div>
 
-                  {/* Schedule */}
-                  <div className="mt-6 space-y-2 border-t border-white/15 pt-5">
-                    {cls.slots.map((slot, idx) => (
-                      <div
-                        key={idx}
-                        className="flex items-center justify-between text-sm"
-                      >
-                        <span className="font-semibold text-white/95">{slot.days}</span>
-                        <span className="font-mono text-xs text-white/75">{slot.time}</span>
+                  {/* Schedule + enrol CTA */}
+                  <div className="mt-6 border-t border-white/15 pt-5">
+                    <div className="space-y-2">
+                      {cls.slots.map((slot, idx) => (
+                        <div
+                          key={idx}
+                          className="flex items-center justify-between text-sm"
+                        >
+                          <span className="font-semibold text-white/95">{slot.days}</span>
+                          <span className="font-mono text-xs text-white/75">{slot.time}</span>
+                        </div>
+                      ))}
+                      <div className="mt-3 flex items-center gap-1.5 text-xs text-white/65">
+                        <FaClock className="text-[10px]" />
+                        <span>{cls.duration} per class</span>
                       </div>
-                    ))}
-                    <div className="mt-3 flex items-center gap-1.5 text-xs text-white/65">
-                      <FaClock className="text-[10px]" />
-                      <span>{cls.duration} per class</span>
                     </div>
+                    <a
+                      href="#register"
+                      className="group mt-5 flex w-full items-center justify-between rounded-xl bg-white/10 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/20"
+                    >
+                      Enrol in {cls.title}
+                      <FaArrowRight className="text-xs opacity-60 transition group-hover:translate-x-1 group-hover:opacity-100" />
+                    </a>
                   </div>
                 </BentoCard>
               </motion.div>

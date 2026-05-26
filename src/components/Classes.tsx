@@ -40,7 +40,7 @@ const classes = [
     description:
       'Intensive Bollywood, hip-hop, freestyle, and choreography for dancers ready to level up.',
     slots: [{ days: 'Mon & Wed', time: '7:00 – 8:00 PM' }],
-    duration: '2 hrs',
+    duration: '1 hr',
     icon: FaBolt,
     gradient: 'noir',
     span: { col: 3 },

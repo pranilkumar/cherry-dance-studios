@@ -59,7 +59,7 @@ export default function PortalClasses() {
       const [{ data: stuData }, { data: batchData }] = await Promise.all([
         supabase
           .from('students')
-          .select('id, student_name, date_of_birth, status, preferred_class, preferred_weekday, preferred_time_slot, experience_level, class_batch:class_batches(id, name, tier, style, instructor, weekdays, start_time, end_time, notes)')
+          .select('id, student_name, date_of_birth, status, preferred_class, preferred_weekday, preferred_time_slot, experience_level, batch_days, class_batch:class_batches(id, name, tier, style, instructor, weekdays, start_time, end_time, notes)')
           .eq('email', user.email)
           .in('status', ['active', 'on_break', 'pending']),
         supabase
@@ -111,10 +111,11 @@ export default function PortalClasses() {
           <div className="space-y-3">
             {enrolledStudents.map((s) => {
               const batch = s.class_batch;
-              const nextDate = getNextClassDate(batch);
+              const studentDays = s.batch_days?.length ? s.batch_days : undefined;
+              const nextDate = getNextClassDate(batch, studentDays);
               const next = formatNextClass(nextDate);
               const days  = batch
-                ? (batch.weekdays || []).join(', ')
+                ? (studentDays || batch.weekdays || []).join(', ')
                 : formatDays(s.preferred_weekday);
               const times = batch
                 ? (batch.end_time

@@ -309,18 +309,28 @@ export default function AttendanceSystem() {
             </div>
           ) : (
             <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]">
-              {/* Stats bar */}
-              <div className="grid grid-cols-3 divide-x divide-white/8 border-b border-white/8 bg-white/[0.02]">
-                {['present', 'late', 'absent'].map((s) => (
-                  <div key={s} className="py-3 text-center">
-                    <p className={`font-[family-name:var(--font-display)] text-xl font-bold tabular-nums ${
-                      s === 'absent' && rosterStats.absent > 0 ? 'text-[#ee2435]' : 'text-white'
-                    }`}>
-                      {rosterStats[s]}
-                    </p>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-white/45">{s}</p>
-                  </div>
-                ))}
+              {/* Stats bar + Mark all present */}
+              <div className="flex items-center justify-between border-b border-white/8 bg-white/[0.02] px-4">
+                <div className="grid flex-1 grid-cols-3 divide-x divide-white/8">
+                  {['present', 'late', 'absent'].map((s) => (
+                    <div key={s} className="py-3 text-center">
+                      <p className={`font-[family-name:var(--font-display)] text-xl font-bold tabular-nums ${
+                        s === 'absent' && rosterStats.absent > 0 ? 'text-[#ee2435]' : 'text-white'
+                      }`}>
+                        {rosterStats[s]}
+                      </p>
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-white/45">{s}</p>
+                    </div>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setMarks(Object.fromEntries(students.map((s) => [s.id, 'present'])))}
+                  className="ml-4 rounded-lg border border-white/15 bg-white/[0.04] px-3 py-1.5 text-xs font-semibold text-white/70 hover:border-white/30 hover:bg-white/[0.08] hover:text-white"
+                  title="Set everyone to Present"
+                >
+                  All present
+                </button>
               </div>
 
               {/* Student rows */}

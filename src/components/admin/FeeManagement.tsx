@@ -48,6 +48,8 @@ export default function FeeManagement() {
   const [bulkModal, setBulkModal] = useState(false);
   const [bulkData, setBulkData] = useState({ amount: '100', feeType: 'Monthly fee', dueDate: '' });
   const [isBulking, setIsBulking] = useState(false);
+  const [lastBulkStudents, setLastBulkStudents] = useState<any[]>([]); // students from last bulk creation
+  const [isNotifying, setIsNotifying] = useState(false);
   const [reminderModal, setReminderModal] = useState(false);
   const [isSendingReminders, setIsSendingReminders] = useState(false);
   const [alert, setAlert] = useState(null);
@@ -218,6 +220,15 @@ export default function FeeManagement() {
       }));
       const { error } = await supabase.from('fees').insert(inserts);
       if (error) throw error;
+      setLastBulkStudents(withoutFee.map((s) => ({
+        email: s.email,
+        emailSecondary: s.email_secondary || '',
+        studentName: s.student_name,
+        parentName: s.parent_name,
+        amount: parseFloat(bulkData.amount),
+        feeType: bulkData.feeType,
+        dueDate: bulkData.dueDate,
+      })));
       showAlert('success', `Created ${inserts.length} fees for ${monthFilter}.`);
       setBulkModal(false);
       fetchData();
@@ -225,6 +236,28 @@ export default function FeeManagement() {
       showAlert('error', err.message || 'Failed to create fees.');
     } finally {
       setIsBulking(false);
+    }
+  };
+
+  // ── Notify parents after bulk creation ────────────────────────────
+  const notifyParentsAfterBulk = async () => {
+    if (!lastBulkStudents.length) return;
+    setIsNotifying(true);
+    try {
+      const res = await fetch('/api/send-fee-notification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ month: monthFilter, fees: lastBulkStudents }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to send notifications');
+      showAlert('success', `Notified ${data.sent} parent${data.sent !== 1 ? 's' : ''}${data.failed ? ` (${data.failed} failed)` : ''}.`);
+      setLastBulkStudents([]);
+    } catch (err) {
+      showAlert('error', err.message || 'Failed to send notifications');
+    } finally {
+      setIsNotifying(false);
     }
   };
 
@@ -413,16 +446,39 @@ export default function FeeManagement() {
 
       {alert && (
         <div
-          className={`mb-5 flex items-center justify-between rounded-xl border px-4 py-3 text-sm backdrop-blur-md ${
+          className={`mb-5 flex flex-col gap-2 rounded-xl border px-4 py-3 text-sm backdrop-blur-md ${
             alert.type === 'success'
               ? 'border-white/15 bg-white/[0.06] text-white'
               : 'border-[#d1060f]/30 bg-[#d1060f]/10 text-[#ee2435]'
           }`}
         >
-          <span>{alert.message}</span>
-          <button onClick={() => setAlert(null)} className="ml-3 opacity-65 hover:opacity-100">
-            <FaTimes className="text-xs" />
-          </button>
+          <div className="flex items-center justify-between">
+            <span>{alert.message}</span>
+            <button onClick={() => setAlert(null)} className="ml-3 opacity-65 hover:opacity-100">
+              <FaTimes className="text-xs" />
+            </button>
+          </div>
+          {alert.type === 'success' && lastBulkStudents.length > 0 && (
+            <div className="flex items-center gap-3 border-t border-white/10 pt-2">
+              <span className="text-xs text-white/60">Notify {lastBulkStudents.length} parent{lastBulkStudents.length !== 1 ? 's' : ''} by email?</span>
+              <button
+                type="button"
+                onClick={notifyParentsAfterBulk}
+                disabled={isNotifying}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-[#d1060f] px-3 py-1 text-xs font-semibold text-white hover:bg-[#b00310] disabled:opacity-60"
+              >
+                <FaBell className="text-[10px]" />
+                {isNotifying ? 'Sending…' : 'Send fee notices'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setLastBulkStudents([])}
+                className="text-xs text-white/40 hover:text-white/70"
+              >
+                Skip
+              </button>
+            </div>
+          )}
         </div>
       )}
 

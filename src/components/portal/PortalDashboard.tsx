@@ -10,9 +10,10 @@ import {
   FaArrowRight,
   FaBirthdayCake,
   FaMusic,
+  FaClock,
 } from 'react-icons/fa';
 import { supabase } from '../../lib/supabaseClient';
-import { parseLocalDate, calcAge, calcNextClass } from '../../lib/dateUtils';
+import { parseLocalDate, calcAge, calcNextClass, fmt24 } from '../../lib/dateUtils';
 
 /**
  * Parent portal home — welcome + kid card(s) + quick stats.
@@ -240,10 +241,38 @@ export default function PortalDashboard() {
                     </div>
 
                     {/* Inline meta */}
-                    <dl className="mt-5 grid grid-cols-2 gap-3 border-t border-white/8 pt-5 text-xs">
-                      <KV k="Preferred class" v={s.preferred_class} />
-                      <KV k="Experience" v={s.experience_level} />
-                    </dl>
+                    <div className="mt-5 border-t border-white/8 pt-5">
+                      {s.class_batch ? (
+                        /* Enrolled in a real batch — show class name + schedule */
+                        <div className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3">
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-white/45">Enrolled class</p>
+                          <p className="mt-1 font-[family-name:var(--font-display)] text-base font-bold text-white">
+                            {s.class_batch.name}
+                          </p>
+                          <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-xs text-white/55">
+                            {s.class_batch.weekdays?.length > 0 && (
+                              <span className="flex items-center gap-1.5">
+                                <FaCalendarAlt className="text-[9px] text-[#ee2435]" />
+                                {s.class_batch.weekdays.join(' & ')}
+                              </span>
+                            )}
+                            {s.class_batch.start_time && (
+                              <span className="flex items-center gap-1.5">
+                                <FaClock className="text-[9px] text-[#ee2435]" />
+                                {fmt24(s.class_batch.start_time)}
+                                {s.class_batch.end_time && ` – ${fmt24(s.class_batch.end_time)}`}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        /* No batch yet — show registration preferences */
+                        <dl className="grid grid-cols-2 gap-3 text-xs">
+                          <KV k="Preferred class" v={s.preferred_class} />
+                          <KV k="Experience" v={s.experience_level} />
+                        </dl>
+                      )}
+                    </div>
 
                     {/* Birthday callout */}
                     {bday && (
@@ -265,24 +294,29 @@ export default function PortalDashboard() {
         )}
 
         {/* Quick links + summary stats */}
-        {students.length > 0 && (
+        {students.length > 0 && (() => {
+          const totalOwed = pendingFees.reduce((s, f) => s + parseFloat(f.amount || 0), 0);
+          const fmtOwed = new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD', maximumFractionDigits: totalOwed % 1 === 0 ? 0 : 2 }).format(totalOwed);
+          const now = new Date();
+          const upcomingWorkshops = workshopBookings.filter((b) => b.workshop?.starts_at && new Date(b.workshop.starts_at) >= now);
+          return (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
             <SummaryCard
               icon={FaDollarSign}
               label="Pending fees"
-              value={pendingFees.length}
+              value={pendingFees.length === 0 ? '$0' : fmtOwed}
               sub={pendingFees.length === 0 ? "You're all caught up." : `${pendingFees.length} payment${pendingFees.length === 1 ? '' : 's'} due`}
               href="/portal/fees"
               featured={pendingFees.length > 0}
             />
             <SummaryCard
               icon={FaHeart}
-              label="Workshop tickets"
-              value={workshopBookings.length}
+              label="Workshops"
+              value={upcomingWorkshops.length}
               sub={
-                workshopBookings.length === 0
-                  ? 'No workshops booked yet.'
-                  : `Latest: ${workshopBookings[0]?.workshop?.title ?? 'Workshop'}`
+                upcomingWorkshops.length === 0
+                  ? workshopBookings.length > 0 ? `${workshopBookings.length} past booking${workshopBookings.length === 1 ? '' : 's'}` : 'No workshops booked yet.'
+                  : `${upcomingWorkshops.length} upcoming ticket${upcomingWorkshops.length === 1 ? '' : 's'}`
               }
               href="/portal/workshops"
             />
@@ -337,7 +371,8 @@ export default function PortalDashboard() {
               href="/portal/classes"
             />
           </div>
-        )}
+          );
+        })()}
       </div>
     </div>
   );

@@ -32,7 +32,7 @@ export default function PortalAttendance() {
 
       const { data: studentData } = await supabase
         .from('students')
-        .select('id, student_name, preferred_class')
+        .select('id, student_name, preferred_class, class_batch:class_batches(name)')
         .eq('email', user.email);
 
       if (cancelled || !studentData?.length) { setLoading(false); return; }
@@ -125,15 +125,45 @@ export default function PortalAttendance() {
           </p>
         </div>
       ) : (
-        <div className="space-y-8">
-          {students.map((student) => (
-            <StudentAttendance
-              key={student.id}
-              student={student}
-              records={attendance[student.id] || []}
-            />
-          ))}
-        </div>
+        <>
+          {/* Multi-student summary — only shown when there are 2+ dancers */}
+          {students.length > 1 && (
+            <div className="mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {students.map((student) => {
+                const records = attendance[student.id] || [];
+                const total   = records.length;
+                const present = records.filter((r) => r.status === 'present' || r.status === 'late').length;
+                const rate    = total > 0 ? Math.round((present / total) * 100) : null;
+                return (
+                  <div key={student.id} className="flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-4">
+                    <div className="flex-1 min-w-0">
+                      <p className="truncate text-sm font-semibold text-white">{student.student_name}</p>
+                      <p className="mt-0.5 text-xs text-white/45">{total} class{total !== 1 ? 'es' : ''} recorded</p>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <p className={`font-[family-name:var(--font-display)] text-2xl font-bold tabular-nums ${
+                        rate == null ? 'text-white/30' : rate >= 85 ? 'text-emerald-400' : rate >= 70 ? 'text-amber-400' : 'text-[#ee2435]'
+                      }`}>
+                        {rate == null ? '—' : `${rate}%`}
+                      </p>
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-white/35">attendance</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          <div className="space-y-8">
+            {students.map((student) => (
+              <StudentAttendance
+                key={student.id}
+                student={student}
+                records={attendance[student.id] || []}
+              />
+            ))}
+          </div>
+        </>
       )}
     </div>
   );
@@ -161,8 +191,10 @@ function StudentAttendance({ student, records }) {
         <p className="font-[family-name:var(--font-display)] text-base font-bold tracking-tight text-white">
           {student.student_name}
         </p>
-        {student.preferred_class && (
-          <p className="mt-0.5 text-xs text-white/45">{student.preferred_class}</p>
+        {(student.class_batch?.name || student.preferred_class) && (
+          <p className="mt-0.5 text-xs text-white/45">
+            {student.class_batch?.name || student.preferred_class}
+          </p>
         )}
       </div>
 

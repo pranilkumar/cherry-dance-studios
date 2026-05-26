@@ -38,10 +38,20 @@ export default function RegistrationManagement() {
   const [converting, setConverting] = useState(false);
   const [resendingId, setResendingId] = useState(null); // tracks which row's Resend is in-flight
   const [alert, setAlert] = useState(null);
+  const [batches, setBatches] = useState([]);
 
   const PAGE_SIZE = 50;
 
-  useEffect(() => { fetchRegistrations(); }, []);
+  useEffect(() => { fetchRegistrations(); fetchBatches(); }, []);
+
+  const fetchBatches = async () => {
+    const { data } = await supabase
+      .from('class_batches')
+      .select('id, name, tier, weekdays, start_time, end_time')
+      .eq('is_active', true)
+      .order('name');
+    setBatches(data || []);
+  };
 
   const fetchRegistrations = async (append = false) => {
     setLoading(true);
@@ -79,6 +89,15 @@ export default function RegistrationManagement() {
       showAlert('error', error.message || 'Failed to convert');
       setConverting(false);
       return;
+    }
+
+    // Assign batch if selected.
+    if (feeData?.batchId && newStudentId) {
+      const { error: batchErr } = await supabase
+        .from('students')
+        .update({ class_batch_id: feeData.batchId })
+        .eq('id', newStudentId);
+      if (batchErr) console.warn('[batch-assign] failed:', batchErr);
     }
 
     // Insert the initial fee record if one was provided.
@@ -363,6 +382,7 @@ export default function RegistrationManagement() {
         <FeeModal
           registration={convertConfirm}
           converting={converting}
+          batches={batches}
           onConfirm={(feeData) => convertToStudent(convertConfirm.id, feeData)}
           onCancel={() => setConvertConfirm(null)}
         />
@@ -517,7 +537,7 @@ function KV({ k, v }) {
   );
 }
 
-function FeeModal({ registration, converting, onConfirm, onCancel }) {
+function FeeModal({ registration, converting, batches = [], onConfirm, onCancel }) {
   const fifteenthOfNextMonth = () => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth() + 1, 15)
@@ -529,10 +549,11 @@ function FeeModal({ registration, converting, onConfirm, onCancel }) {
   const [feeType, setFeeType] = useState('Monthly fee');
   const [dueDate, setDueDate] = useState(fifteenthOfNextMonth());
   const [notes, setNotes] = useState('');
+  const [batchId, setBatchId] = useState('');
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onConfirm({ amount: parseFloat(amount), feeType, dueDate, notes });
+    onConfirm({ amount: parseFloat(amount), feeType, dueDate, notes, batchId: batchId || null });
   };
 
   return (
@@ -604,6 +625,25 @@ function FeeModal({ registration, converting, onConfirm, onCancel }) {
               <option value="Other">Other</option>
             </select>
           </div>
+
+          {batches.length > 0 && (
+            <div>
+              <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-white/45">
+                Assign to class{' '}
+                <span className="font-normal normal-case text-white/30">(optional)</span>
+              </label>
+              <select
+                value={batchId}
+                onChange={(e) => setBatchId(e.target.value)}
+                className={inputCls}
+              >
+                <option value="">— Assign later —</option>
+                {batches.map((b) => (
+                  <option key={b.id} value={b.id}>{b.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div>
             <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-white/45">

@@ -37,17 +37,19 @@ export const DAY_NUM = {
 
 /**
  * Returns the next scheduled class Date for a batch object, or null.
+ * Pass overrideDays (student.batch_days) to restrict to a student's specific days.
  * Used in PortalClasses — pair with formatNextClass() for display.
  */
-export function getNextClassDate(batch) {
+export function getNextClassDate(batch, overrideDays?: string[]) {
   if (!batch?.weekdays?.length || !batch.start_time) return null;
   const [hStr, mStr] = batch.start_time.split(':');
   const hours = parseInt(hStr, 10);
   const minutes = parseInt(mStr, 10);
   const now = new Date();
   const todayDow = now.getDay();
+  const days = overrideDays?.length ? overrideDays : batch.weekdays;
   let minDaysAway = null;
-  for (const day of batch.weekdays) {
+  for (const day of days) {
     const dow = DAY_NUM[day];
     if (dow == null) continue;
     let daysAway = (dow - todayDow + 7) % 7;
@@ -96,8 +98,9 @@ export function calcNextClass(student) {
   const [h, m] = batch.start_time.split(':').map(Number);
   const now = new Date();
   const dow = now.getDay();
+  const days = student.batch_days?.length ? student.batch_days : batch.weekdays;
   let minDays = null;
-  for (const day of batch.weekdays) {
+  for (const day of days) {
     let d = (DAY_NUM[day] - dow + 7) % 7;
     if (d === 0) {
       const t = new Date(now); t.setHours(h, m, 0, 0);

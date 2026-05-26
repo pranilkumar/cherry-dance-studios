@@ -160,6 +160,9 @@ export default function PortalFees() {
                         <p className={`mt-0.5 text-xs ${overdue ? 'text-[#ee2435]' : 'text-white/55'}`}>
                           {overdue ? 'Overdue · was due ' : 'Due '}{formatDate(fee.due_date)}
                         </p>
+                        {fee.notes && (
+                          <p className="mt-0.5 text-xs text-white/35 italic">{fee.notes}</p>
+                        )}
                       </div>
                       <span className="shrink-0 font-[family-name:var(--font-display)] text-lg font-bold tabular-nums text-white">
                         {formatCurrency(fee.amount)}
@@ -194,6 +197,9 @@ export default function PortalFees() {
                         )}
                       </div>
                       <p className="mt-0.5 text-xs text-white/40">Due {formatDate(fee.due_date)}</p>
+                      {fee.notes && (
+                        <p className="mt-0.5 text-xs text-white/30 italic">{fee.notes}</p>
+                      )}
                     </div>
                     <span className="shrink-0 font-[family-name:var(--font-display)] text-lg font-bold tabular-nums text-white/55">
                       {formatCurrency(fee.amount)}
@@ -261,6 +267,9 @@ export default function PortalFees() {
                         Paid {formatDate(fee.payment_date)}
                         {fee.payment_method && ` · ${fee.payment_method.replace('_', ' ')}`}
                       </p>
+                      {fee.notes && (
+                        <p className="mt-0.5 text-xs text-white/30 italic">{fee.notes}</p>
+                      )}
                     </div>
                     <div className="shrink-0 text-right">
                       <span className="font-[family-name:var(--font-display)] text-lg font-bold tabular-nums text-white">

@@ -60,11 +60,12 @@ export default function ClassesAdmin() {
     setLoading(false);
   };
 
-  // Count active students per batch
+  // Count all assigned students per batch (active + on_break) so the delete
+  // confirmation shows the correct number of batch assignments that will be cleared.
   const countByBatch = useMemo(() => {
     const map: Record<string, number> = {};
     (students || []).forEach((s) => {
-      if (s.class_batch_id && s.status === 'active') {
+      if (s.class_batch_id) {
         map[s.class_batch_id] = (map[s.class_batch_id] || 0) + 1;
       }
     });

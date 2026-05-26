@@ -205,7 +205,8 @@ export default function FeeManagement() {
 
   // ── Bulk fee creation ───────────────────────────────────────────────
   const createBulkFees = async () => {
-    const withoutFee = students.filter((s) => s.feeStatus === 'not_created');
+    // Exclude on_break students — bulk fees are for actively attending students only.
+    const withoutFee = students.filter((s) => s.status !== 'on_break' && s.feeStatus === 'not_created');
     if (withoutFee.length === 0) {
       return showAlert('error', 'All active students already have a fee for this month.');
     }
@@ -342,7 +343,7 @@ export default function FeeManagement() {
   // ── Overdue reminders ────────────────────────────────────────────────
   const feeToday = new Date(); feeToday.setHours(0, 0, 0, 0);
   const overdueStudents = students.filter(
-    (s) => s.feeStatus === 'pending' && s.dueDate && new Date(s.dueDate + 'T00:00:00') < feeToday
+    (s) => s.status !== 'on_break' && s.feeStatus === 'pending' && s.dueDate && new Date(s.dueDate + 'T00:00:00') < feeToday
   );
 
   const sendOverdueReminders = async () => {
@@ -484,7 +485,7 @@ export default function FeeManagement() {
 
       <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-4">
         <StatCard icon={FaDollarSign}          label="Total income" value={formatCurrency(monthlyStats.totalIncome)} sub={`${monthlyStats.paidCount} payments`} />
-        <StatCard icon={FaCheckCircle}         label="Paid"         value={monthlyStats.paidCount}    sub={`of ${students.length} active`} />
+        <StatCard icon={FaCheckCircle}         label="Paid"         value={monthlyStats.paidCount}    sub={`of ${students.filter(s => s.status === 'active').length} active`} />
         <StatCard icon={FaClock}               label="Pending"      value={monthlyStats.pendingCount} sub="yet to pay" featured />
         <StatCard icon={FaExclamationTriangle} label="Overdue"      value={monthlyStats.overdueCount} sub="needs attention" featured />
       </div>

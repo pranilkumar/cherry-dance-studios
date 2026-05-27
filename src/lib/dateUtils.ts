@@ -38,9 +38,14 @@ export const DAY_NUM = {
 /**
  * Returns the next scheduled class Date for a batch object, or null.
  * Pass overrideDays (student.batch_days) to restrict to a student's specific days.
+ * Pass cancelledDateStrs (Set of "YYYY-MM-DD") to skip cancelled occurrences.
  * Used in PortalClasses — pair with formatNextClass() for display.
  */
-export function getNextClassDate(batch, overrideDays?: string[]) {
+export function getNextClassDate(
+  batch,
+  overrideDays?: string[],
+  cancelledDateStrs?: Set<string>,
+) {
   if (!batch?.weekdays?.length || !batch.start_time) return null;
   const [hStr, mStr] = batch.start_time.split(':');
   const hours = parseInt(hStr, 10);
@@ -48,24 +53,33 @@ export function getNextClassDate(batch, overrideDays?: string[]) {
   const now = new Date();
   const todayDow = now.getDay();
   const days = overrideDays?.length ? overrideDays : batch.weekdays;
-  let minDaysAway = null;
-  for (const day of days) {
-    const dow = DAY_NUM[day];
-    if (dow == null) continue;
-    let daysAway = (dow - todayDow + 7) % 7;
-    if (daysAway === 0) {
-      const classTime = new Date(now);
-      classTime.setHours(hours, minutes, 0, 0);
-      if (classTime <= now) daysAway = 7;
+
+  // Try up to 5 weeks ahead to skip cancelled dates
+  for (let attempt = 0; attempt < 35; attempt++) {
+    let minDaysAway: number | null = null;
+    for (const day of days) {
+      const dow = DAY_NUM[day];
+      if (dow == null) continue;
+      let daysAway = (dow - todayDow + 7) % 7;
+      if (daysAway === 0) {
+        const classTime = new Date(now);
+        classTime.setHours(hours, minutes, 0, 0);
+        if (classTime <= now) daysAway = 7;
+      }
+      // Offset by however many full weeks we've already skipped
+      daysAway += Math.floor(attempt / days.length) * 7;
+      if (minDaysAway === null || daysAway < minDaysAway) minDaysAway = daysAway;
     }
-    if (minDaysAway === null || daysAway < minDaysAway) minDaysAway = daysAway;
+    if (minDaysAway === null) return null;
+    const next = new Date(now);
+    next.setDate(now.getDate() + minDaysAway);
+    next.setHours(hours, minutes, 0, 0);
+    next.setSeconds(0, 0);
+    const dateStr = next.toISOString().split('T')[0];
+    if (!cancelledDateStrs?.has(dateStr)) return next;
+    // This occurrence is cancelled — keep looking
   }
-  if (minDaysAway === null) return null;
-  const next = new Date(now);
-  next.setDate(now.getDate() + minDaysAway);
-  next.setHours(hours, minutes, 0, 0);
-  next.setSeconds(0, 0);
-  return next;
+  return null;
 }
 
 /**

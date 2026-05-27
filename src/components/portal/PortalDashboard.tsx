@@ -13,7 +13,7 @@ import {
   FaClock,
 } from 'react-icons/fa';
 import { supabase } from '../../lib/supabaseClient';
-import { parseLocalDate, calcAge, calcNextClass, fmt24 } from '../../lib/dateUtils';
+import { parseLocalDate, calcAge, getNextClassDate, fmt24 } from '../../lib/dateUtils';
 
 /**
  * Parent portal home — welcome + kid card(s) + quick stats.
@@ -41,6 +41,22 @@ function suggestTier(age) {
   return 'Slay Squad';
 }
 
+/** Returns a calcNextClass-compatible object but honours cancellations. */
+function nextClassInfo(
+  student: any,
+  cancelledByBatch: Map<string, Set<string>>,
+): { next: Date; daysAway: number; h: number; m: number; batchName: string } | null {
+  const batch = student.class_batch;
+  if (!batch?.weekdays?.length || !batch.start_time) return null;
+  const studentDays = student.batch_days?.length ? student.batch_days : undefined;
+  const nextDate = getNextClassDate(batch, studentDays, cancelledByBatch.get(batch.id));
+  if (!nextDate) return null;
+  const d1 = new Date(nextDate); d1.setHours(0, 0, 0, 0);
+  const d2 = new Date();        d2.setHours(0, 0, 0, 0);
+  const daysAway = Math.round((+d1 - +d2) / 86_400_000);
+  return { next: nextDate, daysAway, h: nextDate.getHours(), m: nextDate.getMinutes(), batchName: batch.name };
+}
+
 export default function PortalDashboard() {
   const [students, setStudents] = useState([]);
   const [registrations, setRegistrations] = useState([]);
@@ -49,6 +65,8 @@ export default function PortalDashboard() {
   const [audioMixCount, setAudioMixCount] = useState(0);
   const [parentName, setParentName] = useState('');
   const [loading, setLoading] = useState(true);
+  /** batch_id → Set of "YYYY-MM-DD" cancelled date strings */
+  const [cancelledByBatch, setCancelledByBatch] = useState<Map<string, Set<string>>>(new Map());
 
   useEffect(() => {
     let cancelled = false;
@@ -83,9 +101,10 @@ export default function PortalDashboard() {
         if (studentList.length > 0) {
           const ids        = studentList.map((s) => s.id);
           const todayStr   = new Date().toISOString().split('T')[0];
+          const aheadDate  = new Date(); aheadDate.setDate(aheadDate.getDate() + 35);
+          const aheadStr   = aheadDate.toISOString().split('T')[0];
 
           // Audio count: filter to public mixes visible to this parent's batches
-          // (same logic as PortalAudio so the count matches what they'll actually see)
           const batchIds = studentList
             .filter((s) => s.status === 'active' || s.status === 'on_break')
             .map((s) => s.class_batch?.id)
@@ -98,7 +117,7 @@ export default function PortalDashboard() {
             ? audioQ.or(`batch_id.is.null,batch_id.in.(${batchIds.join(',')})`)
             : audioQ.is('batch_id', null);
 
-          const [{ data: fees }, { count: mixCount }] = await Promise.all([
+          const [{ data: fees }, { count: mixCount }, { data: cancelData }] = await Promise.all([
             supabase
               .from('fees')
               .select('*')
@@ -107,11 +126,24 @@ export default function PortalDashboard() {
               .or(`due_date.is.null,due_date.lte.${todayStr}`)
               .order('due_date', { ascending: true }),
             audioQ,
+            supabase
+              .from('class_cancellations')
+              .select('batch_id, class_date')
+              .gte('class_date', todayStr)
+              .lte('class_date', aheadStr),
           ]);
 
           if (!cancelled) {
             setPendingFees(fees || []);
             setAudioMixCount(mixCount ?? 0);
+
+            // Build batch_id → Set<YYYY-MM-DD> for cancellation-aware "next class"
+            const cMap = new Map<string, Set<string>>();
+            for (const row of (cancelData || [])) {
+              if (!cMap.has(row.batch_id)) cMap.set(row.batch_id, new Set());
+              cMap.get(row.batch_id)!.add(row.class_date);
+            }
+            setCancelledByBatch(cMap);
           }
         }
       } catch (err) {
@@ -344,7 +376,7 @@ export default function PortalDashboard() {
                 // Find the soonest upcoming class across ALL active dancers
                 let earliest = null;
                 for (const s of active) {
-                  const c = calcNextClass(s);
+                  const c = nextClassInfo(s, cancelledByBatch);
                   if (c && (!earliest || c.next < earliest.next)) earliest = c;
                 }
                 if (!earliest) return active[0].preferred_class || '—';
@@ -361,7 +393,7 @@ export default function PortalDashboard() {
                 if (!active.length) return 'No active dancer yet.';
                 let earliest = null; let earliestStudent = null;
                 for (const s of active) {
-                  const c = calcNextClass(s);
+                  const c = nextClassInfo(s, cancelledByBatch);
                   if (c && (!earliest || c.next < earliest.next)) { earliest = c; earliestStudent = s; }
                 }
                 if (earliest) {

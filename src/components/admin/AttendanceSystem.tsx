@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { QRCodeSVG } from 'qrcode.react';
 import {
   FaQrcode, FaCheckCircle, FaClock, FaUsers, FaCalendarDay,
-  FaSave, FaTimes, FaDownload, FaChevronRight,
+  FaSave, FaTimes, FaDownload, FaChevronRight, FaBan,
 } from 'react-icons/fa';
 import { supabase } from '../../lib/supabaseClient';
 
@@ -15,11 +16,17 @@ const MARKS = {
 };
 
 export default function AttendanceSystem() {
-  const today = new Date().toISOString().split('T')[0];
+  const today      = new Date().toISOString().split('T')[0];
+  const searchParams = useSearchParams();
 
-  const [date, setDate]                   = useState(today);
+  // Pre-select date/batch from URL params (set by the Schedule page "Mark attendance" link)
+  const paramDate  = searchParams.get('date');
+  const paramBatch = searchParams.get('batch');
+
+  const [date, setDate]                   = useState(paramDate || today);
   const [batches, setBatches]             = useState([]);
   const [selectedBatch, setSelectedBatch] = useState(null);
+  const [cancelledDates, setCancelledDates] = useState<Set<string>>(new Set());
   const [students, setStudents]           = useState([]);
   const [marks, setMarks]                 = useState<Record<string, string>>({}); // { student_id: 'present'|'late'|'absent' }
   const [loadingRoster, setLoadingRoster] = useState(false);
@@ -30,6 +37,7 @@ export default function AttendanceSystem() {
 
   useEffect(() => {
     fetchBatches();
+    fetchCancellations();
   }, []);
 
   // Re-fetch stats whenever the selected date or batch changes
@@ -43,7 +51,26 @@ export default function AttendanceSystem() {
       .select('id, name, weekdays, start_time, end_time, instructor, tier')
       .eq('is_active', true)
       .order('name');
-    setBatches(data || []);
+    const list = data || [];
+    setBatches(list);
+    // Auto-select batch from URL param if present
+    if (paramBatch) {
+      const found = list.find((b) => b.id === paramBatch);
+      if (found) setSelectedBatch(found);
+    }
+  };
+
+  // Fetch cancellations for the currently-visible date range (±2 weeks)
+  const fetchCancellations = async () => {
+    const from = new Date(); from.setDate(from.getDate() - 1);
+    const to   = new Date(); to.setDate(to.getDate() + 14);
+    const { data } = await supabase
+      .from('class_cancellations')
+      .select('batch_id, class_date')
+      .gte('class_date', from.toISOString().split('T')[0])
+      .lte('class_date', to.toISOString().split('T')[0]);
+    const keys = new Set((data || []).map((r) => `${r.batch_id}::${r.class_date}`));
+    setCancelledDates(keys);
   };
 
   const fetchDateStats = async (targetDate, batchId = null) => {
@@ -300,6 +327,17 @@ export default function AttendanceSystem() {
           ) : loadingRoster ? (
             <div className="flex h-48 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03]">
               <p className="text-sm text-white/40">Loading roster…</p>
+            </div>
+          ) : cancelledDates.has(`${selectedBatch.id}::${date}`) ? (
+            <div className="rounded-2xl border border-[#d1060f]/30 bg-[#d1060f]/[0.06] p-6 text-center">
+              <FaBan className="mx-auto mb-3 text-2xl text-[#ee2435]/60" />
+              <p className="font-semibold text-white">This class is cancelled</p>
+              <p className="mt-1 text-sm text-white/55">
+                {selectedBatch.name} on {fmtDate(date)} was cancelled.{' '}
+                <a href="/admin/schedule" className="text-[#ee2435] hover:underline">
+                  Reinstate it from the Schedule page.
+                </a>
+              </p>
             </div>
           ) : students.length === 0 ? (
             <div className="flex h-48 items-center justify-center rounded-2xl border border-dashed border-white/10 bg-white/[0.02]">

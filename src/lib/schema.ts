@@ -72,6 +72,19 @@ CREATE TABLE admin_users (
   created_at TIMESTAMP DEFAULT NOW()
 );
 
+-- 6. Class Cancellations Table
+-- Stores one-off cancellations for a specific batch on a specific date.
+-- The recurring schedule is derived from class_batches.weekdays; this table
+-- records exceptions (holidays, instructor absence, etc.).
+CREATE TABLE class_cancellations (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  batch_id UUID NOT NULL REFERENCES class_batches(id) ON DELETE CASCADE,
+  class_date DATE NOT NULL,
+  reason TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(batch_id, class_date)
+);
+
 -- Indexes for better performance
 CREATE INDEX idx_students_status ON students(status);
 CREATE INDEX idx_students_email ON students(email);
@@ -81,6 +94,8 @@ CREATE INDEX idx_fees_due_date ON fees(due_date);
 CREATE INDEX idx_reviews_status ON reviews(status);
 CREATE INDEX idx_attendance_student_id ON attendance(student_id);
 CREATE INDEX idx_attendance_date ON attendance(class_date);
+CREATE INDEX idx_class_cancellations_date ON class_cancellations(class_date);
+CREATE INDEX idx_class_cancellations_batch ON class_cancellations(batch_id);
 
 -- Enable Row Level Security (RLS)
 ALTER TABLE students ENABLE ROW LEVEL SECURITY;

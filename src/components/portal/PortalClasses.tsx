@@ -46,17 +46,24 @@ const STATUS_META = {
 /* ── Component ── */
 
 export default function PortalClasses() {
-  const [students, setStudents]     = useState([]);
-  const [allBatches, setAllBatches] = useState([]);
-  const [loading, setLoading]       = useState(true);
+  const [students, setStudents]           = useState([]);
+  const [allBatches, setAllBatches]       = useState([]);
+  /** batch_id → Set of "YYYY-MM-DD" cancelled date strings */
+  const [cancelledByBatch, setCancelledByBatch] = useState<Map<string, Set<string>>>(new Map());
+  const [loading, setLoading]             = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user || cancelled) return;
+      if (!user || cancelled) { setLoading(false); return; }
 
-      const [{ data: stuData }, { data: batchData }] = await Promise.all([
+      // Look 35 days ahead to cover getNextClassDate's max lookahead
+      const today  = new Date().toISOString().split('T')[0];
+      const ahead  = new Date(); ahead.setDate(ahead.getDate() + 35);
+      const endStr = ahead.toISOString().split('T')[0];
+
+      const [{ data: stuData }, { data: batchData }, { data: cancelData }] = await Promise.all([
         supabase
           .from('students')
           .select('id, student_name, date_of_birth, status, preferred_class, preferred_weekday, preferred_time_slot, experience_level, batch_days, class_batch:class_batches(id, name, tier, style, instructor, weekdays, start_time, end_time, notes)')
@@ -67,11 +74,24 @@ export default function PortalClasses() {
           .select('id, name, tier, style, instructor, weekdays, start_time, end_time, notes')
           .eq('is_active', true)
           .order('start_time'),
+        supabase
+          .from('class_cancellations')
+          .select('batch_id, class_date')
+          .gte('class_date', today)
+          .lte('class_date', endStr),
       ]);
 
       if (!cancelled) {
         setStudents(stuData || []);
         setAllBatches(batchData || []);
+
+        // Build batch_id → Set<YYYY-MM-DD>
+        const map = new Map<string, Set<string>>();
+        for (const row of (cancelData || [])) {
+          if (!map.has(row.batch_id)) map.set(row.batch_id, new Set());
+          map.get(row.batch_id)!.add(row.class_date);
+        }
+        setCancelledByBatch(map);
         setLoading(false);
       }
     })();
@@ -112,7 +132,7 @@ export default function PortalClasses() {
             {enrolledStudents.map((s) => {
               const batch = s.class_batch;
               const studentDays = s.batch_days?.length ? s.batch_days : undefined;
-              const nextDate = getNextClassDate(batch, studentDays);
+              const nextDate = getNextClassDate(batch, studentDays, cancelledByBatch.get(batch?.id));
               const next = formatNextClass(nextDate);
               const days  = batch
                 ? (studentDays || batch.weekdays || []).join(', ')

@@ -16,6 +16,7 @@ import {
   FaSignOutAlt,
   FaBars,
   FaExternalLinkAlt,
+  FaCalendarAlt,
 } from 'react-icons/fa';
 import logo from '../../assets/icons/logo.png';
 
@@ -31,6 +32,7 @@ import logo from '../../assets/icons/logo.png';
 const NAV = [
   { href: '/admin/dashboard',     icon: FaHome,          label: 'Dashboard' },
   { href: '/admin/analytics',     icon: FaChartLine,     label: 'Analytics' },
+  { href: '/admin/schedule',      icon: FaCalendarAlt,   label: 'Schedule' },
   { href: '/admin/attendance',    icon: FaQrcode,        label: 'Attendance' },
   { href: '/admin/registrations', icon: FaClipboardList, label: 'Registrations' },
   { href: '/admin/workshop',      icon: FaHeart,         label: 'Workshops' },

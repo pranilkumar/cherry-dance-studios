@@ -20,11 +20,12 @@ import {
 import logo from '../../assets/icons/logo.png';
 
 /**
- * Admin shell — sidebar + main. Dark sidebar with brand-red accent on
- * active item, light content area. Mobile drawer with overlay.
+ * Admin shell — sidebar + main.
  *
- * Auth: localStorage-based, same gate as before (not real Supabase Auth).
- * The /admin login page renders bare (no shell) via the early return.
+ * Auth is handled entirely by middleware.ts (server-side HMAC token check)
+ * before this component ever renders. This component receives the decoded
+ * email as a prop from the Server Component layout so the sidebar is
+ * populated instantly — no client-side verify fetch, no loading spinner.
  */
 
 const NAV = [
@@ -39,30 +40,17 @@ const NAV = [
   { href: '/admin/audio',         icon: FaMusic,         label: 'Audio' },
 ];
 
-export default function AdminLayoutWrapper({ children }) {
-  const router = useRouter();
+export default function AdminLayoutWrapper({
+  children,
+  email: initialEmail = '',
+}: {
+  children: React.ReactNode;
+  email?: string;
+}) {
+  const router   = useRouter();
   const pathname = usePathname();
-  const [authed, setAuthed] = useState(false);
-  const [email, setEmail] = useState('');
+  const [email, setEmail]           = useState(initialEmail);
   const [mobileOpen, setMobileOpen] = useState(false);
-
-  // Auth gate — verify the httpOnly session cookie server-side.
-  // This cannot be bypassed via DevTools because the cookie is httpOnly
-  // and the actual token is verified by the API, not the client.
-  useEffect(() => {
-    if (pathname === '/admin') return; // login page renders bare
-    fetch('/api/admin/verify')
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.ok) {
-          setAuthed(true);
-          setEmail(data.email || '');
-        } else {
-          router.replace('/admin');
-        }
-      })
-      .catch(() => router.replace('/admin'));
-  }, [router]);
 
   // Lock body scroll when mobile drawer is open
   useEffect(() => {
@@ -75,16 +63,13 @@ export default function AdminLayoutWrapper({ children }) {
     router.push('/admin');
   };
 
-  // Login page itself renders bare (no shell)
+  // Login page renders bare (no shell)
   if (pathname === '/admin') return <>{children}</>;
-  if (!authed) return (
-    <div className="flex min-h-screen items-center justify-center bg-[#0a0a0f]">
-      <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-[#ee2435]" />
-    </div>
-  );
 
+  // Shell renders immediately — middleware already verified the session.
+  // No spinner, no blocking verify fetch needed.
   const currentLabel =
-    NAV.find((n) => pathname.startsWith(n.href))?.label ?? 'Admin';
+    NAV.find((n) => pathname === n.href || pathname.startsWith(n.href + '/'))?.label ?? 'Admin';
 
   return (
     <div className="flex min-h-screen bg-[#0a0a0f] text-white">
@@ -108,7 +93,7 @@ export default function AdminLayoutWrapper({ children }) {
           ${mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
         `}
       >
-        {/* Brand — real logo + wordmark, matches public navbar */}
+        {/* Brand */}
         <Link
           href="/admin/dashboard"
           onClick={() => setMobileOpen(false)}

@@ -82,23 +82,34 @@ export default function FeeManagement() {
           ...student, fee,
           feeStatus: fee ? fee.payment_status : 'not_created',
           amount: fee?.amount || 0,
-          dueDate: fee?.due_date,
+          // For students with no fee record, use the 10th as the implied due date
+          // so overdue detection works correctly.
+          dueDate: fee?.due_date ?? `${monthFilter}-10`,
           paymentDate: fee?.payment_date,
         };
       });
 
       setStudents(studentsWithFees);
 
+      // Compute stats from the full student list so that students with no fee
+      // record (feeStatus === 'not_created') are counted as pending/overdue.
+      const statsToday = new Date(); statsToday.setHours(0, 0, 0, 0);
+      const isUnpaidOverdue = (s: any) => {
+        if (s.feeStatus === 'paid' || s.feeStatus === 'waived') return false;
+        return s.dueDate && new Date(s.dueDate + 'T00:00:00') < statsToday;
+      };
+      const isUnpaidNotOverdue = (s: any) => {
+        if (s.feeStatus === 'paid' || s.feeStatus === 'waived') return false;
+        if (!s.dueDate) return true; // no due date → treat as pending
+        return new Date(s.dueDate + 'T00:00:00') >= statsToday;
+      };
+
       setMonthlyStats({
         totalIncome: feesData?.filter((f) => f.payment_status === 'paid')
           .reduce((sum, f) => sum + parseFloat(f.amount || 0), 0) || 0,
         paidCount: feesData?.filter((f) => f.payment_status === 'paid').length || 0,
-        pendingCount: feesData?.filter((f) => f.payment_status === 'pending').length || 0,
-        overdueCount: feesData?.filter((f) => {
-          if (f.payment_status !== 'pending' || !f.due_date) return false;
-          const today = new Date(); today.setHours(0, 0, 0, 0);
-          return new Date(f.due_date + 'T00:00:00') < today;
-        }).length || 0,
+        pendingCount: studentsWithFees.filter(isUnpaidNotOverdue).length,
+        overdueCount: studentsWithFees.filter(isUnpaidOverdue).length,
       });
     } catch (err) {
       setAlert({ type: 'error', message: err.message || 'Failed to load fee data' });
@@ -117,7 +128,11 @@ export default function FeeManagement() {
     const matchesSearch = !term ||
       (s.student_name || '').toLowerCase().includes(term) ||
       (s.parent_name || '').toLowerCase().includes(term);
-    const matchesStatus = statusFilter === 'all' || s.feeStatus === statusFilter;
+    // 'pending' filter covers both fee-record-pending and no-record (not_created)
+    const matchesStatus =
+      statusFilter === 'all' ||
+      s.feeStatus === statusFilter ||
+      (statusFilter === 'pending' && s.feeStatus === 'not_created');
     return matchesSearch && matchesStatus;
   }), [students, searchTerm, statusFilter]);
 
@@ -343,7 +358,11 @@ export default function FeeManagement() {
   // ── Overdue reminders ────────────────────────────────────────────────
   const feeToday = new Date(); feeToday.setHours(0, 0, 0, 0);
   const overdueStudents = students.filter(
-    (s) => s.status !== 'on_break' && s.feeStatus === 'pending' && s.dueDate && new Date(s.dueDate + 'T00:00:00') < feeToday
+    (s) =>
+      s.status !== 'on_break' &&
+      (s.feeStatus === 'pending' || s.feeStatus === 'not_created') &&
+      s.dueDate &&
+      new Date(s.dueDate + 'T00:00:00') < feeToday
   );
 
   const sendOverdueReminders = async () => {
@@ -391,7 +410,7 @@ export default function FeeManagement() {
     if (student.feeStatus === 'waived') {
       return { label: 'Waived', bg: 'rgba(255,255,255,0.07)', fg: 'rgba(255,255,255,0.4)', icon: FaBan };
     }
-    if (student.feeStatus === 'pending') {
+    if (student.feeStatus === 'pending' || student.feeStatus === 'not_created') {
       const overdue = student.dueDate && new Date(student.dueDate + 'T00:00:00') < feeToday;
       return overdue
         ? { label: 'Overdue', bg: '#d1060f', fg: '#ffffff', icon: FaExclamationTriangle }
@@ -505,9 +524,9 @@ export default function FeeManagement() {
           {[
             { v: 'all',         label: `All (${students.length})` },
             { v: 'paid',        label: `Paid (${monthlyStats.paidCount})` },
-            { v: 'pending',     label: `Pending (${monthlyStats.pendingCount})` },
+            { v: 'pending',     label: `Pending / Overdue (${monthlyStats.pendingCount + monthlyStats.overdueCount})` },
             { v: 'waived',      label: `Waived (${students.filter(s => s.feeStatus === 'waived').length})` },
-            { v: 'not_created', label: 'Not set' },
+            { v: 'not_created', label: `No record (${students.filter(s => s.feeStatus === 'not_created').length})` },
           ].map((f) => (
             <button
               key={f.v}

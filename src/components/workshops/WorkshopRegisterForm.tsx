@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import PhoneInput from 'react-phone-input-2';
 import 'react-phone-input-2/lib/style.css';
-import { supabase } from '../../lib/supabaseClient';
 import { GlowButton } from '../ui';
 import { FaArrowRight, FaCheck, FaPlus, FaTimes } from 'react-icons/fa';
 import { formatPrice } from '../../lib/workshops';
@@ -122,45 +121,35 @@ export default function WorkshopRegisterForm({ workshop }) {
     setSubmitError('');
 
     try {
-      // Duplicate guard — prevent the same email booking the same workshop twice.
-      const { data: existing } = await supabase
-        .from('workshop_bookings')
-        .select('id')
-        .eq('workshop_id', workshop.id)
-        .eq('parent_email', form.email.trim().toLowerCase())
-        .limit(1)
-        .maybeSingle();
-      if (existing) {
-        setSubmitError('This email address already has a booking for this workshop. Check your email for your ticket, or WhatsApp us at 613-890-3789.');
+      // All validation, capacity enforcement, duplicate checking, and price
+      // resolution happen server-side in /api/workshop-register so the client
+      // cannot tamper with price, bypass capacity, or double-book.
+      const res = await fetch('/api/workshop-register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          workshop_id:   workshop.id,
+          package_id:    selectedPkg?.id ?? null,
+          parent_name:   form.parentName.trim(),
+          parent_email:  form.email.trim(),
+          parent_phone:  form.phone,
+          children:      form.children.map((c) => ({ name: c.name.trim(), age: String(c.age) })),
+          dietary_notes: form.dietaryNotes.trim() || null,
+          heard_from:    form.heardFrom || null,
+        }),
+      });
+
+      const result = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        setSubmitError(result.error || 'Something went wrong. Please WhatsApp us at 613-890-3789.');
         setStatus('error');
         return;
       }
 
-      const { data, error } = await supabase
-        .from('workshop_bookings')
-        .insert([
-          {
-            workshop_id: workshop.id,
-            package_id: selectedPkg?.id ?? null,
-            package_label: selectedPkg?.label ?? null,
-            amount_cents: selectedPkg?.price_cents ?? null,
-            parent_name: form.parentName.trim(),
-            parent_email: form.email.trim().toLowerCase(),
-            parent_phone: form.phone,
-            children: form.children.map((c) => ({
-              name: c.name.trim(),
-              age: String(c.age),
-            })),
-            dietary_notes: form.dietaryNotes.trim() || null,
-            heard_from: form.heardFrom || null,
-            payment_status: 'pending',
-          },
-        ])
-        .select('qr_token')
-        .single();
-
-      if (error) throw error;
-      if (!data?.qr_token) throw new Error('No token returned.');
+      if (!result.qr_token) {
+        throw new Error('No token returned from server.');
+      }
 
       // Fire-and-forget admin notification — failure must not affect the user's UX.
       fetch('/api/notify-admin', {
@@ -178,12 +167,10 @@ export default function WorkshopRegisterForm({ workshop }) {
         }),
       }).catch(() => {});
 
-      router.push(`/workshops/${workshop.slug}/ticket/${data.qr_token}`);
+      router.push(`/workshops/${workshop.slug}/ticket/${result.qr_token}`);
     } catch (err) {
-      console.error('[workshop register] insert failed:', err);
-      setSubmitError(
-        'Something went wrong. Please WhatsApp us at 613-890-3789 to register.'
-      );
+      console.error('[workshop register] failed:', err);
+      setSubmitError('Something went wrong. Please WhatsApp us at 613-890-3789 to register.');
       setStatus('error');
     }
   };

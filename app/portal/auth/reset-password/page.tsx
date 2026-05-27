@@ -25,21 +25,43 @@ export default function ResetPasswordPage() {
   const [confirm, setConfirm] = useState('');
   const [error, setError] = useState('');
 
-  // On mount, wait for Supabase to consume the recovery token from the URL.
+  // On mount, listen for the PASSWORD_RECOVERY auth event that Supabase fires
+  // after it exchanges the recovery token from the URL hash. This is more
+  // reliable than a fixed setTimeout — it fires as soon as the exchange
+  // completes, regardless of network latency.
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      await new Promise((r) => setTimeout(r, 400));
-      const { data: { session } } = await supabase.auth.getSession();
-      if (cancelled) return;
-      if (session) {
+    let resolved = false;
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (resolved) return;
+      if ((event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') && session) {
+        resolved = true;
         setPhase('ready');
-      } else {
+      }
+    });
+
+    // Fast path: session may already exist (token processed before listener registered).
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!resolved && session) {
+        resolved = true;
+        setPhase('ready');
+      }
+    });
+
+    // Hard timeout: if no recovery session fires in 10 s the link is genuinely invalid.
+    const fallback = setTimeout(() => {
+      if (!resolved) {
+        resolved = true;
         setPhase('error');
         setError('Reset link expired or invalid. Request a new one from the sign-in page.');
       }
-    })();
-    return () => { cancelled = true; };
+    }, 10_000);
+
+    return () => {
+      resolved = true;
+      clearTimeout(fallback);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const submit = async (e) => {

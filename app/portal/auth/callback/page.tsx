@@ -15,19 +15,40 @@ export default function AuthCallback() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      // Give the supabase client a moment to process the URL hash
-      await new Promise((r) => setTimeout(r, 300));
-      const { data: { session } } = await supabase.auth.getSession();
-      if (cancelled) return;
-      if (session) {
+    let resolved = false;
+
+    // Listen for the SIGNED_IN event that Supabase fires after it exchanges
+    // the URL hash token — fires as soon as the exchange completes regardless
+    // of network speed, so much more reliable than a fixed setTimeout.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (resolved) return;
+      if (event === 'SIGNED_IN' && session) {
+        resolved = true;
         router.replace('/portal');
-      } else {
+      }
+    });
+
+    // Fast path: token may have been processed before our listener registered.
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!resolved && session) {
+        resolved = true;
+        router.replace('/portal');
+      }
+    });
+
+    // Hard timeout: if no SIGNED_IN fires in 10 s the link is genuinely invalid.
+    const fallback = setTimeout(() => {
+      if (!resolved) {
+        resolved = true;
         setError('Sign-in link expired or invalid. Please request a new one.');
       }
-    })();
-    return () => { cancelled = true; };
+    }, 10_000);
+
+    return () => {
+      resolved = true;
+      clearTimeout(fallback);
+      subscription.unsubscribe();
+    };
   }, [router]);
 
   return (

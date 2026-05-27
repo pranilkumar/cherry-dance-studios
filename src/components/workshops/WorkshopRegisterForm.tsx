@@ -122,6 +122,20 @@ export default function WorkshopRegisterForm({ workshop }) {
     setSubmitError('');
 
     try {
+      // Duplicate guard — prevent the same email booking the same workshop twice.
+      const { data: existing } = await supabase
+        .from('workshop_bookings')
+        .select('id')
+        .eq('workshop_id', workshop.id)
+        .eq('parent_email', form.email.trim().toLowerCase())
+        .limit(1)
+        .maybeSingle();
+      if (existing) {
+        setSubmitError('This email address already has a booking for this workshop. Check your email for your ticket, or WhatsApp us at 613-890-3789.');
+        setStatus('error');
+        return;
+      }
+
       const { data, error } = await supabase
         .from('workshop_bookings')
         .insert([
@@ -131,7 +145,7 @@ export default function WorkshopRegisterForm({ workshop }) {
             package_label: selectedPkg?.label ?? null,
             amount_cents: selectedPkg?.price_cents ?? null,
             parent_name: form.parentName.trim(),
-            parent_email: form.email.trim(),
+            parent_email: form.email.trim().toLowerCase(),
             parent_phone: form.phone,
             children: form.children.map((c) => ({
               name: c.name.trim(),
@@ -422,8 +436,8 @@ export default function WorkshopRegisterForm({ workshop }) {
                   type="submit"
                   variant="primary"
                   size="lg"
+                  disabled={status === 'submitting'}
                   icon={status === 'submitting' ? null : <FaArrowRight />}
-                  className={status === 'submitting' ? 'pointer-events-none opacity-60' : ''}
                 >
                   {status === 'submitting' ? 'Reserving…' : 'Reserve my spot'}
                 </GlowButton>

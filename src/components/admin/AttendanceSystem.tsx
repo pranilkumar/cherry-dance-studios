@@ -156,7 +156,7 @@ export default function AttendanceSystem() {
       showAlert('error', error.message || 'Failed to save attendance.');
     } else {
       showAlert('success', `Attendance saved for ${selectedBatch.name} — ${fmtDate(date)}.`);
-      fetchDateStats(date);
+      fetchDateStats(date, selectedBatch?.id ?? null);
     }
   };
 

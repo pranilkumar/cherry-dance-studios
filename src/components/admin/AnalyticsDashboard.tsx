@@ -92,7 +92,8 @@ export default function AnalyticsDashboard() {
       .sort()
       .slice(-12)
       .map(([k, v]) => ({
-        month:   new Date(k + '-01').toLocaleDateString('en-CA', { month: 'short', year: '2-digit' }),
+        // Use T12:00:00 (UTC noon) so local timezone offsets never shift the date to the previous month.
+        month:   new Date(k + '-01T12:00:00').toLocaleDateString('en-CA', { month: 'short', year: '2-digit' }),
         revenue: Math.round(v),
       }));
   }, [fees]);

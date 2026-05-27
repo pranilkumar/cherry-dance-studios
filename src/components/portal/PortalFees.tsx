@@ -34,7 +34,7 @@ export default function PortalFees() {
     let cancelled = false;
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user || cancelled) return;
+      if (!user || cancelled) { setLoading(false); return; }
 
       const { data: students } = await supabase
         .from('students')

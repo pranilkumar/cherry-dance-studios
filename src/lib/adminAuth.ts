@@ -18,15 +18,15 @@ import crypto from 'crypto';
 export const ADMIN_COOKIE   = 'cds_admin_token';
 export const TOKEN_MAX_AGE  = 8 * 60 * 60; // 8 hours in seconds
 
-function getSecret() {
+function getSecret(): string {
   const s = process.env.ADMIN_JWT_SECRET;
   if (!s) {
-    // Fallback keeps local dev working; log a warning so it's obvious in CI/prod logs.
     if (process.env.NODE_ENV === 'production') {
-      console.error('[admin auth] ADMIN_JWT_SECRET is not set — admin tokens are insecure! Add it to your environment variables immediately.');
-    } else {
-      console.warn('[admin auth] ADMIN_JWT_SECRET not set — using dev fallback. Set it in .env.local.');
+      // Hard fail in production — a predictable fallback key is equivalent to no auth.
+      throw new Error('[admin auth] ADMIN_JWT_SECRET is not set. Add it to your environment variables before deploying.');
     }
+    // Dev-only fallback so local development works without the env var.
+    console.warn('[admin auth] ADMIN_JWT_SECRET not set — using dev fallback. Set it in .env.local.');
     return `cds-admin-dev-secret-${process.env.ADMIN_PASSWORD || 'changeme'}`;
   }
   return s;

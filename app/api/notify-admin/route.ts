@@ -7,9 +7,9 @@ const ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#x27
 const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ESC[c]);
 
 // ─── Simple in-memory rate limiter ───────────────────────────────────────────
-// 10 notifications per 15 minutes per IP.
+// 3 notifications per 15 minutes per IP (tighter to limit abuse).
 const RATE_WINDOW_MS = 15 * 60 * 1000;
-const RATE_MAX       = 10;
+const RATE_MAX       = 3;
 const ipMap          = new Map();
 
 function isRateLimited(ip) {
@@ -176,6 +176,16 @@ function buildShell({ preheader, badgeText, headline, rows, ctaHref, ctaLabel })
 // ─── Route handler ────────────────────────────────────────────────────────────
 
 export async function POST(request) {
+  // Origin check — only accept requests from the same site (prevents cross-site abuse).
+  // Skip in development where origin may be localhost or undefined.
+  const siteOrigin = process.env.NEXT_PUBLIC_SITE_URL;
+  if (process.env.NODE_ENV === 'production' && siteOrigin) {
+    const origin = request.headers.get('origin') ?? '';
+    if (!origin.startsWith(siteOrigin)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+  }
+
   // Rate limit by IP
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
   if (isRateLimited(ip)) {

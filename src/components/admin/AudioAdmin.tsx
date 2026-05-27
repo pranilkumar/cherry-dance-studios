@@ -164,9 +164,11 @@ export default function AudioAdmin() {
 
       if (storageErr) throw new Error(`Storage error: ${storageErr.message}`);
 
-      const { data: { publicUrl } } = supabase.storage
+      const { data: urlData } = supabase.storage
         .from('audio-mixes')
         .getPublicUrl(storagePath);
+      const publicUrl = urlData?.publicUrl;
+      if (!publicUrl) throw new Error('Could not get public URL for uploaded file.');
 
       const { error: dbErr } = await supabase.from('audio_mixes').insert([{
         title:       form.title.trim(),

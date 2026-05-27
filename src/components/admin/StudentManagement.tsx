@@ -55,6 +55,7 @@ export default function StudentManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [alert, setAlert] = useState(null);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => { fetchStudents(); fetchBatches(); }, []);
 
@@ -125,6 +126,7 @@ export default function StudentManagement() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (saving) return;
     // break_until only meaningful when the student is on_break — clear it
     // otherwise so it doesn't linger and confuse the table cell.
     const batchId = formData.class_batch_id || null;
@@ -143,17 +145,22 @@ export default function StudentManagement() {
       class_batch_id: batchId,
       batch_days: batchDays,
     };
-    if (editing === 'new') {
-      const { error } = await supabase.from('students').insert([payload]);
-      if (error) return showAlert('error', error.message || 'Failed to add');
-      showAlert('success', 'Student added.');
-    } else {
-      const { error } = await supabase.from('students').update(payload).eq('id', editing.id);
-      if (error) return showAlert('error', error.message || 'Failed to update');
-      showAlert('success', 'Student updated.');
+    setSaving(true);
+    try {
+      if (editing === 'new') {
+        const { error } = await supabase.from('students').insert([payload]);
+        if (error) { showAlert('error', error.message || 'Failed to add'); return; }
+        showAlert('success', 'Student added.');
+      } else {
+        const { error } = await supabase.from('students').update(payload).eq('id', editing.id);
+        if (error) { showAlert('error', error.message || 'Failed to update'); return; }
+        showAlert('success', 'Student updated.');
+      }
+      closeModal();
+      fetchStudents();
+    } finally {
+      setSaving(false);
     }
-    closeModal();
-    fetchStudents();
   };
 
   // One-click status change from the table row — no modal needed.
@@ -580,9 +587,10 @@ export default function StudentManagement() {
               </button>
               <button
                 type="submit"
-                className="rounded-lg bg-[#d1060f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#b00310]"
+                disabled={saving}
+                className="rounded-lg bg-[#d1060f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#b00310] disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                {editing === 'new' ? 'Add student' : 'Save changes'}
+                {saving ? 'Saving…' : (editing === 'new' ? 'Add student' : 'Save changes')}
               </button>
             </div>
           </form>

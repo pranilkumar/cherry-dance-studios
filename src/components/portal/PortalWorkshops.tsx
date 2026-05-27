@@ -114,7 +114,7 @@ export default function PortalWorkshops() {
     let cancelled = false;
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user || cancelled) return;
+      if (!user || cancelled) { setLoading(false); return; }
 
       const { data } = await supabase
         .from('workshop_bookings')

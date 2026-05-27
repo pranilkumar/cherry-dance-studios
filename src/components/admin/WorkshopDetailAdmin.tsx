@@ -178,7 +178,7 @@ export default function WorkshopDetailAdmin({ workshopId }) {
                   <tr key={b.id} className="hover:bg-white/[0.04]">
                     <td className="px-4 py-3">
                       <div className="font-medium text-white">{b.parent_name}</div>
-                      <div className="font-mono text-[10px] text-white/40">{b.qr_token.slice(0, 8)}…</div>
+                      <div className="font-mono text-[10px] text-white/40">{b.qr_token ? `${b.qr_token.slice(0, 8)}…` : '—'}</div>
                     </td>
                     <td className="px-4 py-3 text-white/85">
                       {dancers.length === 0 ? <span className="text-white/35">—</span> : (

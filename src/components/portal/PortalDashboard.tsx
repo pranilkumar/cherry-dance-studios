@@ -53,68 +53,72 @@ export default function PortalDashboard() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user || cancelled) return;
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user || cancelled) { setLoading(false); return; }
 
-      const email = user.email;
-      const fallbackName = email.split('@')[0];
-      setParentName(user.user_metadata?.full_name || fallbackName);
+        const email = user.email;
+        const fallbackName = email.split('@')[0];
+        setParentName(user.user_metadata?.full_name || fallbackName);
 
-      // Phase 1: parallel fetch — students, registrations, workshops
-      const [{ data: stu }, { data: regs }, { data: workshops }] = await Promise.all([
-        supabase.from('students').select('*, avatar_url, class_batch:class_batches(id, name, weekdays, start_time, end_time)').eq('email', email),
-        supabase.from('registrations').select('*').eq('email', email).order('created_at', { ascending: false }),
-        supabase
-          .from('workshop_bookings')
-          .select('*, workshop:workshops(slug, title, starts_at, venue_name)')
-          .eq('parent_email', email)
-          .order('created_at', { ascending: false }),
-      ]);
-
-      if (cancelled) return;
-
-      const studentList = stu || [];
-      setStudents(studentList);
-      setRegistrations(regs || []);
-      setWorkshopBookings(workshops || []);
-
-      // Phase 2: queries that depend on knowing this parent's students/batches
-      if (studentList.length > 0) {
-        const ids        = studentList.map((s) => s.id);
-        const todayStr   = new Date().toISOString().split('T')[0];
-
-        // Audio count: filter to public mixes visible to this parent's batches
-        // (same logic as PortalAudio so the count matches what they'll actually see)
-        const batchIds = studentList
-          .filter((s) => s.status === 'active' || s.status === 'on_break')
-          .map((s) => s.class_batch?.id)
-          .filter(Boolean);
-        let audioQ = supabase
-          .from('audio_mixes')
-          .select('id', { count: 'exact', head: true })
-          .eq('is_public', true);
-        audioQ = batchIds.length > 0
-          ? audioQ.or(`batch_id.is.null,batch_id.in.(${batchIds.join(',')})`)
-          : audioQ.is('batch_id', null);
-
-        const [{ data: fees }, { count: mixCount }] = await Promise.all([
+        // Phase 1: parallel fetch — students, registrations, workshops
+        const [{ data: stu }, { data: regs }, { data: workshops }] = await Promise.all([
+          supabase.from('students').select('*, avatar_url, class_batch:class_batches(id, name, weekdays, start_time, end_time)').eq('email', email),
+          supabase.from('registrations').select('*').eq('email', email).order('created_at', { ascending: false }),
           supabase
-            .from('fees')
-            .select('*')
-            .in('student_id', ids)
-            .eq('payment_status', 'pending')
-            .or(`due_date.is.null,due_date.lte.${todayStr}`)
-            .order('due_date', { ascending: true }),
-          audioQ,
+            .from('workshop_bookings')
+            .select('*, workshop:workshops(slug, title, starts_at, venue_name)')
+            .eq('parent_email', email)
+            .order('created_at', { ascending: false }),
         ]);
 
-        if (!cancelled) {
-          setPendingFees(fees || []);
-          setAudioMixCount(mixCount ?? 0);
-        }
-      }
+        if (cancelled) return;
 
-      setLoading(false);
+        const studentList = stu || [];
+        setStudents(studentList);
+        setRegistrations(regs || []);
+        setWorkshopBookings(workshops || []);
+
+        // Phase 2: queries that depend on knowing this parent's students/batches
+        if (studentList.length > 0) {
+          const ids        = studentList.map((s) => s.id);
+          const todayStr   = new Date().toISOString().split('T')[0];
+
+          // Audio count: filter to public mixes visible to this parent's batches
+          // (same logic as PortalAudio so the count matches what they'll actually see)
+          const batchIds = studentList
+            .filter((s) => s.status === 'active' || s.status === 'on_break')
+            .map((s) => s.class_batch?.id)
+            .filter(Boolean);
+          let audioQ = supabase
+            .from('audio_mixes')
+            .select('id', { count: 'exact', head: true })
+            .eq('is_public', true);
+          audioQ = batchIds.length > 0
+            ? audioQ.or(`batch_id.is.null,batch_id.in.(${batchIds.join(',')})`)
+            : audioQ.is('batch_id', null);
+
+          const [{ data: fees }, { count: mixCount }] = await Promise.all([
+            supabase
+              .from('fees')
+              .select('*')
+              .in('student_id', ids)
+              .eq('payment_status', 'pending')
+              .or(`due_date.is.null,due_date.lte.${todayStr}`)
+              .order('due_date', { ascending: true }),
+            audioQ,
+          ]);
+
+          if (!cancelled) {
+            setPendingFees(fees || []);
+            setAudioMixCount(mixCount ?? 0);
+          }
+        }
+      } catch (err) {
+        console.error('[PortalDashboard] fetch error:', err);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     })();
     return () => { cancelled = true; };
   }, []);

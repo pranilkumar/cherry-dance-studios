@@ -13,12 +13,33 @@ import {
   FaClipboardList,
   FaHeart,
   FaArrowRight,
+  FaBirthdayCake,
 } from 'react-icons/fa';
 
 /**
  * Admin dashboard — overview KPIs + recent activity.
  * Dark theme matching the public homepage aesthetic.
  */
+
+/** Returns students whose birthday falls within the next `daysAhead` days (inclusive of today). */
+function getUpcomingBirthdays(students: any[], daysAhead = 14) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const thisYear = today.getFullYear();
+
+  return students
+    .filter((s) => s.date_of_birth && (s.status === 'active' || s.status === 'on_break'))
+    .map((s) => {
+      const dob = new Date(s.date_of_birth + 'T00:00:00');
+      // Try this year's birthday; if it already passed, use next year's.
+      let bday = new Date(thisYear, dob.getMonth(), dob.getDate());
+      if (bday < today) bday = new Date(thisYear + 1, dob.getMonth(), dob.getDate());
+      const daysUntil = Math.round((bday.getTime() - today.getTime()) / 86_400_000);
+      return { ...s, daysUntil, bdayDate: bday };
+    })
+    .filter((s) => s.daysUntil <= daysAhead)
+    .sort((a, b) => a.daysUntil - b.daysUntil);
+}
 
 const formatCurrency = (amount) =>
   new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' }).format(amount || 0);
@@ -43,6 +64,7 @@ export default function AdminDashboard() {
     monthlyRevenue: 0,
     recentStudents: [],
     upcomingDues: [],
+    upcomingBirthdays: [] as any[],
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -95,6 +117,7 @@ export default function AdminDashboard() {
           monthlyRevenue,
           recentStudents: (students || []).slice(0, 5),
           upcomingDues: upcomingDues || [],
+          upcomingBirthdays: getUpcomingBirthdays(students || []),
         });
       } catch (err) {
         console.error('Dashboard fetch failed:', err);
@@ -134,6 +157,27 @@ export default function AdminDashboard() {
         {error && (
           <div className="mb-6 rounded-2xl border border-[#d1060f]/30 bg-[#d1060f]/10 px-4 py-3 text-sm text-[#ee2435]">
             {error}
+          </div>
+        )}
+
+        {/* 🎂 Today's birthdays — banner */}
+        {!loading && stats.upcomingBirthdays.filter((s) => s.daysUntil === 0).length > 0 && (
+          <div className="mb-8 overflow-hidden rounded-2xl border border-amber-400/30 bg-amber-400/[0.06] px-5 py-4">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">🎂</span>
+              <div>
+                <p className="font-[family-name:var(--font-display)] text-base font-bold text-amber-300">
+                  Birthday{stats.upcomingBirthdays.filter((s) => s.daysUntil === 0).length > 1 ? 's' : ''} today!
+                </p>
+                <p className="mt-0.5 text-sm text-amber-200/80">
+                  {stats.upcomingBirthdays
+                    .filter((s) => s.daysUntil === 0)
+                    .map((s) => s.student_name)
+                    .join(' · ')}
+                  {' — '}don&rsquo;t forget the cake! 🎉
+                </p>
+              </div>
+            </div>
           </div>
         )}
 
@@ -268,6 +312,54 @@ export default function AdminDashboard() {
                   ))}
                 </tbody>
               </table>
+            )}
+          </DataPanel>
+
+          {/* Upcoming birthdays panel */}
+          <DataPanel
+            title="Upcoming birthdays"
+            actionHref="/admin/students"
+            actionLabel="See students"
+            loading={loading}
+            empty={!loading && stats.upcomingBirthdays.length === 0}
+            emptyIcon={FaBirthdayCake}
+            emptyTitle="No birthdays in the next 14 days"
+            emptyText="Birthdays within 14 days will appear here."
+          >
+            {stats.upcomingBirthdays.length > 0 && (
+              <ul className="divide-y divide-white/8">
+                {stats.upcomingBirthdays.map((s) => {
+                  const isToday    = s.daysUntil === 0;
+                  const isTomorrow = s.daysUntil === 1;
+                  const label      = isToday
+                    ? 'Today 🎂'
+                    : isTomorrow
+                    ? 'Tomorrow'
+                    : `In ${s.daysUntil} days`;
+                  const dateStr = s.bdayDate.toLocaleDateString('en-CA', {
+                    month: 'short', day: 'numeric',
+                  });
+                  return (
+                    <li key={s.id} className="flex items-center justify-between px-4 py-3 hover:bg-white/[0.04]">
+                      <div>
+                        <p className={`font-medium ${isToday ? 'text-amber-300' : 'text-white'}`}>
+                          {s.student_name}
+                        </p>
+                        <p className="text-xs text-white/50">{s.parent_name} · {dateStr}</p>
+                      </div>
+                      <span
+                        className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                          isToday
+                            ? 'bg-amber-400/20 text-amber-300'
+                            : 'bg-white/8 text-white/65'
+                        }`}
+                      >
+                        {label}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
             )}
           </DataPanel>
         </div>

@@ -99,15 +99,14 @@ export default function AdminDashboard() {
           paidFees?.reduce((sum, fee) => sum + parseFloat(fee.amount || 0), 0) || 0;
         const activeStudents = students?.filter((s) => s.status === 'active').length || 0;
 
-        const today = new Date();
-        const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+        // Overdue = pending fees whose due date has already passed
         const { data: upcomingDues, error: dErr } = await supabase
           .from('fees')
           .select('*, students(student_name, parent_name)')
           .eq('payment_status', 'pending')
-          .gte('due_date', today.toISOString().split('T')[0])
-          .lte('due_date', nextWeek.toISOString().split('T')[0])
-          .order('due_date', { ascending: true });
+          .lt('due_date', todayStr)
+          .order('due_date', { ascending: true })
+          .limit(10);
         if (dErr) throw dErr;
 
         setStats({
@@ -205,9 +204,10 @@ export default function AdminDashboard() {
           />
           <KpiCard
             icon={FaChartLine}
-            label="Upcoming dues"
+            label="Overdue fees"
             value={loading ? null : stats.upcomingDues.length}
-            sub="next 7 days"
+            sub="past due, unpaid"
+            featured={stats.upcomingDues.length > 0}
           />
         </div>
 
@@ -276,14 +276,14 @@ export default function AdminDashboard() {
           </DataPanel>
 
           <DataPanel
-            title="Upcoming payment dues"
+            title="Overdue payments"
             actionHref="/admin/fees"
             actionLabel="See all"
             loading={loading}
             empty={!loading && stats.upcomingDues.length === 0}
             emptyIcon={FaClock}
-            emptyTitle="No upcoming dues"
-            emptyText="Payment dues will appear here."
+            emptyTitle="No overdue payments"
+            emptyText="All caught up — no fees are past due."
           >
             {stats.upcomingDues.length > 0 && (
               <table className="w-full text-sm">

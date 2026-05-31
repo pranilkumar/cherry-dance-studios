@@ -123,18 +123,30 @@ export default function FeeManagement() {
     setBulkData((p) => ({ ...p, dueDate: `${monthFilter}-10` }));
   }, [fetchData, monthFilter]);
 
-  const filtered = useMemo(() => students.filter((s) => {
+  const filtered = useMemo(() => {
+    const filterToday = new Date(); filterToday.setHours(0, 0, 0, 0);
+    const studentIsOverdue = (s) =>
+      (s.feeStatus === 'pending' || s.feeStatus === 'not_created') &&
+      s.dueDate && new Date(s.dueDate + 'T00:00:00') < filterToday;
+    const studentIsPending = (s) =>
+      (s.feeStatus === 'pending' || s.feeStatus === 'not_created') &&
+      (!s.dueDate || new Date(s.dueDate + 'T00:00:00') >= filterToday);
+
+    return students.filter((s) => {
     const term = searchTerm.toLowerCase();
     const matchesSearch = !term ||
       (s.student_name || '').toLowerCase().includes(term) ||
       (s.parent_name || '').toLowerCase().includes(term);
-    // 'pending' filter covers both fee-record-pending and no-record (not_created)
     const matchesStatus =
       statusFilter === 'all' ||
-      s.feeStatus === statusFilter ||
-      (statusFilter === 'pending' && s.feeStatus === 'not_created');
+      (statusFilter === 'overdue'      && studentIsOverdue(s)) ||
+      (statusFilter === 'pending'      && studentIsPending(s)) ||
+      (statusFilter === 'paid'         && s.feeStatus === 'paid') ||
+      (statusFilter === 'waived'       && s.feeStatus === 'waived') ||
+      (statusFilter === 'not_created'  && s.feeStatus === 'not_created');
     return matchesSearch && matchesStatus;
-  }), [students, searchTerm, statusFilter]);
+  });
+  }, [students, searchTerm, statusFilter]);
 
   const openPayment = (student) => {
     setPaymentData({
@@ -524,7 +536,8 @@ export default function FeeManagement() {
           {[
             { v: 'all',         label: `All (${students.length})` },
             { v: 'paid',        label: `Paid (${monthlyStats.paidCount})` },
-            { v: 'pending',     label: `Pending / Overdue (${monthlyStats.pendingCount + monthlyStats.overdueCount})` },
+            { v: 'overdue',     label: `Overdue (${monthlyStats.overdueCount})` },
+            { v: 'pending',     label: `Pending (${monthlyStats.pendingCount})` },
             { v: 'waived',      label: `Waived (${students.filter(s => s.feeStatus === 'waived').length})` },
             { v: 'not_created', label: `No record (${students.filter(s => s.feeStatus === 'not_created').length})` },
           ].map((f) => (

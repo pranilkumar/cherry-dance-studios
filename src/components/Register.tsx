@@ -115,9 +115,9 @@ function SectionHead({ num, label, icon: Icon = undefined }: { num: any; label: 
   );
 }
 
-function Field({ label, required = false, error = undefined, hint = undefined, children }: { label: any; required?: any; error?: any; hint?: any; children: any }) {
+function Field({ label, required = false, error = undefined, hint = undefined, id = undefined, children }: { label: any; required?: any; error?: any; hint?: any; id?: string; children: any }) {
   return (
-    <div>
+    <div id={id}>
       <label className="mb-2 flex items-center justify-between text-sm font-medium text-[#0a0a0f]/75">
         <span>
           {label}
@@ -160,8 +160,14 @@ export default function Register() {
   const tier = useMemo(() => suggestTier(age), [age]);
   const nextBday = useMemo(() => formatNextBirthday(form.childDob), [form.childDob]);
 
-  const validate = () => {
-    const e: Record<string, any> = {};
+  // Field order matches DOM top-to-bottom so we can scroll to the first error.
+  const FIELD_ORDER = [
+    'childName', 'childDob', 'parentName', 'email', 'phone',
+    'preferredClass', 'preferredDays', 'preferredTimes',
+  ];
+
+  const validate = (): Record<string, string> => {
+    const e: Record<string, string> = {};
     if (!form.childName.trim()) e.childName = "Dancer's name is required.";
     if (!form.childDob) {
       e.childDob = 'Date of birth is required.';
@@ -179,19 +185,26 @@ export default function Register() {
       e.emailSecondary = 'Please enter a valid email address.';
     if (!form.phone || form.phone.length < 7) e.phone = 'A valid phone number is required.';
     if (!form.preferredClass) e.preferredClass = 'Please select a dance style.';
-    if (!form.flexibleDays && form.preferredDays.length === 0) {
+    if (!form.flexibleDays && form.preferredDays.length === 0)
       e.preferredDays = 'Pick at least one day (or check "Flexible").';
-    }
-    if (form.preferredTimes.length === 0) {
+    if (form.preferredTimes.length === 0)
       e.preferredTimes = 'Pick at least one time slot.';
-    }
     setErrors(e);
-    return Object.keys(e).length === 0;
+    return e;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validate()) return;
+    const errs = validate();
+    if (Object.keys(errs).length > 0) {
+      // Scroll the first broken field into view so the parent sees it immediately.
+      const firstKey = FIELD_ORDER.find((k) => errs[k]);
+      if (firstKey) {
+        const el = document.getElementById(`field-${firstKey}`);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      return;
+    }
     setStatus('submitting');
     setSubmitError('');
 
@@ -348,7 +361,7 @@ export default function Register() {
             <div>
               <SectionHead num="01" label="Your dancer" />
 
-              <Field label="Dancer's full name" required error={errors.childName}>
+              <Field id="field-childName" label="Dancer's full name" required error={errors.childName}>
                 <input
                   type="text"
                   value={form.childName}
@@ -362,6 +375,7 @@ export default function Register() {
               {/* DOB block — the spotlight, with live age + tier + birthday hint */}
               <div className="mt-5">
                 <Field
+                  id="field-childDob"
                   label="Date of birth"
                   required
                   error={errors.childDob}
@@ -414,7 +428,7 @@ export default function Register() {
             <div>
               <SectionHead num="02" label="Parent / guardian" />
 
-              <Field label="Your full name" required error={errors.parentName}>
+              <Field id="field-parentName" label="Your full name" required error={errors.parentName}>
                 <input
                   type="text"
                   value={form.parentName}
@@ -426,7 +440,7 @@ export default function Register() {
               </Field>
 
               <div className="mt-5 grid gap-5 md:grid-cols-2">
-                <Field label="Email" required error={errors.email}>
+                <Field id="field-email" label="Email" required error={errors.email}>
                   <input
                     type="email"
                     value={form.email}
@@ -437,7 +451,7 @@ export default function Register() {
                   />
                 </Field>
 
-                <Field label="Phone / WhatsApp" required error={errors.phone}>
+                <Field id="field-phone" label="Phone / WhatsApp" required error={errors.phone}>
                   <PhoneInput
                     country="ca"
                     preferredCountries={['ca', 'us', 'in']}
@@ -478,7 +492,7 @@ export default function Register() {
             <div>
               <SectionHead num="03" label="Class preferences" />
 
-              <Field label="Dance style" required error={errors.preferredClass}>
+              <Field id="field-preferredClass" label="Dance style" required error={errors.preferredClass}>
                 <select
                   value={form.preferredClass}
                   onChange={(e) => set('preferredClass', e.target.value)}
@@ -497,6 +511,7 @@ export default function Register() {
               {/* Preferred days — multi-select chips */}
               <div className="mt-5">
                 <Field
+                  id="field-preferredDays"
                   label="Preferred days"
                   required
                   hint="select any that work"
@@ -546,6 +561,7 @@ export default function Register() {
               {/* Preferred times — multi-select chips */}
               <div className="mt-5">
                 <Field
+                  id="field-preferredTimes"
                   label="Preferred times"
                   required
                   hint="select any that work"
@@ -707,6 +723,31 @@ export default function Register() {
             </div>
 
             {/* Submit */}
+            {/* Validation summary — shown after a failed submit attempt */}
+            {Object.keys(errors).length > 0 && (
+              <div className="rounded-xl border border-[#d1060f]/30 bg-[#d1060f]/5 p-4 text-sm text-[#d1060f]">
+                <p className="font-semibold">
+                  Please fill in {Object.keys(errors).length} required field{Object.keys(errors).length === 1 ? '' : 's'} above before submitting.
+                </p>
+                <ul className="mt-2 space-y-0.5 text-xs opacity-80">
+                  {FIELD_ORDER.filter((k) => errors[k]).map((k) => (
+                    <li key={k}>
+                      <button
+                        type="button"
+                        className="underline underline-offset-2 hover:opacity-70"
+                        onClick={() => {
+                          const el = document.getElementById(`field-${k}`);
+                          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }}
+                      >
+                        {errors[k]}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             {status === 'error' && (
               <div className="rounded-xl border border-[#d1060f]/30 bg-[#d1060f]/5 p-4 text-sm text-[#d1060f]">
                 <p className="font-semibold">Something went wrong saving your enquiry.</p>

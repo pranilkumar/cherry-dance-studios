@@ -107,15 +107,62 @@ export default function AdminDashboard() {
 
         const activeStudents = students?.filter((s) => s.status === 'active').length || 0;
 
-        // Overdue = pending fees across ALL months whose due date has already passed.
-        const { data: upcomingDues, error: dErr } = await supabase
+        // ── Overdue ───────────────────────────────────────────────────────
+        // 1. Real overdue: pending fee records whose due date has already passed.
+        const { data: realOverdue, error: dErr } = await supabase
           .from('fees')
           .select('*, students(student_name, parent_name)')
           .eq('payment_status', 'pending')
           .lt('due_date', todayStr)
-          .order('due_date', { ascending: true })
-          .limit(10);
+          .order('due_date', { ascending: true });
         if (dErr) throw dErr;
+
+        // 2. Virtual overdue: active students with a fee rate configured but NO fee
+        //    record at all for the most recently passed billing period (the 10th).
+        //    If today is before the 10th → last month's billing has passed.
+        //    If today is on/after the 10th → this month's billing has passed.
+        const BILLING_DAY = 10;
+        const pastBillingMonth =
+          today.getDate() < BILLING_DAY
+            ? new Date(today.getFullYear(), today.getMonth() - 1, 1)  // last month
+            : new Date(today.getFullYear(), today.getMonth(), 1);      // this month
+        const pbmStr = `${pastBillingMonth.getFullYear()}-${String(pastBillingMonth.getMonth() + 1).padStart(2, '0')}`;
+        const pbmLastDay = new Date(pastBillingMonth.getFullYear(), pastBillingMonth.getMonth() + 1, 0).getDate();
+
+        const { data: pbmFees } = await supabase
+          .from('fees')
+          .select('student_id')
+          .gte('due_date', `${pbmStr}-01`)
+          .lte('due_date', `${pbmStr}-${String(pbmLastDay).padStart(2, '0')}`);
+
+        const studentsWithPbmRecord = new Set((pbmFees || []).map((f) => f.student_id));
+
+        // Students with a rate set but no record for the past billing month
+        const virtualOverdue = (students || [])
+          .filter(
+            (s) =>
+              s.status === 'active' &&
+              s.fee_amount && parseFloat(s.fee_amount) > 0 &&
+              !studentsWithPbmRecord.has(s.id)
+          )
+          .map((s) => ({
+            id: `virtual-${s.id}`,
+            student_id: s.id,
+            students: { student_name: s.student_name, parent_name: s.parent_name },
+            amount: parseFloat(s.fee_amount),
+            due_date: `${pbmStr}-${String(BILLING_DAY).padStart(2, '0')}`,
+            payment_status: 'pending',
+            isVirtual: true,
+          }));
+
+        // Merge real + virtual, deduplicate by student (real record wins), sort by due date.
+        const realOverdueStudentIds = new Set((realOverdue || []).map((f) => f.student_id));
+        const uniqueVirtualOverdue = virtualOverdue.filter(
+          (v) => !realOverdueStudentIds.has(v.student_id)
+        );
+        const allOverdue = [...(realOverdue || []), ...uniqueVirtualOverdue]
+          .sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime())
+          .slice(0, 15);
 
         setStats({
           totalStudents: students?.length || 0,
@@ -123,7 +170,7 @@ export default function AdminDashboard() {
           pendingPayments: pendingThisMonth,
           monthlyRevenue,
           recentStudents: (students || []).slice(0, 5),
-          upcomingDues: upcomingDues || [],
+          upcomingDues: allOverdue,
           upcomingBirthdays: getUpcomingBirthdays(students || []),
         });
       } catch (err) {

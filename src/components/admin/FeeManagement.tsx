@@ -46,7 +46,7 @@ export default function FeeManagement() {
   const [editModal, setEditModal] = useState(null);      // fee object being edited
   const [editData, setEditData] = useState<{ amount: string; fee_type: string; due_date: string; notes: string }>({ amount: '', fee_type: '', due_date: '', notes: '' });
   const [bulkModal, setBulkModal] = useState(false);
-  const [bulkData, setBulkData] = useState({ amount: '100', feeType: 'Monthly fee', dueDate: '' });
+  const [bulkData, setBulkData] = useState({ amount: '100', feeType: 'Monthly fee' });
   const [isBulking, setIsBulking] = useState(false);
   const [lastBulkStudents, setLastBulkStudents] = useState<any[]>([]); // students from last bulk creation
   const [isNotifying, setIsNotifying] = useState(false);
@@ -135,7 +135,6 @@ export default function FeeManagement() {
 
   useEffect(() => {
     fetchData();
-    setBulkData((p) => ({ ...p, dueDate: `${monthFilter}-10` }));
   }, [fetchData, monthFilter]);
 
   const filtered = useMemo(() => {
@@ -254,12 +253,15 @@ export default function FeeManagement() {
     }
     setIsBulking(true);
     try {
+      // Due date is always the 10th of the selected month — not user-editable
+      // to prevent accidentally creating fees with wrong due dates.
+      const bulkDueDate = `${monthFilter}-10`;
       const inserts = withoutFee.map((s) => ({
         student_id: s.id,
         fee_type: bulkData.feeType,
         // Use the student's individual fee amount if set, otherwise the bulk default.
         amount: s.fee_amount ? parseFloat(s.fee_amount) : parseFloat(bulkData.amount),
-        due_date: bulkData.dueDate,
+        due_date: bulkDueDate,
         payment_status: 'pending',
       }));
       const { error } = await supabase.from('fees').insert(inserts);
@@ -271,7 +273,7 @@ export default function FeeManagement() {
         parentName: s.parent_name,
         amount: parseFloat(bulkData.amount),
         feeType: bulkData.feeType,
-        dueDate: bulkData.dueDate,
+        dueDate: bulkDueDate,
       })));
       showAlert('success', `Created ${inserts.length} fees for ${monthFilter}.`);
       setBulkModal(false);
@@ -827,18 +829,21 @@ export default function FeeManagement() {
           </p>
           <div className="space-y-4">
             <Grid2>
-              <Field label="Amount (CAD)" required>
+              <Field label="Default amount (CAD)" required>
                 <div className="relative">
                   <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-white/45">$</span>
                   <input type="number" min="0" step="0.01" value={bulkData.amount}
                     onChange={(e) => setBulkData((p) => ({ ...p, amount: e.target.value }))}
                     className={`${inputCls} pl-7`} />
                 </div>
+                <p className="mt-1 text-[10px] text-white/35">Used for students without an individual rate set.</p>
               </Field>
-              <Field label="Due date" required>
-                <input type="date" value={bulkData.dueDate}
-                  onChange={(e) => setBulkData((p) => ({ ...p, dueDate: e.target.value }))}
-                  className={`${inputCls} [color-scheme:dark]`} />
+              <Field label="Due date">
+                <div className={`${inputCls} flex items-center text-white/55`}>
+                  <FaCalendarAlt className="mr-2 text-[#ee2435] text-xs shrink-0" />
+                  10th {new Date(`${monthFilter}-10T00:00:00`).toLocaleDateString('en-CA', { month: 'long', year: 'numeric' })}
+                </div>
+                <p className="mt-1 text-[10px] text-white/35">Always the 10th — edit individual fees to change.</p>
               </Field>
             </Grid2>
             <Field label="Fee type">

@@ -52,6 +52,7 @@ export default function FeeManagement() {
   const [isNotifying, setIsNotifying] = useState(false);
   const [reminderModal, setReminderModal] = useState(false);
   const [isSendingReminders, setIsSendingReminders] = useState(false);
+  const [selectedReminderIds, setSelectedReminderIds] = useState<Set<string>>(new Set());
   const [setRateModal, setSetRateModal] = useState<any>(null);   // student whose fee_amount we're setting
   const [setRateValue, setSetRateValue] = useState('');
   const [isSavingRate, setIsSavingRate] = useState(false);
@@ -421,10 +422,10 @@ export default function FeeManagement() {
 
   const sendOverdueReminders = async () => {
     setIsSendingReminders(true);
-    // Only send to students who have a known amount > 0 and an email address.
-    // Students with $0 amount have no fee rate configured — emailing "you owe $0"
-    // would be confusing; skip them and advise the admin to set a rate first.
-    const sendable = overdueStudents.filter((s) => s.email && s.amount > 0);
+    // Only send to checked students who have a known amount > 0 and an email address.
+    const sendable = overdueStudents.filter(
+      (s) => selectedReminderIds.has(s.id) && s.email && s.amount > 0
+    );
     let sent = 0, failed = 0;
     for (const s of sendable) {
       try {
@@ -498,7 +499,12 @@ export default function FeeManagement() {
           {overdueStudents.length > 0 && (
             <button
               type="button"
-              onClick={() => setReminderModal(true)}
+              onClick={() => {
+                // Pre-select all students who can actually receive a reminder
+                const sendable = overdueStudents.filter((s) => s.email && s.amount > 0);
+                setSelectedReminderIds(new Set(sendable.map((s) => s.id)));
+                setReminderModal(true);
+              }}
               className="inline-flex items-center gap-2 rounded-lg border border-[#d1060f]/50 bg-[#d1060f]/15 px-3.5 py-2 text-xs font-medium text-[#ee2435] hover:bg-[#d1060f]/25"
             >
               <FaBell className="text-[10px]" />
@@ -912,59 +918,103 @@ export default function FeeManagement() {
 
       {/* ── Overdue reminders modal ── */}
       {reminderModal && (() => {
-        const canSend   = overdueStudents.filter((s) => s.email && s.amount > 0);
-        const noAmount  = overdueStudents.filter((s) => s.amount === 0);
-        const noEmail   = overdueStudents.filter((s) => s.amount > 0 && !s.email);
+        const canSend  = overdueStudents.filter((s) => s.email && s.amount > 0);
+        const noAmount = overdueStudents.filter((s) => s.amount === 0);
+        const noEmail  = overdueStudents.filter((s) => s.amount > 0 && !s.email);
+        const checkedCount = canSend.filter((s) => selectedReminderIds.has(s.id)).length;
+        const allChecked   = checkedCount === canSend.length && canSend.length > 0;
+
+        const toggleStudent = (id: string, canToggle: boolean) => {
+          if (!canToggle) return;
+          setSelectedReminderIds((prev) => {
+            const next = new Set(prev);
+            next.has(id) ? next.delete(id) : next.add(id);
+            return next;
+          });
+        };
+
+        const toggleAll = () => {
+          setSelectedReminderIds(
+            allChecked ? new Set() : new Set(canSend.map((s) => s.id))
+          );
+        };
+
         return (
           <Modal title={<><FaBell className="inline -mt-0.5 mr-2 text-[#ee2435]" />Send overdue reminders</>} onClose={() => setReminderModal(false)}>
-            <p className="mb-4 text-sm text-white/70">
-              Reminder emails will be sent to{' '}
-              <strong className="text-white">{canSend.length} parent{canSend.length === 1 ? '' : 's'}</strong>{' '}
-              with overdue fees.
-              {(noAmount.length > 0 || noEmail.length > 0) && (
-                <span className="ml-1 text-white/45">
-                  ({noAmount.length + noEmail.length} will be skipped — see below.)
-                </span>
+            {/* Select all / none row */}
+            <div className="mb-3 flex items-center justify-between">
+              <p className="text-sm text-white/70">
+                <strong className="text-white">{checkedCount}</strong> of{' '}
+                <strong className="text-white">{canSend.length}</strong> selected
+              </p>
+              {canSend.length > 0 && (
+                <button
+                  type="button"
+                  onClick={toggleAll}
+                  className="text-xs text-white/45 underline-offset-2 hover:text-white/80 hover:underline"
+                >
+                  {allChecked ? 'Deselect all' : 'Select all'}
+                </button>
               )}
-            </p>
+            </div>
+
             <div className="mb-5 overflow-hidden rounded-lg border border-white/8">
               {overdueStudents.map((s, i) => {
                 const missingAmount = s.amount === 0;
                 const missingEmail  = !s.email && s.amount > 0;
-                const willSkip      = missingAmount || missingEmail;
+                const canToggle     = !missingAmount && !missingEmail;
+                const isChecked     = canToggle && selectedReminderIds.has(s.id);
+
                 return (
                   <div
                     key={s.id}
-                    className={`flex items-center justify-between px-4 py-2.5 text-sm ${
+                    onClick={() => toggleStudent(s.id, canToggle)}
+                    className={`flex items-center gap-3 px-4 py-2.5 text-sm ${
                       i < overdueStudents.length - 1 ? 'border-b border-white/8' : ''
-                    } ${willSkip ? 'opacity-50' : ''}`}
+                    } ${canToggle ? 'cursor-pointer hover:bg-white/[0.04]' : 'opacity-45'}`}
                   >
-                    <div>
-                      <span className={`font-medium ${willSkip ? 'text-white/60' : 'text-white'}`}>
-                        {s.student_name}
-                      </span>
-                      <span className="ml-2 text-xs text-white/45">{s.email || 'no email'}</span>
-                      {missingAmount && (
-                        <span className="ml-2 text-[10px] text-amber-400/80">· rate not set — will skip</span>
-                      )}
-                      {missingEmail && (
-                        <span className="ml-2 text-[10px] text-white/40">· no email — will skip</span>
+                    {/* Checkbox */}
+                    <div className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition ${
+                      isChecked
+                        ? 'border-[#d1060f] bg-[#d1060f]'
+                        : canToggle
+                          ? 'border-white/25 bg-white/[0.04]'
+                          : 'border-white/15 bg-white/[0.02]'
+                    }`}>
+                      {isChecked && (
+                        <svg className="h-2.5 w-2.5 text-white" viewBox="0 0 10 8" fill="none">
+                          <path d="M1 4l3 3 5-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
                       )}
                     </div>
-                    <span className={`font-semibold tabular-nums ${missingAmount ? 'text-white/35' : 'text-[#ee2435]'}`}>
+
+                    {/* Name + email */}
+                    <div className="min-w-0 flex-1">
+                      <span className="font-medium text-white">{s.student_name}</span>
+                      <span className="ml-2 text-xs text-white/45">{s.email || 'no email'}</span>
+                      {missingAmount && (
+                        <span className="ml-2 text-[10px] text-amber-400/80">· rate not set</span>
+                      )}
+                      {missingEmail && (
+                        <span className="ml-2 text-[10px] text-white/40">· no email</span>
+                      )}
+                    </div>
+
+                    <span className={`shrink-0 font-semibold tabular-nums ${missingAmount ? 'text-white/30' : 'text-[#ee2435]'}`}>
                       {missingAmount ? '—' : formatCurrency(s.amount)}
                     </span>
                   </div>
                 );
               })}
             </div>
+
             {noAmount.length > 0 && (
               <p className="mb-4 text-xs text-amber-400/70">
-                ⚠ {noAmount.length} student{noAmount.length === 1 ? ' has' : 's have'} no fee rate configured.
-                Use <strong className="text-amber-400/90">Create this month&rsquo;s fees</strong> to bill them,
-                or set a per-student rate during conversion.
+                ⚠ {noAmount.length} student{noAmount.length === 1 ? ' has' : 's have'} no fee rate set — use{' '}
+                <strong className="text-amber-400/90">Set rate</strong> in the fees table first.
               </p>
             )}
+
             <div className="flex items-center justify-end gap-3 border-t border-white/8 pt-4">
               <button type="button" onClick={() => setReminderModal(false)}
                 className="rounded-lg border border-white/15 bg-white/5 px-4 py-2 text-sm font-medium text-white/85 hover:border-white/30">
@@ -973,11 +1023,11 @@ export default function FeeManagement() {
               <button
                 type="button"
                 onClick={sendOverdueReminders}
-                disabled={isSendingReminders || canSend.length === 0}
+                disabled={isSendingReminders || checkedCount === 0}
                 className="inline-flex items-center gap-2 rounded-lg bg-[#d1060f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#b00310] disabled:opacity-60"
               >
                 <FaBell className="text-xs" />
-                {isSendingReminders ? 'Sending…' : `Send to ${canSend.length}`}
+                {isSendingReminders ? 'Sending…' : `Send to ${checkedCount}`}
               </button>
             </div>
           </Modal>

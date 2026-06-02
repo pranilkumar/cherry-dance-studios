@@ -52,6 +52,9 @@ export default function FeeManagement() {
   const [isNotifying, setIsNotifying] = useState(false);
   const [reminderModal, setReminderModal] = useState(false);
   const [isSendingReminders, setIsSendingReminders] = useState(false);
+  const [setRateModal, setSetRateModal] = useState<any>(null);   // student whose fee_amount we're setting
+  const [setRateValue, setSetRateValue] = useState('');
+  const [isSavingRate, setIsSavingRate] = useState(false);
   const [alert, setAlert] = useState(null);
   const [monthlyStats, setMonthlyStats] = useState({ totalIncome: 0, paidCount: 0, pendingCount: 0, overdueCount: 0 });
 
@@ -379,6 +382,33 @@ export default function FeeManagement() {
     }
   };
 
+  // ── Set per-student monthly rate ────────────────────────────────────
+  const openSetRate = (student) => {
+    setSetRateValue(student.fee_amount ? String(student.fee_amount) : '');
+    setSetRateModal(student);
+  };
+
+  const saveStudentRate = async () => {
+    if (!setRateModal) return;
+    const rate = parseFloat(setRateValue);
+    if (!rate || rate <= 0) return showAlert('error', 'Please enter a valid amount.');
+    setIsSavingRate(true);
+    try {
+      const { error } = await supabase
+        .from('students')
+        .update({ fee_amount: rate })
+        .eq('id', setRateModal.id);
+      if (error) throw error;
+      showAlert('success', `Monthly rate for ${setRateModal.student_name} set to ${formatCurrency(rate)}.`);
+      setSetRateModal(null);
+      fetchData();
+    } catch (err) {
+      showAlert('error', err.message || 'Failed to save rate.');
+    } finally {
+      setIsSavingRate(false);
+    }
+  };
+
   // ── Overdue reminders ────────────────────────────────────────────────
   const feeToday = new Date(); feeToday.setHours(0, 0, 0, 0);
   const overdueStudents = students.filter(
@@ -619,11 +649,23 @@ export default function FeeManagement() {
                               {formatCurrency(student.amount)}
                             </span>
                             {student.feeStatus === 'not_created' && (
-                              <div className="text-[10px] text-white/30">rate</div>
+                              <button
+                                type="button"
+                                onClick={() => openSetRate(student)}
+                                className="block text-[10px] text-white/35 underline-offset-2 hover:text-[#ee2435] hover:underline"
+                              >
+                                edit rate
+                              </button>
                             )}
                           </div>
                         ) : (
-                          <span className="text-white/35">Not set</span>
+                          <button
+                            type="button"
+                            onClick={() => openSetRate(student)}
+                            className="inline-flex items-center gap-1 rounded-md border border-dashed border-white/20 px-2 py-0.5 text-xs text-white/40 hover:border-[#ee2435]/50 hover:text-[#ee2435]"
+                          >
+                            <FaDollarSign className="text-[9px]" /> Set rate
+                          </button>
                         )}
                       </td>
                       <td className="px-5 py-3 text-xs text-white/65">{formatDate(student.dueDate)}</td>
@@ -941,6 +983,46 @@ export default function FeeManagement() {
           </Modal>
         );
       })()}
+
+      {/* ── Set monthly rate modal ── */}
+      {setRateModal && (
+        <Modal title={<><FaDollarSign className="inline -mt-0.5 mr-2 text-[#ee2435]" />Set monthly rate</>} onClose={() => setSetRateModal(null)}>
+          <div className="mb-5 rounded-lg border border-white/8 bg-white/[0.03] px-4 py-3">
+            <strong className="text-base text-white">{setRateModal.student_name}</strong>
+            <div className="text-xs text-white/55">Parent: {setRateModal.parent_name}</div>
+          </div>
+          <p className="mb-4 text-sm text-white/60">
+            This sets the monthly fee rate for this student. It will be used automatically when creating monthly fees in bulk.
+          </p>
+          <Field label="Monthly rate (CAD)" required>
+            <div className="relative">
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-white/45">$</span>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={setRateValue}
+                onChange={(e) => setSetRateValue(e.target.value)}
+                placeholder="e.g. 100"
+                className={`${inputCls} pl-7`}
+                autoFocus
+                onKeyDown={(e) => e.key === 'Enter' && saveStudentRate()}
+              />
+            </div>
+          </Field>
+          <div className="mt-6 flex items-center justify-end gap-3 border-t border-white/8 pt-4">
+            <button type="button" onClick={() => setSetRateModal(null)}
+              className="rounded-lg border border-white/15 bg-white/5 px-4 py-2 text-sm font-medium text-white/85 hover:border-white/30">
+              Cancel
+            </button>
+            <button type="button" onClick={saveStudentRate} disabled={isSavingRate}
+              className="inline-flex items-center gap-2 rounded-lg bg-[#d1060f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#b00310] disabled:opacity-60">
+              <FaCheckCircle className="text-xs" />
+              {isSavingRate ? 'Saving…' : 'Save rate'}
+            </button>
+          </div>
+        </Modal>
+      )}
 
       {historyModal && (
         <Modal title={<><FaHistory className="inline -mt-0.5 mr-2 text-[#ee2435]" /> Payment history</>} onClose={() => setHistoryModal(null)} size="lg">

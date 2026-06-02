@@ -78,10 +78,21 @@ export default function FeeManagement() {
         const fee = allFees.find((f) => f.payment_status === 'paid')
           ?? allFees.find((f) => f.payment_status === 'waived')
           ?? allFees[0];
+        // Amount priority:
+        // 1. Actual fee record amount (most authoritative)
+        // 2. Student's configured monthly rate (fee_amount) — shown for not_created students
+        //    so reminders and the table display the right number even before a fee is created
+        // 3. 0 (truly unknown — shows "Not set" in the table)
+        const resolvedAmount =
+          fee?.amount != null
+            ? parseFloat(String(fee.amount))
+            : student.fee_amount
+              ? parseFloat(String(student.fee_amount))
+              : 0;
         return {
           ...student, fee,
           feeStatus: fee ? fee.payment_status : 'not_created',
-          amount: fee?.amount || 0,
+          amount: resolvedAmount,
           // For students with no fee record, use the 10th as the implied due date
           // so overdue detection works correctly.
           dueDate: fee?.due_date ?? `${monthFilter}-10`,
@@ -380,9 +391,12 @@ export default function FeeManagement() {
 
   const sendOverdueReminders = async () => {
     setIsSendingReminders(true);
+    // Only send to students who have a known amount > 0 and an email address.
+    // Students with $0 amount have no fee rate configured — emailing "you owe $0"
+    // would be confusing; skip them and advise the admin to set a rate first.
+    const sendable = overdueStudents.filter((s) => s.email && s.amount > 0);
     let sent = 0, failed = 0;
-    for (const s of overdueStudents) {
-      if (!s.email) { failed++; continue; }
+    for (const s of sendable) {
       try {
         const res = await fetch('/api/send-overdue-reminder', {
           method: 'POST',
@@ -400,13 +414,17 @@ export default function FeeManagement() {
         if (res.ok) sent++; else failed++;
       } catch { failed++; }
     }
+    const skipped = overdueStudents.length - sendable.length;
     setIsSendingReminders(false);
     setReminderModal(false);
     showAlert(
       failed === 0 ? 'success' : 'error',
-      failed === 0
-        ? `Reminders sent to ${sent} parent${sent === 1 ? '' : 's'}.`
-        : `Sent ${sent}, failed ${failed}. Check that all students have emails on file.`
+      [
+        failed === 0
+          ? `Reminders sent to ${sent} parent${sent === 1 ? '' : 's'}.`
+          : `Sent ${sent}, failed ${failed}. Check that all students have emails on file.`,
+        skipped > 0 ? `${skipped} skipped — no fee rate set (use "Create this month's fees" or set per-student rate).` : '',
+      ].filter(Boolean).join(' ')
     );
   };
 
@@ -595,9 +613,18 @@ export default function FeeManagement() {
                       </td>
                       <td className="px-5 py-3 text-white/80">{student.parent_name}</td>
                       <td className="px-5 py-3 text-right tabular-nums">
-                        {student.amount > 0
-                          ? <span className="font-semibold text-white">{formatCurrency(student.amount)}</span>
-                          : <span className="text-white/35">Not set</span>}
+                        {student.amount > 0 ? (
+                          <div>
+                            <span className={`font-semibold ${student.feeStatus === 'not_created' ? 'text-white/55' : 'text-white'}`}>
+                              {formatCurrency(student.amount)}
+                            </span>
+                            {student.feeStatus === 'not_created' && (
+                              <div className="text-[10px] text-white/30">rate</div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-white/35">Not set</span>
+                        )}
                       </td>
                       <td className="px-5 py-3 text-xs text-white/65">{formatDate(student.dueDate)}</td>
                       <td className="px-5 py-3">
@@ -842,35 +869,78 @@ export default function FeeManagement() {
       )}
 
       {/* ── Overdue reminders modal ── */}
-      {reminderModal && (
-        <Modal title={<><FaBell className="inline -mt-0.5 mr-2 text-[#ee2435]" />Send overdue reminders</>} onClose={() => setReminderModal(false)}>
-          <p className="mb-4 text-sm text-white/70">
-            This will send a payment reminder email to <strong className="text-white">{overdueStudents.length} parent{overdueStudents.length === 1 ? '' : 's'}</strong> with overdue fees.
-          </p>
-          <div className="mb-5 overflow-hidden rounded-lg border border-white/8">
-            {overdueStudents.map((s, i) => (
-              <div key={s.id} className={`flex items-center justify-between px-4 py-2.5 text-sm ${i < overdueStudents.length - 1 ? 'border-b border-white/8' : ''}`}>
-                <div>
-                  <span className="font-medium text-white">{s.student_name}</span>
-                  <span className="ml-2 text-xs text-white/45">{s.email || 'no email'}</span>
-                </div>
-                <span className="font-semibold tabular-nums text-[#ee2435]">{formatCurrency(s.amount)}</span>
-              </div>
-            ))}
-          </div>
-          <div className="flex items-center justify-end gap-3 border-t border-white/8 pt-4">
-            <button type="button" onClick={() => setReminderModal(false)}
-              className="rounded-lg border border-white/15 bg-white/5 px-4 py-2 text-sm font-medium text-white/85 hover:border-white/30">
-              Cancel
-            </button>
-            <button type="button" onClick={sendOverdueReminders} disabled={isSendingReminders}
-              className="inline-flex items-center gap-2 rounded-lg bg-[#d1060f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#b00310] disabled:opacity-60">
-              <FaBell className="text-xs" />
-              {isSendingReminders ? 'Sending…' : 'Send reminders'}
-            </button>
-          </div>
-        </Modal>
-      )}
+      {reminderModal && (() => {
+        const canSend   = overdueStudents.filter((s) => s.email && s.amount > 0);
+        const noAmount  = overdueStudents.filter((s) => s.amount === 0);
+        const noEmail   = overdueStudents.filter((s) => s.amount > 0 && !s.email);
+        return (
+          <Modal title={<><FaBell className="inline -mt-0.5 mr-2 text-[#ee2435]" />Send overdue reminders</>} onClose={() => setReminderModal(false)}>
+            <p className="mb-4 text-sm text-white/70">
+              Reminder emails will be sent to{' '}
+              <strong className="text-white">{canSend.length} parent{canSend.length === 1 ? '' : 's'}</strong>{' '}
+              with overdue fees.
+              {(noAmount.length > 0 || noEmail.length > 0) && (
+                <span className="ml-1 text-white/45">
+                  ({noAmount.length + noEmail.length} will be skipped — see below.)
+                </span>
+              )}
+            </p>
+            <div className="mb-5 overflow-hidden rounded-lg border border-white/8">
+              {overdueStudents.map((s, i) => {
+                const missingAmount = s.amount === 0;
+                const missingEmail  = !s.email && s.amount > 0;
+                const willSkip      = missingAmount || missingEmail;
+                return (
+                  <div
+                    key={s.id}
+                    className={`flex items-center justify-between px-4 py-2.5 text-sm ${
+                      i < overdueStudents.length - 1 ? 'border-b border-white/8' : ''
+                    } ${willSkip ? 'opacity-50' : ''}`}
+                  >
+                    <div>
+                      <span className={`font-medium ${willSkip ? 'text-white/60' : 'text-white'}`}>
+                        {s.student_name}
+                      </span>
+                      <span className="ml-2 text-xs text-white/45">{s.email || 'no email'}</span>
+                      {missingAmount && (
+                        <span className="ml-2 text-[10px] text-amber-400/80">· rate not set — will skip</span>
+                      )}
+                      {missingEmail && (
+                        <span className="ml-2 text-[10px] text-white/40">· no email — will skip</span>
+                      )}
+                    </div>
+                    <span className={`font-semibold tabular-nums ${missingAmount ? 'text-white/35' : 'text-[#ee2435]'}`}>
+                      {missingAmount ? '—' : formatCurrency(s.amount)}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+            {noAmount.length > 0 && (
+              <p className="mb-4 text-xs text-amber-400/70">
+                ⚠ {noAmount.length} student{noAmount.length === 1 ? ' has' : 's have'} no fee rate configured.
+                Use <strong className="text-amber-400/90">Create this month&rsquo;s fees</strong> to bill them,
+                or set a per-student rate during conversion.
+              </p>
+            )}
+            <div className="flex items-center justify-end gap-3 border-t border-white/8 pt-4">
+              <button type="button" onClick={() => setReminderModal(false)}
+                className="rounded-lg border border-white/15 bg-white/5 px-4 py-2 text-sm font-medium text-white/85 hover:border-white/30">
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={sendOverdueReminders}
+                disabled={isSendingReminders || canSend.length === 0}
+                className="inline-flex items-center gap-2 rounded-lg bg-[#d1060f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#b00310] disabled:opacity-60"
+              >
+                <FaBell className="text-xs" />
+                {isSendingReminders ? 'Sending…' : `Send to ${canSend.length}`}
+              </button>
+            </div>
+          </Modal>
+        );
+      })()}
 
       {historyModal && (
         <Modal title={<><FaHistory className="inline -mt-0.5 mr-2 text-[#ee2435]" /> Payment history</>} onClose={() => setHistoryModal(null)} size="lg">

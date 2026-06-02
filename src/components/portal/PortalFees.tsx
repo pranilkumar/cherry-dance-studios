@@ -9,16 +9,12 @@ const formatCurrency = (amount) =>
 
 const formatDate = (dateString) => {
   if (!dateString) return '—';
-  // Parse as local date to avoid timezone shift
   const [y, m, d] = dateString.split('T')[0].split('-').map(Number);
   return new Date(y, m - 1, d).toLocaleDateString('en-CA', {
     year: 'numeric', month: 'short', day: 'numeric',
   });
 };
 
-// A fee is overdue only if its due date is strictly before today (midnight-to-midnight).
-// Passing `today` (midnight) rather than `new Date()` prevents fees due *today*
-// from being flagged as overdue before the day is even over.
 const isOverdue = (fee, today) =>
   fee.payment_status !== 'paid' &&
   fee.due_date &&
@@ -36,9 +32,11 @@ export default function PortalFees() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user || cancelled) { setLoading(false); return; }
 
+      // Fetch fee_amount alongside student record so we can show the current
+      // month's fee automatically even if the admin hasn't created a record yet.
       const { data: students } = await supabase
         .from('students')
-        .select('id, student_name')
+        .select('id, student_name, fee_amount, status')
         .eq('email', user.email);
 
       if (!students || students.length === 0) {
@@ -49,15 +47,51 @@ export default function PortalFees() {
       const nameMap = {};
       students.forEach((s) => { nameMap[s.id] = s.student_name; });
 
-      const { data: feesData } = await supabase
+      const { data: realFees } = await supabase
         .from('fees')
         .select('*')
         .in('student_id', students.map((s) => s.id))
         .order('due_date', { ascending: false });
 
+      // ── Virtual current-month fee ──────────────────────────────────────
+      // If a student has a monthly rate (fee_amount) but no fee record for
+      // the current month yet, inject a virtual pending entry so parents
+      // always see what they owe without the admin having to create records
+      // manually each month.
+      const now = new Date();
+      const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      const dueDateStr = `${currentMonthStr}-10`;
+
+      const virtualFees: any[] = [];
+      for (const student of students) {
+        if (!student.fee_amount || parseFloat(student.fee_amount) <= 0) continue;
+        if (student.status === 'on_break') continue;
+
+        // Skip if any real fee record already exists for this month
+        // (paid, pending, or waived — any status means the month is covered)
+        const hasRealFeeThisMonth = (realFees || []).some(
+          (f) => f.student_id === student.id && f.due_date?.startsWith(currentMonthStr)
+        );
+        if (hasRealFeeThisMonth) continue;
+
+        virtualFees.push({
+          id: `virtual-${student.id}-${currentMonthStr}`,
+          student_id: student.id,
+          fee_type: 'Monthly fee',
+          amount: parseFloat(student.fee_amount),
+          due_date: dueDateStr,
+          payment_status: 'pending',
+          payment_date: null,
+          payment_method: null,
+          notes: null,
+          isVirtual: true,
+        });
+      }
+
       if (!cancelled) {
         setStudentNames(nameMap);
-        setFees(feesData || []);
+        // Real fees first (sorted by due_date desc already), then virtuals at the top
+        setFees([...virtualFees, ...(realFees || [])]);
         setLoading(false);
       }
     })();
@@ -65,11 +99,8 @@ export default function PortalFees() {
   }, []);
 
   const today = new Date(); today.setHours(0, 0, 0, 0);
-  // Only pending fees are relevant to the parent — paid = history, waived = hide entirely
   const pending     = fees.filter((f) => f.payment_status === 'pending');
-  // Due today or earlier (or no due date) → actually owed now
   const outstanding = pending.filter((f) => !f.due_date || new Date(f.due_date + 'T00:00:00') <= today);
-  // Due in the future → show as upcoming, not alarming
   const upcoming    = pending.filter((f) => f.due_date && new Date(f.due_date + 'T00:00:00') > today);
   const history     = fees.filter((f) => f.payment_status === 'paid');
   const totalOwed   = outstanding.reduce((s, f) => s + parseFloat(f.amount || 0), 0);

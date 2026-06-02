@@ -78,28 +78,36 @@ export default function AdminDashboard() {
           .order('created_at', { ascending: false });
         if (sErr) throw sErr;
 
-        // "Pending payments" = fees that are actually due (not future-scheduled fees)
-        const todayStr = new Date().toISOString().split('T')[0];
-        const { data: pendingFees, error: pfErr } = await supabase
+        const today = new Date();
+        const todayStr = today.toISOString().split('T')[0];
+
+        // Current month range — same logic as the fees page so numbers match.
+        const currentMonth = today.toISOString().slice(0, 7);
+        const startOfMonth = `${currentMonth}-01`;
+        const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+        const endOfMonth = `${currentMonth}-${String(lastDay).padStart(2, '0')}`;
+
+        // Fetch all fees for the current month in one query.
+        const { data: monthFees, error: mErr } = await supabase
           .from('fees')
           .select('*')
-          .eq('payment_status', 'pending')
-          .or(`due_date.is.null,due_date.lte.${todayStr}`);
-        if (pfErr) throw pfErr;
+          .gte('due_date', startOfMonth)
+          .lte('due_date', endOfMonth);
+        if (mErr) throw mErr;
 
-        const currentMonth = new Date().toISOString().slice(0, 7);
-        const { data: paidFees, error: pErr } = await supabase
-          .from('fees')
-          .select('amount')
-          .eq('payment_status', 'paid')
-          .gte('payment_date', `${currentMonth}-01`);
-        if (pErr) throw pErr;
-
+        // Revenue = sum of fees DUE this month that have been paid (matches fees page).
         const monthlyRevenue =
-          paidFees?.reduce((sum, fee) => sum + parseFloat(fee.amount || 0), 0) || 0;
+          (monthFees || [])
+            .filter((f) => f.payment_status === 'paid')
+            .reduce((sum, f) => sum + parseFloat(f.amount || 0), 0);
+
+        // Pending = fees DUE this month that haven't been paid yet (matches fees page).
+        const pendingThisMonth =
+          (monthFees || []).filter((f) => f.payment_status === 'pending').length;
+
         const activeStudents = students?.filter((s) => s.status === 'active').length || 0;
 
-        // Overdue = pending fees whose due date has already passed
+        // Overdue = pending fees across ALL months whose due date has already passed.
         const { data: upcomingDues, error: dErr } = await supabase
           .from('fees')
           .select('*, students(student_name, parent_name)')
@@ -112,7 +120,7 @@ export default function AdminDashboard() {
         setStats({
           totalStudents: students?.length || 0,
           activeStudents,
-          pendingPayments: pendingFees?.length || 0,
+          pendingPayments: pendingThisMonth,
           monthlyRevenue,
           recentStudents: (students || []).slice(0, 5),
           upcomingDues: upcomingDues || [],

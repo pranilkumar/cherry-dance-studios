@@ -91,13 +91,18 @@ export default function RegistrationManagement() {
       return;
     }
 
-    // Assign batch if selected.
-    if (feeData?.batchId && newStudentId) {
-      const { error: batchErr } = await supabase
+    // Assign batch + save the per-student monthly fee amount on the student record
+    // so future bulk fee creation can use the correct individual amount.
+    const studentUpdate: Record<string, any> = {};
+    if (feeData?.batchId) studentUpdate.class_batch_id = feeData.batchId;
+    if (feeData?.amount)  studentUpdate.fee_amount = feeData.amount;
+
+    if (newStudentId && Object.keys(studentUpdate).length > 0) {
+      const { error: stuErr } = await supabase
         .from('students')
-        .update({ class_batch_id: feeData.batchId })
+        .update(studentUpdate)
         .eq('id', newStudentId);
-      if (batchErr) console.warn('[batch-assign] failed:', batchErr);
+      if (stuErr) console.warn('[student-update] failed:', stuErr);
     }
 
     // Insert the initial fee record if one was provided.
@@ -110,7 +115,10 @@ export default function RegistrationManagement() {
         payment_status: 'pending',
         notes: feeData.notes || null,
       });
-      if (feeErr) console.warn('[fee-insert] failed:', feeErr);
+      if (feeErr) {
+        console.warn('[fee-insert] failed:', feeErr);
+        showAlert('error', `Student converted but fee creation failed: ${feeErr.message}`);
+      }
     }
 
     let emailNote = '';
@@ -538,16 +546,20 @@ function KV({ k, v }) {
 }
 
 function FeeModal({ registration, converting, batches = [], onConfirm, onCancel }) {
-  const fifteenthOfNextMonth = () => {
+  // Default due date: the 10th of the current month (matching fee management).
+  // If the 10th has already passed, use the 10th of next month.
+  const defaultDueDate = () => {
     const now = new Date();
-    return new Date(now.getFullYear(), now.getMonth() + 1, 15)
-      .toISOString()
-      .split('T')[0];
+    const tenth = new Date(now.getFullYear(), now.getMonth(), 10);
+    const target = tenth < now
+      ? new Date(now.getFullYear(), now.getMonth() + 1, 10)
+      : tenth;
+    return target.toISOString().split('T')[0];
   };
 
   const [amount, setAmount] = useState('100');
   const [feeType, setFeeType] = useState('Monthly fee');
-  const [dueDate, setDueDate] = useState(fifteenthOfNextMonth());
+  const [dueDate, setDueDate] = useState(defaultDueDate());
   const [notes, setNotes] = useState('');
   const [batchId, setBatchId] = useState('');
 

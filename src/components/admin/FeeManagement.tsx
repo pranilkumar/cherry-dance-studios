@@ -59,7 +59,7 @@ export default function FeeManagement() {
     setLoading(true);
     try {
       const { data: studentsData, error: sErr } = await supabase
-        .from('students').select('*, class_batch:class_batches(name)').in('status', ['active', 'on_break']).order('student_name');
+        .from('students').select('*, fee_amount, class_batch:class_batches(name)').in('status', ['active', 'on_break']).order('student_name');
       if (sErr) throw sErr;
 
       const startOfMonth = `${monthFilter}-01`;
@@ -242,7 +242,8 @@ export default function FeeManagement() {
       const inserts = withoutFee.map((s) => ({
         student_id: s.id,
         fee_type: bulkData.feeType,
-        amount: parseFloat(bulkData.amount),
+        // Use the student's individual fee amount if set, otherwise the bulk default.
+        amount: s.fee_amount ? parseFloat(s.fee_amount) : parseFloat(bulkData.amount),
         due_date: bulkData.dueDate,
         payment_status: 'pending',
       }));

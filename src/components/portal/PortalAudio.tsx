@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { FaPlay, FaPause, FaMusic, FaLock, FaUsers } from 'react-icons/fa';
+import { FaPlay, FaPause, FaMusic, FaLock, FaUsers, FaDownload } from 'react-icons/fa';
 import { supabase } from '../../lib/supabaseClient';
 
 function fmtTime(s) {
@@ -23,10 +23,35 @@ function fmtDate(iso) {
  */
 function AudioCard({ mix }) {
   const audioRef = useRef(null);
-  const [playing, setPlaying]   = useState(false);
-  const [current, setCurrent]   = useState(0);
-  const [duration, setDuration] = useState(0);
+  const [playing, setPlaying]     = useState(false);
+  const [current, setCurrent]     = useState(0);
+  const [duration, setDuration]   = useState(0);
   const [buffering, setBuffering] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+
+  const handleDownload = async () => {
+    setDownloading(true);
+    try {
+      // Fetch the file as a blob so the browser downloads it instead of
+      // opening it in a new tab (required for cross-origin Supabase Storage URLs).
+      const res = await fetch(mix.file_url);
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      // Use original filename if stored, otherwise derive from title.
+      a.download = mix.file_name || `${mix.title.replace(/[^a-z0-9]/gi, '-').toLowerCase()}.mp3`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+    } catch {
+      // Fallback: open in new tab
+      window.open(mix.file_url, '_blank');
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   useEffect(() => {
     const a = audioRef.current;
@@ -103,18 +128,31 @@ function AudioCard({ mix }) {
           </div>
         </div>
 
-        {/* Audience badge */}
-        {mix.batch ? (
-          <span className="mt-0.5 flex flex-shrink-0 items-center gap-1 rounded-full border border-[#d1060f]/25 bg-[#d1060f]/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#ee2435]">
-            <FaLock className="text-[8px]" />
-            {mix.batch.name}
-          </span>
-        ) : (
-          <span className="mt-0.5 flex flex-shrink-0 items-center gap-1 rounded-full border border-white/15 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white/50">
-            <FaUsers className="text-[8px]" />
-            All students
-          </span>
-        )}
+        {/* Audience badge + download */}
+        <div className="mt-0.5 flex flex-shrink-0 items-center gap-2">
+          {mix.batch ? (
+            <span className="flex items-center gap-1 rounded-full border border-[#d1060f]/25 bg-[#d1060f]/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#ee2435]">
+              <FaLock className="text-[8px]" />
+              {mix.batch.name}
+            </span>
+          ) : (
+            <span className="flex items-center gap-1 rounded-full border border-white/15 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white/50">
+              <FaUsers className="text-[8px]" />
+              All students
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={handleDownload}
+            disabled={downloading}
+            title="Download mix"
+            className="grid h-7 w-7 place-items-center rounded-full border border-white/15 bg-white/[0.04] text-white/50 transition hover:border-white/30 hover:text-white disabled:opacity-50"
+          >
+            {downloading
+              ? <span className="inline-block h-3 w-3 animate-spin rounded-full border border-white/30 border-t-white" />
+              : <FaDownload className="text-[10px]" />}
+          </button>
+        </div>
       </div>
 
       {/* Player */}

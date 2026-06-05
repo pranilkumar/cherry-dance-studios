@@ -23,6 +23,7 @@ export default function PortalAttendance() {
   const [loading, setLoading]       = useState(true);
   const [fromDate, setFromDate]     = useState(defaultFromDate);
   const [showAll, setShowAll]       = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -49,9 +50,13 @@ export default function PortalAttendance() {
       // Limit to selected window unless "Show all" is active
       if (!showAll) query = query.gte('class_date', fromDate);
 
-      const { data: attData } = await query;
+      const { data: attData, error: attErr } = await query;
 
       if (!cancelled) {
+        if (attErr) {
+          console.error('[portal-attendance] query error:', attErr);
+          setFetchError(attErr.message);
+        }
         const grouped = {};
         for (const row of (attData || [])) {
           if (!grouped[row.student_id]) grouped[row.student_id] = [];
@@ -115,6 +120,12 @@ export default function PortalAttendance() {
           </div>
         )}
       </header>
+
+      {fetchError && (
+        <div className="mb-6 rounded-xl border border-[#d1060f]/30 bg-[#d1060f]/10 px-4 py-3 text-sm text-[#ee2435]">
+          Could not load attendance records: {fetchError}
+        </div>
+      )}
 
       {loading ? (
         <div className="py-16 text-center text-sm text-white/40">Loading attendance…</div>

@@ -22,7 +22,7 @@ export default function PortalAttendance() {
   const [attendance, setAttendance] = useState({}); // keyed by student_id
   const [loading, setLoading]       = useState(true);
   const [fromDate, setFromDate]     = useState(defaultFromDate);
-  const [showAll, setShowAll]       = useState(false);
+  const [showAll, setShowAll]       = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
 
   useEffect(() => {

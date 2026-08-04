@@ -40,20 +40,6 @@ function Field({ label, required = false, error = undefined, hint = undefined, c
   );
 }
 
-/* ── Spotlight beam SVG (decorative) ── */
-function Spotlight({ className }: { className?: string }) {
-  return (
-    <div className={`pointer-events-none absolute ${className}`}>
-      <div
-        className="h-[500px] w-[2px] origin-top"
-        style={{
-          background: 'linear-gradient(to bottom, rgba(255,255,255,0.18) 0%, transparent 100%)',
-          boxShadow: '0 0 60px 20px rgba(255,255,255,0.06)',
-        }}
-      />
-    </div>
-  );
-}
 
 export default function AdultBollywoodLanding() {
   const [form, setForm] = useState(EMPTY);
@@ -185,13 +171,38 @@ export default function AdultBollywoodLanding() {
         {/* Background glow */}
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute inset-0 bg-gradient-to-b from-black via-[#0a0a0f] to-[#0a0a0f]" />
+
+          {/* Left spotlight beam — cone from upper-left toward center */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background: 'conic-gradient(from 118deg at 10% -2%, transparent 0deg, rgba(255,255,255,0.09) 12deg, rgba(255,255,255,0.05) 32deg, transparent 46deg)',
+            }}
+          />
+          {/* Left lamp orb */}
+          <div
+            className="absolute left-[9%] top-0 h-3 w-3 -translate-x-1/2 rounded-full"
+            style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.3) 40%, transparent 70%)', boxShadow: '0 0 18px 8px rgba(255,255,255,0.25)' }}
+          />
+
+          {/* Right spotlight beam — cone from upper-right toward center */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background: 'conic-gradient(from 214deg at 90% -2%, transparent 0deg, rgba(255,255,255,0.09) 12deg, rgba(255,255,255,0.05) 32deg, transparent 46deg)',
+            }}
+          />
+          {/* Right lamp orb */}
+          <div
+            className="absolute right-[9%] top-0 h-3 w-3 translate-x-1/2 rounded-full"
+            style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.3) 40%, transparent 70%)', boxShadow: '0 0 18px 8px rgba(255,255,255,0.25)' }}
+          />
+
+          {/* Red center glow */}
           <div
             className="absolute left-1/2 top-0 h-[70vh] w-[70vh] -translate-x-1/2 rounded-full opacity-30"
             style={{ background: 'radial-gradient(circle, #d1060f 0%, transparent 70%)' }}
           />
-          {/* Spotlight beams */}
-          <Spotlight className="-left-10 top-0 rotate-[20deg]" />
-          <Spotlight className="right-0 top-0 -rotate-[20deg]" />
         </div>
 
         {/* Sparkle dots */}

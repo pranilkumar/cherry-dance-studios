@@ -154,6 +154,13 @@ export default function StudentManagement() {
       } else {
         const { error } = await supabase.from('students').update(payload).eq('id', editing.id);
         if (error) { showAlert('error', error.message || 'Failed to update'); return; }
+        // Cancel pending fees from this month onwards when moving to on_break
+        if (formData.status === 'on_break' && editing.status !== 'on_break') {
+          const monthStart = new Date(); monthStart.setDate(1);
+          const monthStr = monthStart.toISOString().split('T')[0];
+          await supabase.from('fees').delete()
+            .eq('student_id', editing.id).eq('payment_status', 'pending').gte('due_date', monthStr);
+        }
         showAlert('success', 'Student updated.');
       }
       closeModal();
@@ -177,6 +184,13 @@ export default function StudentManagement() {
       showAlert('error', error.message || 'Failed to update status');
       fetchStudents(); // Roll back from server.
     } else {
+      // Cancel pending fees from this month onwards when moving to on_break
+      if (newStatus === 'on_break') {
+        const monthStart = new Date(); monthStart.setDate(1);
+        const monthStr = monthStart.toISOString().split('T')[0];
+        await supabase.from('fees').delete()
+          .eq('student_id', id).eq('payment_status', 'pending').gte('due_date', monthStr);
+      }
       showAlert('success', `Marked as ${STATUS_META[newStatus]?.label || newStatus}.`);
     }
   };

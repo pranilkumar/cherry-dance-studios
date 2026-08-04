@@ -110,10 +110,12 @@ export default function FeeManagement() {
       // record (feeStatus === 'not_created') are counted as pending/overdue.
       const statsToday = new Date(); statsToday.setHours(0, 0, 0, 0);
       const isUnpaidOverdue = (s: any) => {
+        if (s.status === 'on_break') return false;
         if (s.feeStatus === 'paid' || s.feeStatus === 'waived') return false;
         return s.dueDate && new Date(s.dueDate + 'T00:00:00') < statsToday;
       };
       const isUnpaidNotOverdue = (s: any) => {
+        if (s.status === 'on_break') return false;
         if (s.feeStatus === 'paid' || s.feeStatus === 'waived') return false;
         if (!s.dueDate) return true; // no due date → treat as pending
         return new Date(s.dueDate + 'T00:00:00') >= statsToday;
@@ -140,9 +142,11 @@ export default function FeeManagement() {
   const filtered = useMemo(() => {
     const filterToday = new Date(); filterToday.setHours(0, 0, 0, 0);
     const studentIsOverdue = (s) =>
+      s.status !== 'on_break' &&
       (s.feeStatus === 'pending' || s.feeStatus === 'not_created') &&
       s.dueDate && new Date(s.dueDate + 'T00:00:00') < filterToday;
     const studentIsPending = (s) =>
+      s.status !== 'on_break' &&
       (s.feeStatus === 'pending' || s.feeStatus === 'not_created') &&
       (!s.dueDate || new Date(s.dueDate + 'T00:00:00') >= filterToday);
 

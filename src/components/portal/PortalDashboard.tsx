@@ -11,6 +11,10 @@ import {
   FaBirthdayCake,
   FaMusic,
   FaClock,
+  FaExclamationTriangle,
+  FaBullhorn,
+  FaBell,
+  FaStar,
 } from 'react-icons/fa';
 import { supabase } from '../../lib/supabaseClient';
 import { parseLocalDate, calcAge, getNextClassDate, fmt24 } from '../../lib/dateUtils';
@@ -67,6 +71,9 @@ export default function PortalDashboard() {
   const [loading, setLoading] = useState(true);
   /** batch_id → Set of "YYYY-MM-DD" cancelled date strings */
   const [cancelledByBatch, setCancelledByBatch] = useState<Map<string, Set<string>>>(new Map());
+  const [upcomingCancellations, setUpcomingCancellations] = useState([]);
+  const [latestAnnouncement, setLatestAnnouncement] = useState(null);
+  const [upcomingEvents, setUpcomingEvents] = useState([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -117,7 +124,36 @@ export default function PortalDashboard() {
             ? audioQ.or(`batch_id.is.null,batch_id.in.(${batchIds.join(',')})`)
             : audioQ.is('batch_id', null);
 
-          const [{ data: fees }, { count: mixCount }, { data: cancelData }] = await Promise.all([
+          const nowIso = new Date().toISOString();
+          const cancelQ = batchIds.length > 0
+            ? supabase
+                .from('class_cancellations')
+                .select('batch_id, class_date, reason, batch:class_batches(name)')
+                .in('batch_id', batchIds)
+                .gte('class_date', todayStr)
+                .lte('class_date', aheadStr)
+                .order('class_date', { ascending: true })
+            : { data: [] };
+
+          const annQ = batchIds.length > 0
+            ? supabase
+                .from('announcements')
+                .select('id, title, body, created_at')
+                .eq('is_active', true)
+                .or(`audience.eq.all,batch_id.in.(${batchIds.join(',')})`)
+                .or(`expires_at.is.null,expires_at.gte.${todayStr}`)
+                .order('created_at', { ascending: false })
+                .limit(1)
+            : supabase
+                .from('announcements')
+                .select('id, title, body, created_at')
+                .eq('is_active', true)
+                .eq('audience', 'all')
+                .or(`expires_at.is.null,expires_at.gte.${todayStr}`)
+                .order('created_at', { ascending: false })
+                .limit(1);
+
+          const [{ data: fees }, { count: mixCount }, { data: cancelData }, { data: annData }, { data: evData }] = await Promise.all([
             supabase
               .from('fees')
               .select('*')
@@ -126,16 +162,23 @@ export default function PortalDashboard() {
               .or(`due_date.is.null,due_date.lte.${todayStr}`)
               .order('due_date', { ascending: true }),
             audioQ,
+            cancelQ,
+            annQ,
             supabase
-              .from('class_cancellations')
-              .select('batch_id, class_date')
-              .gte('class_date', todayStr)
-              .lte('class_date', aheadStr),
+              .from('events')
+              .select('id, title, starts_at, location')
+              .eq('is_public', true)
+              .gte('starts_at', nowIso)
+              .order('starts_at', { ascending: true })
+              .limit(3),
           ]);
 
           if (!cancelled) {
             setPendingFees(fees || []);
             setAudioMixCount(mixCount ?? 0);
+            setUpcomingCancellations(cancelData || []);
+            setLatestAnnouncement((annData || [])[0] ?? null);
+            setUpcomingEvents(evData || []);
 
             // Build batch_id → Set<YYYY-MM-DD> for cancellation-aware "next class"
             const cMap = new Map<string, Set<string>>();
@@ -184,6 +227,68 @@ export default function PortalDashboard() {
               : "We couldn't find a dancer linked to your email yet."}
           </p>
         </header>
+
+        {/* ── Cancellation alerts ── */}
+        {!loading && upcomingCancellations.length > 0 && (
+          <div className="mb-6 space-y-2">
+            {upcomingCancellations.map((c) => (
+              <div key={`${c.batch_id}-${c.class_date}`} className="flex items-start gap-3 rounded-2xl border border-[#d1060f]/30 bg-[#d1060f]/[0.07] px-4 py-3">
+                <FaExclamationTriangle className="mt-0.5 flex-shrink-0 text-[#ee2435]" />
+                <div className="min-w-0 flex-1 text-sm">
+                  <span className="font-semibold text-white">{c.batch?.name} class cancelled — </span>
+                  <span className="text-white/75">
+                    {new Date(c.class_date + 'T00:00').toLocaleDateString('en-CA', { weekday: 'long', month: 'short', day: 'numeric' })}
+                  </span>
+                  {c.reason && <span className="text-white/50"> · {c.reason}</span>}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ── Latest announcement ── */}
+        {!loading && latestAnnouncement && (
+          <Link href="/portal/notices" className="mb-6 flex items-start gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 hover:bg-white/[0.05] transition block">
+            <FaBullhorn className="mt-0.5 flex-shrink-0 text-[#ee2435]" />
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-white/40 mb-0.5">Announcement</p>
+              <p className="text-sm font-semibold text-white">{latestAnnouncement.title}</p>
+              <p className="text-xs text-white/55 line-clamp-1">{latestAnnouncement.body}</p>
+            </div>
+            <FaArrowRight className="mt-1 flex-shrink-0 text-xs text-white/30" />
+          </Link>
+        )}
+
+        {/* ── Upcoming events teaser ── */}
+        {!loading && upcomingEvents.length > 0 && (
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/45 flex items-center gap-2">
+                <FaStar className="text-[#ee2435]" /> Upcoming events
+              </p>
+              <Link href="/portal/notices" className="text-xs text-white/40 hover:text-white">See all →</Link>
+            </div>
+            <div className="space-y-2">
+              {upcomingEvents.map((ev) => (
+                <Link key={ev.id} href="/portal/notices" className="flex items-center gap-3 rounded-xl border border-white/8 bg-white/[0.02] px-4 py-3 hover:bg-white/[0.04] transition">
+                  <div className="flex-shrink-0 rounded-lg border border-white/10 bg-white/[0.05] px-2.5 py-1.5 text-center min-w-[44px]">
+                    <p className="text-[9px] font-semibold uppercase tracking-wider text-white/45">
+                      {new Date(ev.starts_at).toLocaleDateString('en-CA', { month: 'short' })}
+                    </p>
+                    <p className="font-[family-name:var(--font-display)] text-base font-bold text-white leading-none">
+                      {new Date(ev.starts_at).getDate()}
+                    </p>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-white truncate">{ev.title}</p>
+                    {ev.location && <p className="text-xs text-white/45 truncate">{ev.location}</p>}
+                  </div>
+                  <FaArrowRight className="ml-auto flex-shrink-0 text-xs text-white/30" />
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Unlinked state */}
         {!loading && students.length === 0 && registrations.length === 0 && workshopBookings.length === 0 && (

@@ -14,6 +14,7 @@ import {
   FaSignOutAlt,
   FaBars,
   FaExternalLinkAlt,
+  FaBell,
 } from 'react-icons/fa';
 import { supabase } from '../../lib/supabaseClient';
 import logo from '../../assets/icons/logo.png';
@@ -25,6 +26,7 @@ import logo from '../../assets/icons/logo.png';
 
 const NAV = [
   { href: '/portal',            icon: FaHome,         label: 'Home' },
+  { href: '/portal/notices',    icon: FaBell,         label: 'Notices' },
   { href: '/portal/classes',    icon: FaCalendarAlt,  label: 'Classes' },
   { href: '/portal/attendance', icon: FaUsers,        label: 'Attendance' },
   { href: '/portal/fees',       icon: FaDollarSign,   label: 'Fees' },

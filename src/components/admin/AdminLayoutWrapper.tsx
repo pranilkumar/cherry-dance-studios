@@ -17,6 +17,8 @@ import {
   FaBars,
   FaExternalLinkAlt,
   FaCalendarAlt,
+  FaBullhorn,
+  FaStar,
 } from 'react-icons/fa';
 import logo from '../../assets/icons/logo.png';
 
@@ -30,16 +32,18 @@ import logo from '../../assets/icons/logo.png';
  */
 
 const NAV = [
-  { href: '/admin/dashboard',     icon: FaHome,          label: 'Dashboard' },
-  { href: '/admin/analytics',     icon: FaChartLine,     label: 'Analytics' },
-  { href: '/admin/schedule',      icon: FaCalendarAlt,   label: 'Schedule' },
-  { href: '/admin/attendance',    icon: FaQrcode,        label: 'Attendance' },
-  { href: '/admin/registrations', icon: FaClipboardList, label: 'Registrations' },
-  { href: '/admin/workshop',      icon: FaHeart,         label: 'Workshops' },
-  { href: '/admin/students',      icon: FaUsers,         label: 'Students' },
-  { href: '/admin/classes',       icon: FaLayerGroup,    label: 'Classes' },
-  { href: '/admin/fees',          icon: FaDollarSign,    label: 'Fees' },
-  { href: '/admin/audio',         icon: FaMusic,         label: 'Audio' },
+  { href: '/admin/dashboard',       icon: FaHome,          label: 'Dashboard' },
+  { href: '/admin/analytics',       icon: FaChartLine,     label: 'Analytics' },
+  { href: '/admin/schedule',        icon: FaCalendarAlt,   label: 'Schedule' },
+  { href: '/admin/attendance',      icon: FaQrcode,        label: 'Attendance' },
+  { href: '/admin/registrations',   icon: FaClipboardList, label: 'Registrations' },
+  { href: '/admin/workshop',        icon: FaHeart,         label: 'Workshops' },
+  { href: '/admin/students',        icon: FaUsers,         label: 'Students' },
+  { href: '/admin/classes',         icon: FaLayerGroup,    label: 'Classes' },
+  { href: '/admin/fees',            icon: FaDollarSign,    label: 'Fees' },
+  { href: '/admin/audio',           icon: FaMusic,         label: 'Audio' },
+  { href: '/admin/announcements',   icon: FaBullhorn,      label: 'Announcements' },
+  { href: '/admin/events',          icon: FaStar,          label: 'Events' },
 ];
 
 export default function AdminLayoutWrapper({

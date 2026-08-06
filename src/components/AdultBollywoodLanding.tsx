@@ -8,7 +8,7 @@ import 'react-phone-input-2/lib/style.css';
 import { supabase } from '../lib/supabaseClient';
 import {
   FaArrowRight, FaCheck, FaMapMarkerAlt, FaCalendarAlt,
-  FaStar, FaWhatsapp, FaInstagram, FaUsers, FaFire,
+  FaStar, FaWhatsapp, FaInstagram, FaUsers, FaFire, FaClock,
 } from 'react-icons/fa';
 import logo from '../assets/icons/logo.png';
 
@@ -126,7 +126,7 @@ export default function AdultBollywoodLanding() {
         </h1>
         <p className="mt-4 max-w-md text-base text-white/60">
           We&rsquo;ve received your registration for the September Adult Bollywood batch.
-          Cherry or Pranil will WhatsApp you within <strong className="text-white">24 hours</strong> with schedule details and next steps.
+          We&rsquo;ll WhatsApp you within <strong className="text-white">24 hours</strong> with schedule details and next steps.
         </p>
         <div className="mt-10 flex flex-wrap justify-center gap-4">
           <a
@@ -225,7 +225,7 @@ export default function AdultBollywoodLanding() {
             transition={{ duration: 0.6 }}
           >
             <span className="inline-block rounded-full border border-[#d1060f]/40 bg-[#d1060f]/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.25em] text-[#ee2435]">
-              Starting September · Barrhaven
+              Starting September 2026 · Barrhaven
             </span>
           </motion.div>
 
@@ -278,7 +278,7 @@ export default function AdultBollywoodLanding() {
             className="mt-6 flex flex-wrap justify-center gap-3 text-xs text-white/40"
           >
             <span className="flex items-center gap-1.5">
-              <FaCalendarAlt className="text-[#ee2435]" /> Starting September 2025 · 8 weeks
+              <FaCalendarAlt className="text-[#ee2435]" /> Wednesdays 7–8 PM · 8 weeks · Sept 2026
             </span>
             <span className="flex items-center gap-1.5">
               <FaMapMarkerAlt className="text-[#ee2435]" /> Barrhaven, Ottawa
@@ -331,10 +331,6 @@ export default function AdultBollywoodLanding() {
                 body: 'Each class builds on the last. Clear progression, visible improvement. Not a drop-in — a real learning journey.',
               },
               {
-                title: 'Small group',
-                body: 'Limited spots so Cherry can give real attention to your technique, not just general corrections.',
-              },
-              {
                 title: 'Barrhaven studio',
                 body: 'Right here in Barrhaven — no long drive across the city. Details shared on confirmation.',
               },
@@ -346,6 +342,39 @@ export default function AdultBollywoodLanding() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* ── Pricing & schedule ── */}
+      <section className="border-t border-white/8 bg-[#0a0a0f] px-6 py-20">
+        <div className="mx-auto max-w-3xl text-center">
+          <p className="mb-4 text-xs font-semibold uppercase tracking-[0.25em] text-white/40">
+            Pricing
+          </p>
+          <div className="flex items-baseline justify-center gap-2">
+            <span className="font-[family-name:var(--font-display)] text-7xl font-bold text-white md:text-8xl">$200</span>
+            <span className="text-2xl font-medium text-white/40 md:text-3xl">CAD</span>
+          </div>
+          <p className="mt-2 text-sm text-white/40">for the full 8-week batch</p>
+          <div className="mt-10 flex flex-wrap justify-center gap-3">
+            {[
+              { icon: FaCalendarAlt, label: 'Every Wednesday' },
+              { icon: FaClock,       label: '7:00 – 8:00 PM' },
+              { icon: FaUsers,       label: '8 weeks' },
+              { icon: FaMapMarkerAlt, label: 'Barrhaven, Ottawa' },
+            ].map(({ icon: Icon, label }) => (
+              <div key={label} className="flex items-center gap-2.5 rounded-full border border-white/10 bg-white/[0.04] px-5 py-2.5 text-sm text-white/65">
+                <Icon className="text-[#ee2435]" /> {label}
+              </div>
+            ))}
+          </div>
+          <p className="mt-8 text-xs text-white/30">Payment is collected on the first class. Registering holds your spot.</p>
+          <a
+            href="#register"
+            className="mt-8 inline-flex items-center gap-2 rounded-full bg-[#d1060f] px-8 py-3.5 text-sm font-bold text-white shadow-[0_8px_32px_rgba(209,6,15,0.4)] transition hover:bg-[#b00310]"
+          >
+            Reserve my spot <FaArrowRight className="text-xs" />
+          </a>
         </div>
       </section>
 

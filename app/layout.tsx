@@ -1,5 +1,6 @@
 import { Space_Grotesk, Inter, Yatra_One } from 'next/font/google';
 import '../src/index.css';
+import RecaptchaProvider from '../src/components/RecaptchaProvider';
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
@@ -112,7 +113,7 @@ export default function RootLayout({ children }) {
       <head>
         <script dangerouslySetInnerHTML={{ __html: swCleanup }} />
       </head>
-      <body>{children}</body>
+      <body><RecaptchaProvider>{children}</RecaptchaProvider></body>
     </html>
   );
 }

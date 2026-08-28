@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import { useGoogleReCaptcha } from 'react-google-recaptcha-v3';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import PhoneInput from 'react-phone-input-2';
@@ -48,6 +49,7 @@ export default function AdultBollywoodLanding() {
   const [submitError, setSubmitError] = useState('');
   const [honeypot, setHoneypot] = useState('');
   const loadTime = useRef(Date.now());
+  const { executeRecaptcha } = useGoogleReCaptcha();
 
   const set = (field: string, value: any) => {
     setForm((p) => ({ ...p, [field]: value }));
@@ -69,6 +71,24 @@ export default function AdultBollywoodLanding() {
     if (honeypot || Date.now() - loadTime.current < 3000) {
       setStatus('success');
       return;
+    }
+    // reCAPTCHA v3 verification
+    if (executeRecaptcha) {
+      try {
+        const token = await executeRecaptcha('adult_registration');
+        const captchaRes = await fetch('/api/verify-captcha', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token }),
+        });
+        if (!captchaRes.ok) {
+          setSubmitError('Security check failed. Please try again.');
+          setStatus('idle');
+          return;
+        }
+      } catch {
+        // Non-fatal: proceed if captcha service is unreachable
+      }
     }
     const errs = validate();
     if (Object.keys(errs).length > 0) return;

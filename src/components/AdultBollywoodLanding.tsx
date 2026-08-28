@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import PhoneInput from 'react-phone-input-2';
@@ -46,6 +46,8 @@ export default function AdultBollywoodLanding() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
   const [submitError, setSubmitError] = useState('');
+  const [honeypot, setHoneypot] = useState('');
+  const loadTime = useRef(Date.now());
 
   const set = (field: string, value: any) => {
     setForm((p) => ({ ...p, [field]: value }));
@@ -64,6 +66,10 @@ export default function AdultBollywoodLanding() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (honeypot || Date.now() - loadTime.current < 3000) {
+      setStatus('success');
+      return;
+    }
     const errs = validate();
     if (Object.keys(errs).length > 0) return;
     setStatus('submitting');
@@ -395,6 +401,17 @@ export default function AdultBollywoodLanding() {
 
           <div className="rounded-3xl border border-[#0a0a0f]/8 bg-white p-6 shadow-[0_12px_48px_rgba(10,10,15,0.06)] md:p-10">
             <form onSubmit={handleSubmit} noValidate className="space-y-6">
+              {/* Honeypot — invisible to humans, bots fill it */}
+              <input
+                type="text"
+                name="website"
+                value={honeypot}
+                onChange={(e) => setHoneypot(e.target.value)}
+                tabIndex={-1}
+                autoComplete="off"
+                aria-hidden="true"
+                style={{ position: 'absolute', left: '-9999px', width: 0, height: 0, opacity: 0 }}
+              />
 
               <Field label="Your full name" required error={errors.name}>
                 <input

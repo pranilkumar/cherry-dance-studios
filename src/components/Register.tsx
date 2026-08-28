@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { motion } from 'framer-motion';
 import PhoneInput from 'react-phone-input-2';
 import 'react-phone-input-2/lib/style.css';
@@ -140,6 +140,8 @@ export default function Register() {
   const [errors, setErrors] = useState<Record<string, any>>({});
   const [status, setStatus] = useState('idle');
   const [submitError, setSubmitError] = useState('');
+  const [honeypot, setHoneypot] = useState('');
+  const loadTime = useRef(Date.now());
 
   const set = (field, value) => {
     setForm((p) => ({ ...p, [field]: value }));
@@ -195,6 +197,11 @@ export default function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // Bot detection: honeypot filled or form submitted too fast
+    if (honeypot || Date.now() - loadTime.current < 3000) {
+      setStatus('success');
+      return;
+    }
     const errs = validate();
     if (Object.keys(errs).length > 0) {
       // Scroll the first broken field into view so the parent sees it immediately.
@@ -357,6 +364,17 @@ export default function Register() {
           className="rounded-3xl border border-[#0a0a0f]/8 bg-white p-6 shadow-[0_12px_48px_rgba(10,10,15,0.06)] md:p-10"
         >
           <form onSubmit={handleSubmit} noValidate className="space-y-10">
+            {/* Honeypot — invisible to humans, bots fill it */}
+            <input
+              type="text"
+              name="website"
+              value={honeypot}
+              onChange={(e) => setHoneypot(e.target.value)}
+              tabIndex={-1}
+              autoComplete="off"
+              aria-hidden="true"
+              style={{ position: 'absolute', left: '-9999px', width: 0, height: 0, opacity: 0 }}
+            />
             {/* 01 — Your dancer (lead with the kid, they're the star) */}
             <div>
               <SectionHead num="01" label="Your dancer" />

@@ -93,9 +93,17 @@ export default function FeeManagement() {
             : student.fee_amount
               ? parseFloat(String(student.fee_amount))
               : 0;
+        // Only bill from the month the student enrolled
+        const enrolledMonthStr = student.enrollment_date
+          ? String(student.enrollment_date).slice(0, 7)
+          : null;
+        const billableThisMonth = !enrolledMonthStr || enrolledMonthStr <= monthFilter;
+
         return {
           ...student, fee,
-          feeStatus: fee ? fee.payment_status : 'not_created',
+          feeStatus: fee
+            ? fee.payment_status
+            : billableThisMonth ? 'not_created' : 'not_enrolled',
           amount: resolvedAmount,
           // For students with no fee record, use the 10th as the implied due date
           // so overdue detection works correctly.
@@ -111,12 +119,12 @@ export default function FeeManagement() {
       const statsToday = new Date(); statsToday.setHours(0, 0, 0, 0);
       const isUnpaidOverdue = (s: any) => {
         if (s.status === 'on_break') return false;
-        if (s.feeStatus === 'paid' || s.feeStatus === 'waived') return false;
+        if (s.feeStatus === 'paid' || s.feeStatus === 'waived' || s.feeStatus === 'not_enrolled') return false;
         return s.dueDate && new Date(s.dueDate + 'T00:00:00') < statsToday;
       };
       const isUnpaidNotOverdue = (s: any) => {
         if (s.status === 'on_break') return false;
-        if (s.feeStatus === 'paid' || s.feeStatus === 'waived') return false;
+        if (s.feeStatus === 'paid' || s.feeStatus === 'waived' || s.feeStatus === 'not_enrolled') return false;
         if (!s.dueDate) return true; // no due date → treat as pending
         return new Date(s.dueDate + 'T00:00:00') >= statsToday;
       };
@@ -143,10 +151,12 @@ export default function FeeManagement() {
     const filterToday = new Date(); filterToday.setHours(0, 0, 0, 0);
     const studentIsOverdue = (s) =>
       s.status !== 'on_break' &&
+      s.feeStatus !== 'not_enrolled' &&
       (s.feeStatus === 'pending' || s.feeStatus === 'not_created') &&
       s.dueDate && new Date(s.dueDate + 'T00:00:00') < filterToday;
     const studentIsPending = (s) =>
       s.status !== 'on_break' &&
+      s.feeStatus !== 'not_enrolled' &&
       (s.feeStatus === 'pending' || s.feeStatus === 'not_created') &&
       (!s.dueDate || new Date(s.dueDate + 'T00:00:00') >= filterToday);
 
@@ -251,7 +261,7 @@ export default function FeeManagement() {
   // ── Bulk fee creation ───────────────────────────────────────────────
   const createBulkFees = async () => {
     // Exclude on_break students — bulk fees are for actively attending students only.
-    const withoutFee = students.filter((s) => s.status !== 'on_break' && s.feeStatus === 'not_created');
+    const withoutFee = students.filter((s) => s.status !== 'on_break' && s.feeStatus === 'not_created' && s.feeStatus !== 'not_enrolled');
     if (withoutFee.length === 0) {
       return showAlert('error', 'All active students already have a fee for this month.');
     }
@@ -421,6 +431,7 @@ export default function FeeManagement() {
   const overdueStudents = students.filter(
     (s) =>
       s.status !== 'on_break' &&
+      s.feeStatus !== 'not_enrolled' &&
       (s.feeStatus === 'pending' || s.feeStatus === 'not_created') &&
       s.dueDate &&
       new Date(s.dueDate + 'T00:00:00') < feeToday
@@ -477,6 +488,9 @@ export default function FeeManagement() {
     }
     if (student.feeStatus === 'waived') {
       return { label: 'Waived', bg: 'rgba(255,255,255,0.07)', fg: 'rgba(255,255,255,0.4)', icon: FaBan };
+    }
+    if (student.feeStatus === 'not_enrolled') {
+      return { label: 'Not enrolled yet', bg: 'rgba(255,255,255,0.04)', fg: 'rgba(255,255,255,0.25)', icon: FaBan };
     }
     if (student.feeStatus === 'pending' || student.feeStatus === 'not_created') {
       const overdue = student.dueDate && new Date(student.dueDate + 'T00:00:00') < feeToday;

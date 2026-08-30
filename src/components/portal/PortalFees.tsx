@@ -36,7 +36,7 @@ export default function PortalFees() {
       // month's fee automatically even if the admin hasn't created a record yet.
       const { data: students } = await supabase
         .from('students')
-        .select('id, student_name, fee_amount, status')
+        .select('id, student_name, fee_amount, status, enrollment_date')
         .eq('email', user.email);
 
       if (!students || students.length === 0) {
@@ -66,6 +66,13 @@ export default function PortalFees() {
       for (const student of students) {
         if (!student.fee_amount || parseFloat(student.fee_amount) <= 0) continue;
         if (student.status === 'on_break') continue;
+
+        // Only bill from the month the student enrolled
+        if (student.enrollment_date) {
+          const enrolled = new Date(student.enrollment_date);
+          const enrolledMonthStr = `${enrolled.getFullYear()}-${String(enrolled.getMonth() + 1).padStart(2, '0')}`;
+          if (currentMonthStr < enrolledMonthStr) continue;
+        }
 
         // Skip if any real fee record already exists for this month
         // (paid, pending, or waived — any status means the month is covered)

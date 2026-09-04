@@ -53,46 +53,55 @@ export default function PortalFees() {
         .in('student_id', students.map((s) => s.id))
         .order('due_date', { ascending: false });
 
-      // ── Virtual current-month fee ──────────────────────────────────────
-      // If a student has a monthly rate (fee_amount) but no fee record for
-      // the current month yet, inject a virtual pending entry so parents
-      // always see what they owe without the admin having to create records
-      // manually each month.
+      // ── Virtual fees for all outstanding months ────────────────────────
+      // For each active student with a fee_amount, generate a virtual pending
+      // entry for every month from enrollment to now that has no real fee record.
+      // This ensures parents see the full outstanding balance, not just the
+      // current month.
       const now = new Date();
-      const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-      const dueDateStr = `${currentMonthStr}-10`;
+      const currentYear  = now.getFullYear();
+      const currentMonth = now.getMonth() + 1; // 1-indexed
 
       const virtualFees: any[] = [];
       for (const student of students) {
         if (!student.fee_amount || parseFloat(student.fee_amount) <= 0) continue;
         if (student.status === 'on_break') continue;
 
-        // Only bill from the month the student enrolled
-        if (student.enrollment_date) {
-          const enrolled = new Date(student.enrollment_date);
-          const enrolledMonthStr = `${enrolled.getFullYear()}-${String(enrolled.getMonth() + 1).padStart(2, '0')}`;
-          if (currentMonthStr < enrolledMonthStr) continue;
+        // Start billing from enrollment month (fall back to current month if missing)
+        const enrolled    = student.enrollment_date ? new Date(student.enrollment_date) : now;
+        let   iterYear    = enrolled.getFullYear();
+        let   iterMonth   = enrolled.getMonth() + 1; // 1-indexed
+
+        while (
+          iterYear < currentYear ||
+          (iterYear === currentYear && iterMonth <= currentMonth)
+        ) {
+          const monthStr   = `${iterYear}-${String(iterMonth).padStart(2, '0')}`;
+          const dueDateStr = `${monthStr}-10`;
+
+          const hasRealFee = (realFees || []).some(
+            (f) => f.student_id === student.id && f.due_date?.startsWith(monthStr)
+          );
+
+          if (!hasRealFee) {
+            virtualFees.push({
+              id: `virtual-${student.id}-${monthStr}`,
+              student_id: student.id,
+              fee_type: 'Monthly fee',
+              amount: parseFloat(student.fee_amount),
+              due_date: dueDateStr,
+              payment_status: 'pending',
+              payment_date: null,
+              payment_method: null,
+              notes: null,
+              isVirtual: true,
+            });
+          }
+
+          // Advance to next month
+          iterMonth++;
+          if (iterMonth > 12) { iterMonth = 1; iterYear++; }
         }
-
-        // Skip if any real fee record already exists for this month
-        // (paid, pending, or waived — any status means the month is covered)
-        const hasRealFeeThisMonth = (realFees || []).some(
-          (f) => f.student_id === student.id && f.due_date?.startsWith(currentMonthStr)
-        );
-        if (hasRealFeeThisMonth) continue;
-
-        virtualFees.push({
-          id: `virtual-${student.id}-${currentMonthStr}`,
-          student_id: student.id,
-          fee_type: 'Monthly fee',
-          amount: parseFloat(student.fee_amount),
-          due_date: dueDateStr,
-          payment_status: 'pending',
-          payment_date: null,
-          payment_method: null,
-          notes: null,
-          isVirtual: true,
-        });
       }
 
       if (!cancelled) {
@@ -134,7 +143,7 @@ export default function PortalFees() {
       {!loading && noStudents && (
         <div className="rounded-2xl border border-dashed border-white/15 bg-white/[0.02] p-10 text-center">
           <p className="text-sm text-white/60">
-            No dancer linked to this email yet. Contact Cherry or Pranil to get set up.
+            No dancer linked to this email yet. Contact us to get set up.
           </p>
         </div>
       )}
@@ -264,7 +273,7 @@ export default function PortalFees() {
               </p>
               <p>
                 <span className="font-semibold text-white">Cash</span>{' '}
-                — hand it to Cherry or Pranil at the studio.
+                — hand it to us at the studio.
               </p>
               <p>
                 <span className="font-semibold text-white">Questions?</span>{' '}

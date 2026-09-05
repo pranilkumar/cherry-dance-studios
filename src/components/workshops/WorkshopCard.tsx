@@ -119,23 +119,12 @@ export default function WorkshopCard({ workshop, index = 0 }) {
             </span>
           </div>
 
-          {/* Capacity bar (only when capacity > 0 and not completed) */}
-          {capacity > 0 && !isCompleted && (
+          {/* Sold-out indicator — spots count hidden from public */}
+          {(isSoldOut || isFull) && !isCompleted && (
             <div className="mt-5">
-              <div className="flex items-center justify-between text-[0.7rem] text-white/55">
-                <span className="flex items-center gap-1.5">
-                  <FaUsers className="text-[10px]" />
-                  {isSoldOut || isFull
-                    ? `${capacity} / ${capacity} booked`
-                    : `${spotsLeft} of ${capacity} spots left`}
-                </span>
-              </div>
-              <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-white/10">
-                <div
-                  className="h-full bg-gradient-to-r from-[#d1060f] to-[#ee2435]"
-                  style={{ width: `${fillPct}%` }}
-                />
-              </div>
+              <span className="flex items-center gap-1.5 text-[0.7rem] text-[#ee2435]">
+                <FaUsers className="text-[10px]" /> Sold out
+              </span>
             </div>
           )}
         </div>

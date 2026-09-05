@@ -114,16 +114,8 @@ export default function WorkshopDetail({ workshop }) {
               {venue_name && (
                 <DetailPill icon={FaMapMarkerAlt} text={venue_address || venue_name} />
               )}
-              {capacity > 0 && !isCompleted && (
-                <DetailPill
-                  icon={FaUsers}
-                  text={
-                    isSoldOut
-                      ? 'Sold out'
-                      : `${spotsLeft} of ${capacity} spots left`
-                  }
-                  highlight={isSoldOut}
-                />
+              {isSoldOut && !isCompleted && (
+                <DetailPill icon={FaUsers} text="Sold out" highlight />
               )}
               {isCompleted && <DetailPill text="Past event" muted />}
             </motion.div>
@@ -219,8 +211,8 @@ export default function WorkshopDetail({ workshop }) {
                 <p className="mt-3 text-white/65">Contact us for pricing.</p>
               )}
 
-              {/* Capacity bar */}
-              {capacity > 0 && !isCompleted && (
+              {/* Capacity bar — hidden from public; sold-out state shown in header pill */}
+              {false && capacity > 0 && !isCompleted && (
                 <div className="mt-6 border-t border-white/10 pt-5">
                   <div className="flex items-center justify-between text-xs text-white/65">
                     <span>{registered_count} booked</span>

@@ -44,8 +44,6 @@ export default function WorkshopDetail({ workshop }) {
 
   const isSoldOut = status === 'sold_out' || (capacity > 0 && registered_count >= capacity);
   const isCompleted = status === 'completed';
-  const spotsLeft = capacity > 0 ? Math.max(0, capacity - registered_count) : null;
-  const fillPct = capacity > 0 ? Math.min(100, (registered_count / capacity) * 100) : 0;
 
   return (
     <main className="min-h-screen bg-[#0a0a0f] text-white">
@@ -209,22 +207,6 @@ export default function WorkshopDetail({ workshop }) {
                 </>
               ) : (
                 <p className="mt-3 text-white/65">Contact us for pricing.</p>
-              )}
-
-              {/* Capacity bar — hidden from public; sold-out state shown in header pill */}
-              {false && capacity > 0 && !isCompleted && (
-                <div className="mt-6 border-t border-white/10 pt-5">
-                  <div className="flex items-center justify-between text-xs text-white/65">
-                    <span>{registered_count} booked</span>
-                    <span>{capacity} total</span>
-                  </div>
-                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
-                    <div
-                      className="h-full bg-gradient-to-r from-[#d1060f] to-[#ee2435]"
-                      style={{ width: `${fillPct}%` }}
-                    />
-                  </div>
-                </div>
               )}
 
               {/* CTA */}

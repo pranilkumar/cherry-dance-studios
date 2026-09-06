@@ -28,8 +28,6 @@ export default function WorkshopTicket({ booking }) {
     workshop,
   } = booking;
 
-  const childCount = Array.isArray(children) ? children.length : 0;
-
   return (
     <main className="min-h-screen bg-[#f5f5f8]">
       {/* Confirmation header */}
@@ -101,8 +99,7 @@ export default function WorkshopTicket({ booking }) {
               )}
 
               <dl className="mt-7 divide-y divide-[#0a0a0f]/8">
-                <Row k="Parent" v={parent_name} />
-                <Row k="Dancers" v={`${childCount} ${childCount === 1 ? 'dancer' : 'dancers'}`} />
+                <Row k="Attendee" v={parent_name} />
                 {package_label && <Row k="Package" v={package_label} />}
                 {amount_cents != null && <Row k="Amount" v={formatPrice(amount_cents)} />}
               </dl>

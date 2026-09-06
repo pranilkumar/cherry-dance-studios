@@ -63,7 +63,7 @@ export default function PortalClasses() {
       const ahead  = new Date(); ahead.setDate(ahead.getDate() + 35);
       const endStr = ahead.toISOString().split('T')[0];
 
-      const [{ data: stuData }, { data: batchData }, { data: cancelData }] = await Promise.all([
+      const [{ data: stuData, error: stuErr }, { data: batchData }, { data: cancelData }] = await Promise.all([
         supabase
           .from('students')
           .select('id, student_name, date_of_birth, status, preferred_class, preferred_weekday, preferred_time_slot, experience_level, batch_days, class_batch:class_batches(id, name, tier, style, instructor, weekdays, start_time, end_time, notes)')
@@ -82,6 +82,7 @@ export default function PortalClasses() {
       ]);
 
       if (!cancelled) {
+        if (stuErr) console.error('[portal-classes] students query:', stuErr);
         setStudents(stuData || []);
         setAllBatches(batchData || []);
 

@@ -26,15 +26,17 @@ function fmtDT(iso) {
   });
 }
 
-function RsvpModal({ event, studentId, onClose, onDone }) {
+function RsvpModal({ event, students, onClose, onDone }) {
+  const [selectedStudentId, setSelectedStudentId] = useState(students[0]?.id ?? null);
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
 
   async function submit() {
+    if (!selectedStudentId) return;
     setSaving(true);
     await supabase.from('event_rsvps').insert({
       event_id: event.id,
-      student_id: studentId,
+      student_id: selectedStudentId,
       notes: notes.trim() || null,
     });
     setSaving(false);
@@ -55,8 +57,31 @@ function RsvpModal({ event, studentId, onClose, onDone }) {
           </button>
         </div>
         <p className="mb-4 text-sm text-white/60">
-          Let Cherry and Pranil know your dancer is interested in attending this event.
+          Let us know your dancer is interested in attending this event.
         </p>
+        {students.length > 1 && (
+          <div className="mb-4">
+            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-white/55">
+              Which dancer?
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {students.map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => setSelectedStudentId(s.id)}
+                  className={`rounded-full border px-3 py-1.5 text-sm font-medium transition ${
+                    selectedStudentId === s.id
+                      ? 'border-[#d1060f] bg-[#d1060f]/15 text-white'
+                      : 'border-white/15 text-white/60 hover:text-white'
+                  }`}
+                >
+                  {s.student_name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         <div className="mb-4">
           <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-white/55">
             Note <span className="text-white/30 normal-case">(optional)</span>
@@ -75,7 +100,7 @@ function RsvpModal({ event, studentId, onClose, onDone }) {
           </button>
           <button
             onClick={submit}
-            disabled={saving}
+            disabled={saving || !selectedStudentId}
             className="rounded-full bg-[#d1060f] px-5 py-2 text-sm font-semibold text-white hover:bg-[#b00310] disabled:opacity-50"
           >
             {saving ? 'Submitting…' : "Yes, we're interested!"}
@@ -94,7 +119,7 @@ export default function PortalNotices() {
   const [myRsvps, setMyRsvps] = useState<Set<string>>(new Set());
   const [studentIds, setStudentIds] = useState([]);
   const [batchIds, setBatchIds] = useState([]);
-  const [primaryStudentId, setPrimaryStudentId] = useState(null);
+  const [rsvpStudents, setRsvpStudents] = useState([]);
   const [rsvpModal, setRsvpModal] = useState(null);
 
   useEffect(() => {
@@ -114,17 +139,17 @@ export default function PortalNotices() {
       const bIds = students.map((s) => s.class_batch_id).filter(Boolean);
       setStudentIds(sIds);
       setBatchIds(bIds);
-      setPrimaryStudentId(sIds[0]);
+      setRsvpStudents(students.map((s) => ({ id: s.id, student_name: s.student_name })));
 
       const todayStr = new Date().toISOString().split('T')[0];
       const aheadStr = (() => { const d = new Date(); d.setDate(d.getDate() + 30); return d.toISOString().split('T')[0]; })();
       const nowIso = new Date().toISOString();
 
       const [
-        { data: cancels },
-        { data: activeAnns },
-        { data: upcomingEvents },
-        { data: rsvpRows },
+        { data: cancels, error: cancelErr },
+        { data: activeAnns, error: annErr },
+        { data: upcomingEvents, error: evErr },
+        { data: rsvpRows, error: rsvpErr },
       ] = await Promise.all([
         // Upcoming cancellations for this student's batch(es)
         bIds.length > 0
@@ -170,6 +195,10 @@ export default function PortalNotices() {
       ]);
 
       if (!cancelled) {
+        if (cancelErr) console.error('[portal-notices] cancellations:', cancelErr);
+        if (annErr)    console.error('[portal-notices] announcements:', annErr);
+        if (evErr)     console.error('[portal-notices] events:', evErr);
+        if (rsvpErr)   console.error('[portal-notices] rsvps:', rsvpErr);
         setCancellations(cancels || []);
         setAnnouncements(activeAnns || []);
         setEvents(upcomingEvents || []);
@@ -329,10 +358,10 @@ export default function PortalNotices() {
         </div>
       )}
 
-      {rsvpModal && primaryStudentId && (
+      {rsvpModal && rsvpStudents.length > 0 && (
         <RsvpModal
           event={rsvpModal}
-          studentId={primaryStudentId}
+          students={rsvpStudents}
           onClose={() => setRsvpModal(null)}
           onDone={() => handleRsvpDone(rsvpModal.id)}
         />

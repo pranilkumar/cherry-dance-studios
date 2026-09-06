@@ -8,6 +8,7 @@ import {
 } from 'react-icons/fa';
 import { supabase } from '../../lib/supabaseClient';
 import { formatWorkshopDate, formatPrice } from '../../lib/workshops';
+import HowToPay from './HowToPay';
 
 function PaymentBadge({ status }) {
   if (status === 'paid') {
@@ -116,13 +117,14 @@ export default function PortalWorkshops() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user || cancelled) { setLoading(false); return; }
 
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('workshop_bookings')
         .select('*, workshop:workshops(slug, title, starts_at, venue_name, venue_address)')
         .eq('parent_email', user.email)
         .order('created_at', { ascending: false });
 
       if (!cancelled) {
+        if (error) console.error('[portal-workshops] bookings query:', error);
         setBookings(data || []);
         setLoading(false);
       }
@@ -137,8 +139,10 @@ export default function PortalWorkshops() {
   const past = bookings.filter(
     (b) => b.workshop?.starts_at && new Date(b.workshop.starts_at) < now,
   );
-  // Bookings whose workshop was deleted or has missing data
-  const orphaned = bookings.filter((b) => !b.workshop?.starts_at && !b.workshop?.title);
+  // Date TBD: workshop exists but no start date set yet (draft)
+  const dateTbd = bookings.filter((b) => b.workshop && !b.workshop.starts_at);
+  // Truly orphaned: workshop was deleted (join returned null)
+  const orphaned = bookings.filter((b) => !b.workshop);
 
   return (
     <div className="p-6 md:p-8">
@@ -204,6 +208,23 @@ export default function PortalWorkshops() {
         </section>
       )}
 
+      {/* Date TBD — workshop exists but start date not announced yet */}
+      {!loading && dateTbd.length > 0 && (
+        <section className="mb-8">
+          <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-white/55">
+            Date to be announced
+          </h2>
+          <div className="space-y-3">
+            {dateTbd.map((b) => (
+              <div key={b.id} className="rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-4">
+                <p className="text-sm font-medium text-white">{b.workshop.title}</p>
+                <p className="mt-0.5 text-xs text-white/45">Date not yet announced — we'll be in touch.</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Orphaned bookings — workshop record was deleted */}
       {!loading && orphaned.length > 0 && (
         <section className="mb-8">
@@ -225,31 +246,7 @@ export default function PortalWorkshops() {
 
       {/* How to pay — shown when any upcoming booking has payment pending */}
       {!loading && upcoming.some((b) => b.payment_status === 'pending') && (
-        <section className="mb-8 rounded-2xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur-md">
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-white/55">
-            How to pay
-          </h2>
-          <div className="space-y-2 text-sm text-white/75">
-            <p>
-              <span className="font-semibold text-white">E-transfer</span>{' '}
-              — send to{' '}
-              <a href="mailto:cherrydancestudio.cds@gmail.com" className="text-[#ee2435] hover:underline">
-                cherrydancestudio.cds@gmail.com
-              </a>
-              {' '}and include your dancer&rsquo;s name and the workshop name in the message.
-            </p>
-            <p>
-              <span className="font-semibold text-white">Cash</span>{' '}
-              — hand it to us at the studio.
-            </p>
-            <p>
-              <span className="font-semibold text-white">Questions?</span>{' '}
-              <a href="https://wa.me/16138903789" className="text-[#ee2435] hover:underline" target="_blank" rel="noreferrer">
-                WhatsApp us at 613-890-3789
-              </a>
-            </p>
-          </div>
-        </section>
+        <HowToPay etransferExtra="and the workshop name" />
       )}
 
       {!loading && bookings.length > 0 && (

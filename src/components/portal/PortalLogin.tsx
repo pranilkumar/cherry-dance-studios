@@ -340,14 +340,6 @@ export default function PortalLogin() {
                     onChange={(e) => {
                       const v = e.target.value.replace(/\D/g, '').slice(0, 8);
                       setCode(v);
-                      // Supabase OTPs are 6 OR 8 digits depending on project
-                      // config — auto-submit when the input lands on either.
-                      if (v.length === 6 || v.length === 8) {
-                        setTimeout(() => {
-                          const form = e.target.form;
-                          if (form) form.requestSubmit();
-                        }, 50);
-                      }
                     }}
                     placeholder="••••••"
                     className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3.5 text-center font-mono text-3xl tracking-[0.35em] text-white placeholder:text-white/20 transition focus:border-[#ee2435] focus:bg-white/[0.06] focus:outline-none focus:ring-4 focus:ring-[#d1060f]/20"

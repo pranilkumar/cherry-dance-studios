@@ -34,7 +34,8 @@ export default function PortalAttendance() {
       const { data: studentData } = await supabase
         .from('students')
         .select('id, student_name, preferred_class, class_batch:class_batches(name)')
-        .eq('email', user.email);
+        .eq('email', user.email)
+        .in('status', ['active', 'on_break', 'pending']);
 
       if (cancelled || !studentData?.length) { setLoading(false); return; }
 

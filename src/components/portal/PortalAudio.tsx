@@ -88,8 +88,12 @@ function AudioCard({ mix }) {
     } else {
       // Pause every other audio element first
       document.querySelectorAll('audio').forEach((el) => { if (el !== a) el.pause(); });
-      await a.play();
-      setPlaying(true);
+      try {
+        await a.play();
+        setPlaying(true);
+      } catch {
+        // Autoplay blocked (Safari/iOS) — silently ignore; user tapped the button intentionally
+      }
     }
   };
 
@@ -211,7 +215,7 @@ export default function PortalAudio() {
     let cancelled = false;
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user || cancelled) return;
+      if (!user || cancelled) { setLoading(false); return; }
 
       // Fetch the parent's students to get their batch IDs
       const { data: students } = await supabase
@@ -286,7 +290,7 @@ export default function PortalAudio() {
             Nothing here yet.
           </p>
           <p className="mt-2 text-sm text-white/45">
-            Cherry and Pranil will share practice mixes here once your class is underway.
+            Your instructors will share practice mixes here once your class is underway.
           </p>
         </div>
       )}

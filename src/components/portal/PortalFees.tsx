@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { FaCheckCircle, FaClock, FaExclamationTriangle, FaHistory } from 'react-icons/fa';
+import HowToPay from './HowToPay';
 
 const formatCurrency = (amount) =>
   new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' }).format(amount || 0);
@@ -25,6 +26,7 @@ export default function PortalFees() {
   const [studentNames, setStudentNames] = useState({});
   const [loading, setLoading] = useState(true);
   const [noStudents, setNoStudents] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -32,12 +34,15 @@ export default function PortalFees() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user || cancelled) { setLoading(false); return; }
 
-      // Fetch fee_amount alongside student record so we can show the current
-      // month's fee automatically even if the admin hasn't created a record yet.
-      const { data: students } = await supabase
+      const { data: students, error: stuErr } = await supabase
         .from('students')
         .select('id, student_name, fee_amount, status, enrollment_date')
         .eq('email', user.email);
+
+      if (stuErr) {
+        if (!cancelled) { setFetchError('Could not load fee data. Please refresh.'); setLoading(false); }
+        return;
+      }
 
       if (!students || students.length === 0) {
         if (!cancelled) { setNoStudents(true); setLoading(false); }
@@ -47,11 +52,16 @@ export default function PortalFees() {
       const nameMap = {};
       students.forEach((s) => { nameMap[s.id] = s.student_name; });
 
-      const { data: realFees } = await supabase
+      const { data: realFees, error: feesErr } = await supabase
         .from('fees')
         .select('*')
         .in('student_id', students.map((s) => s.id))
         .order('due_date', { ascending: false });
+
+      if (feesErr) {
+        if (!cancelled) { setFetchError('Could not load fee data. Please refresh.'); setLoading(false); }
+        return;
+      }
 
       // ── Virtual fees for all outstanding months ────────────────────────
       // For each active student with a fee_amount, generate a virtual pending
@@ -65,7 +75,7 @@ export default function PortalFees() {
       const virtualFees: any[] = [];
       for (const student of students) {
         if (!student.fee_amount || parseFloat(student.fee_amount) <= 0) continue;
-        if (student.status === 'on_break') continue;
+        if (student.status !== 'active') continue;
 
         // Start billing from enrollment month (fall back to current month if missing)
         const enrolled    = student.enrollment_date ? new Date(student.enrollment_date) : now;
@@ -140,7 +150,13 @@ export default function PortalFees() {
         <div className="py-20 text-center text-sm text-white/40">Loading your fees…</div>
       )}
 
-      {!loading && noStudents && (
+      {!loading && fetchError && (
+        <div className="rounded-2xl border border-[#d1060f]/30 bg-[#d1060f]/10 p-5 text-sm text-[#ee2435]">
+          {fetchError}
+        </div>
+      )}
+
+      {!loading && !fetchError && noStudents && (
         <div className="rounded-2xl border border-dashed border-white/15 bg-white/[0.02] p-10 text-center">
           <p className="text-sm text-white/60">
             No dancer linked to this email yet. Contact us to get set up.
@@ -148,7 +164,7 @@ export default function PortalFees() {
         </div>
       )}
 
-      {!loading && !noStudents && (
+      {!loading && !fetchError && !noStudents && (
         <>
           {/* Summary cards */}
           <div className="mb-8 grid grid-cols-2 gap-4">
@@ -258,31 +274,7 @@ export default function PortalFees() {
           )}
 
           {/* How to pay — always visible so parents know how to reach us */}
-          <section className="mb-8 rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-            <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-white/55">
-              How to pay
-            </h2>
-            <div className="space-y-2 text-sm text-white/75">
-              <p>
-                <span className="font-semibold text-white">E-transfer</span>{' '}
-                — send to{' '}
-                <a href="mailto:cherrydancestudio.cds@gmail.com" className="text-[#ee2435] hover:underline">
-                  cherrydancestudio.cds@gmail.com
-                </a>
-                {' '}and include your dancer&rsquo;s name in the message.
-              </p>
-              <p>
-                <span className="font-semibold text-white">Cash</span>{' '}
-                — hand it to us at the studio.
-              </p>
-              <p>
-                <span className="font-semibold text-white">Questions?</span>{' '}
-                <a href="https://wa.me/16138903789" className="text-[#ee2435] hover:underline" target="_blank" rel="noreferrer">
-                  WhatsApp us at 613-890-3789
-                </a>
-              </p>
-            </div>
-          </section>
+          <HowToPay />
 
           {/* Payment history */}
           <section>

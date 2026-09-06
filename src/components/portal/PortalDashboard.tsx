@@ -18,6 +18,7 @@ import {
 } from 'react-icons/fa';
 import { supabase } from '../../lib/supabaseClient';
 import { parseLocalDate, calcAge, getNextClassDate, fmt24 } from '../../lib/dateUtils';
+import { getInitials } from '../../lib/portalUtils';
 
 /**
  * Parent portal home — welcome + kid card(s) + quick stats.
@@ -74,6 +75,7 @@ export default function PortalDashboard() {
   const [upcomingCancellations, setUpcomingCancellations] = useState([]);
   const [latestAnnouncement, setLatestAnnouncement] = useState(null);
   const [upcomingEvents, setUpcomingEvents] = useState([]);
+  const [fetchError, setFetchError] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -191,6 +193,7 @@ export default function PortalDashboard() {
         }
       } catch (err) {
         console.error('[PortalDashboard] fetch error:', err);
+        if (!cancelled) setFetchError(true);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -222,6 +225,8 @@ export default function PortalDashboard() {
           <p className="mt-2 text-sm text-white/55 md:text-base">
             {loading
               ? 'Loading your dancers…'
+              : fetchError
+              ? 'Something went wrong loading your dashboard. Please refresh.'
               : students.length > 0
               ? `Here's what's happening with ${students.length === 1 ? 'your dancer' : 'your dancers'}.`
               : "We couldn't find a dancer linked to your email yet."}
@@ -350,7 +355,7 @@ export default function PortalDashboard() {
                           {s.avatar_url
                             ? <img src={s.avatar_url} alt={s.student_name} className="h-full w-full object-cover" />
                             : <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white">
-                                {s.student_name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase()}
+                                {getInitials(s.student_name)}
                               </span>
                           }
                         </div>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { getInitials } from '../../lib/portalUtils';
 import {
   FaHome,
   FaCalendarAlt,
@@ -292,9 +293,7 @@ export default function PortalShell({ children }) {
 /* ── Sidebar avatar — shows dancer photo or email/name initials ── */
 
 function SidebarAvatar({ name, url }) {
-  const initials = name
-    ? name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase()
-    : '?';
+  const initials = getInitials(name);
   return (
     <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full bg-gradient-to-br from-[#d1060f] to-[#780f17]">
       {url

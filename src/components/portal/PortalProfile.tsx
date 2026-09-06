@@ -6,6 +6,7 @@ import {
   FaEdit, FaTimes, FaUser, FaPhone, FaShieldAlt, FaCamera,
 } from 'react-icons/fa';
 import { supabase } from '../../lib/supabaseClient';
+import { getInitials } from '../../lib/portalUtils';
 
 /**
  * Parent portal — Profile page.
@@ -28,11 +29,10 @@ export default function PortalProfile() {
       if (cancelled || !user) return;
 
       setEmail(user.email || '');
-      const providers = user.app_metadata?.providers || [];
-      const identities = user.identities || [];
-      setHasPassword(
-        providers.includes('email') || identities.some((i) => i.provider === 'email'),
-      );
+      // Supabase marks OTP users with provider='email' identically to password
+      // users — we can't reliably distinguish them client-side. Show "Set password"
+      // always; setting a new password over an existing one is safe.
+      setHasPassword(false);
       setLoadingUser(false);
 
       const { data } = await supabase
@@ -83,7 +83,7 @@ export default function PortalProfile() {
           }`}
         >
           {alert.type === 'success'
-            ? <FaCheckCircle className="shrink-0 text-[#ee2435]" />
+            ? <FaCheckCircle className="shrink-0 text-white/70" />
             : <FaExclamationCircle className="shrink-0" />}
           {alert.msg}
         </div>
@@ -247,12 +247,7 @@ function StudentContactCard({ student, onSave, onError }) {
     setAvatarUploading(false);
   };
 
-  const initials = student.student_name
-    .split(' ')
-    .map((w) => w[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase();
+  const initials = getInitials(student.student_name);
 
   return (
     <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-md">
@@ -508,7 +503,7 @@ function PasswordPanel({ hasPassword, onChange }) {
 
       {phase === 'saved' && (
         <div className="mt-5 flex items-center gap-2 rounded-xl border border-white/15 bg-white/[0.05] px-4 py-3 text-sm text-white/85">
-          <FaCheckCircle className="text-[#ee2435]" /> Password saved.
+          <FaCheckCircle className="text-white/70" /> Password saved.
         </div>
       )}
 

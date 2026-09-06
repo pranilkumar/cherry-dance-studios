@@ -55,7 +55,7 @@ export async function POST(request: Request) {
   // ── 2. Fetch the workshop server-side (authoritative price + capacity) ───────
   const { data: workshop, error: wErr } = await supabaseAdmin
     .from('workshops')
-    .select('id, title, status, max_capacity, packages')
+    .select('id, title, status, capacity, packages')
     .eq('id', workshop_id)
     .maybeSingle();
 
@@ -82,7 +82,7 @@ export async function POST(request: Request) {
   }
 
   // ── 4. Capacity check ────────────────────────────────────────────────────────
-  if (workshop.max_capacity != null) {
+  if (workshop.capacity != null) {
     const { count, error: cErr } = await supabaseAdmin
       .from('workshop_bookings')
       .select('id', { count: 'exact', head: true })
@@ -93,7 +93,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Could not verify capacity. Try again.' }, { status: 500 });
     }
 
-    if ((count ?? 0) >= workshop.max_capacity) {
+    if ((count ?? 0) >= workshop.capacity) {
       return NextResponse.json({ error: 'Sorry, this workshop is now full.' }, { status: 409 });
     }
   }

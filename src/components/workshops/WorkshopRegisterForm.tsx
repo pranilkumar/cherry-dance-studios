@@ -215,8 +215,8 @@ export default function WorkshopRegisterForm({ workshop }) {
               {/* 02 — Package */}
               {packages.length > 0 && (
                 <div>
-                  <SectionHead num="02" label="Pick your package" />
-                  <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                  <SectionHead num="02" label="Package" />
+                  <div className="grid gap-3 sm:grid-cols-2">
                     {packages.map((pkg) => {
                       const active = form.packageId === pkg.id;
                       return (
@@ -230,13 +230,15 @@ export default function WorkshopRegisterForm({ workshop }) {
                               : 'border-[#0a0a0f]/12 bg-white hover:border-[#0a0a0f]/25'
                           }`}
                         >
-                          <p className={`font-[family-name:var(--font-display)] text-base font-bold tracking-tight ${active ? 'text-[#d1060f]' : 'text-[#0a0a0f]'}`}>
-                            {pkg.label}
-                          </p>
+                          <div className="flex items-baseline justify-between gap-2">
+                            <p className={`font-[family-name:var(--font-display)] text-base font-bold tracking-tight ${active ? 'text-[#d1060f]' : 'text-[#0a0a0f]'}`}>
+                              {pkg.label}
+                            </p>
+                            <p className={`font-[family-name:var(--font-display)] text-xl font-bold shrink-0 ${active ? 'text-[#d1060f]' : 'text-[#0a0a0f]'}`}>
+                              {formatPrice(pkg.price_cents)}
+                            </p>
+                          </div>
                           {pkg.desc && <p className="mt-1 text-xs text-[#0a0a0f]/55">{pkg.desc}</p>}
-                          <p className={`mt-4 font-[family-name:var(--font-display)] text-2xl font-bold ${active ? 'text-[#d1060f]' : 'text-[#0a0a0f]'}`}>
-                            {formatPrice(pkg.price_cents)}
-                          </p>
                           {active && (
                             <span className="absolute right-3 top-3 grid h-6 w-6 place-items-center rounded-full bg-[#d1060f] text-[10px] text-white">
                               <FaCheck />

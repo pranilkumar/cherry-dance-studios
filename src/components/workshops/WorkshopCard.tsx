@@ -30,9 +30,6 @@ export default function WorkshopCard({ workshop, index = 0 }) {
   const isCompleted = status === 'completed';
   const isFull = capacity > 0 && registered_count >= capacity;
 
-  const spotsLeft = capacity > 0 ? Math.max(0, capacity - registered_count) : null;
-  const fillPct = capacity > 0 ? Math.min(100, (registered_count / capacity) * 100) : 0;
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 24 }}

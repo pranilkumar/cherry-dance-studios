@@ -51,19 +51,14 @@ function buildRegistrationHtml(data) {
 }
 
 function buildWorkshopHtml(data) {
-  const { workshopTitle, parentName, email, phone, children,
+  const { workshopTitle, parentName, email, phone,
           packageLabel, dietaryNotes, adminUrl } = data;
 
-  const childList = Array.isArray(children)
-    ? children.map((c) => `${esc(c.name)} (age ${esc(c.age)})`).join(', ')
-    : esc(children);
-
   const rows = [
-    ['Workshop',    esc(workshopTitle)],
-    ['Parent',      esc(parentName)],
-    ['Email',       `<a href="mailto:${esc(email)}" style="color:#ee2435;">${esc(email)}</a>`],
-    ['Phone',       esc(phone)],
-    ['Children',    childList],
+    ['Workshop',  esc(workshopTitle)],
+    ['Attendee',  esc(parentName)],
+    ['Email',     `<a href="mailto:${esc(email)}" style="color:#ee2435;">${esc(email)}</a>`],
+    ['Phone',     esc(phone)],
     packageLabel ? ['Package', esc(packageLabel)] : null,
     dietaryNotes?.trim() ? ['Dietary notes', esc(dietaryNotes)] : null,
   ].filter(Boolean);

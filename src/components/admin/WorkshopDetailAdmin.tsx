@@ -161,8 +161,7 @@ export default function WorkshopDetailAdmin({ workshopId }) {
           <table className="w-full text-sm">
             <thead className="border-b border-white/8 bg-white/[0.04] text-xs uppercase tracking-wider text-white/45">
               <tr>
-                <th className="px-4 py-3 text-left">Parent</th>
-                <th className="px-4 py-3 text-left">Dancers</th>
+                <th className="px-4 py-3 text-left">Attendee</th>
                 <th className="px-4 py-3 text-left">Contact</th>
                 <th className="px-4 py-3 text-left">Package</th>
                 <th className="px-4 py-3 text-right">Amount</th>
@@ -172,24 +171,12 @@ export default function WorkshopDetailAdmin({ workshopId }) {
             </thead>
             <tbody className="divide-y divide-white/8">
               {bookings.map((b) => {
-                const dancers = Array.isArray(b.children) ? b.children : [];
                 const pay = PAY_BADGE[b.payment_status] ?? PAY_BADGE.pending;
                 return (
                   <tr key={b.id} className="hover:bg-white/[0.04]">
                     <td className="px-4 py-3">
                       <div className="font-medium text-white">{b.parent_name}</div>
                       <div className="font-mono text-[10px] text-white/40">{b.qr_token ? `${b.qr_token.slice(0, 8)}…` : '—'}</div>
-                    </td>
-                    <td className="px-4 py-3 text-white/85">
-                      {dancers.length === 0 ? <span className="text-white/35">—</span> : (
-                        <ul className="space-y-0.5">
-                          {dancers.map((d, i) => (
-                            <li key={i} className="text-xs">
-                              {d.name} <span className="text-white/45">({d.age})</span>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
                     </td>
                     <td className="px-4 py-3 text-xs">
                       <div className="text-white/85">{b.parent_email}</div>

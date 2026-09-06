@@ -252,7 +252,7 @@ export default function PortalClasses() {
 
           <p className="mt-3 flex items-start gap-1.5 text-xs text-white/40">
             <FaInfoCircle className="mt-0.5 shrink-0 text-[10px]" />
-            Schedule changes? Cherry or Pranil will notify you directly.
+            Schedule changes? We&rsquo;ll notify you directly.
           </p>
         </section>
       )}

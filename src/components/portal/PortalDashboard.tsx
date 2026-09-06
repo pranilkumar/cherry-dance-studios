@@ -322,8 +322,7 @@ export default function PortalDashboard() {
             </p>
             <p className="mt-2 text-sm text-white/75">
               We received your registration for{' '}
-              <strong className="text-white">{registrations[0].student_name}</strong>. Cherry or
-              Pranil will confirm shortly. Once approved, your full dashboard will appear here.
+              <strong className="text-white">{registrations[0].student_name}</strong>. We&rsquo;ll confirm shortly. Once approved, your full dashboard will appear here.
             </p>
           </div>
         )}

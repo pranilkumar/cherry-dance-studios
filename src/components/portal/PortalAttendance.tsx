@@ -83,7 +83,7 @@ export default function PortalAttendance() {
         </p>
         <div className="mt-4 inline-flex items-start gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-xs text-white/55 backdrop-blur-sm">
           <span className="mt-0.5 shrink-0 text-[#ee2435]">ℹ</span>
-          Attendance is marked by Cherry or Pranil at the start of each class — you don&rsquo;t need to check in yourself.
+          Attendance is marked by our instructors at the start of each class — you don&rsquo;t need to check in yourself.
         </div>
 
         {/* Date range filter */}
@@ -132,7 +132,7 @@ export default function PortalAttendance() {
       ) : students.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-white/12 bg-white/[0.02] p-8 text-center">
           <p className="text-sm text-white/55">
-            No dancers linked to this account yet. Contact Cherry or Pranil to get set up.
+            No dancers linked to this account yet. Contact us to get set up.
           </p>
         </div>
       ) : (

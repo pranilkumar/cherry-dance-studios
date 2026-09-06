@@ -98,7 +98,7 @@ export default function PortalProfile() {
           {loadingUser ? 'Loading…' : email || '—'}
         </p>
         <p className="mt-1 text-xs text-white/35">
-          To update your email address, contact Cherry or Pranil.
+          To update your email address, contact us.
         </p>
       </section>
 
@@ -124,7 +124,7 @@ export default function PortalProfile() {
       ) : (
         <section className="mb-5 rounded-2xl border border-dashed border-white/12 bg-white/[0.02] p-6 text-center">
           <p className="text-sm text-white/55">
-            No dancers linked to this email yet. Contact Cherry or Pranil to get set up.
+            No dancers linked to this email yet. Contact us to get set up.
           </p>
         </section>
       )}

@@ -215,7 +215,7 @@ export default function PortalWorkshops() {
               <div key={b.id} className="rounded-2xl border border-white/8 bg-white/[0.02] px-5 py-4">
                 <p className="text-sm text-white/55">Workshop data unavailable.</p>
                 <p className="mt-0.5 text-xs text-white/30">
-                  Contact Cherry or Pranil if you believe this booking is valid.
+                  Contact us if you believe this booking is valid.
                 </p>
               </div>
             ))}
@@ -240,7 +240,7 @@ export default function PortalWorkshops() {
             </p>
             <p>
               <span className="font-semibold text-white">Cash</span>{' '}
-              — hand it to Cherry or Pranil at the studio.
+              — hand it to us at the studio.
             </p>
             <p>
               <span className="font-semibold text-white">Questions?</span>{' '}

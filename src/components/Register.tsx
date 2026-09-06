@@ -308,7 +308,7 @@ export default function Register() {
           </KineticHeading>
 
           <p className="mt-5 text-base text-[#0a0a0f]/65 md:text-lg">
-            We&rsquo;ve received your enrolment. Cherry or Pranil will be in touch within{' '}
+            We&rsquo;ve received your enrolment. We&rsquo;ll be in touch within{' '}
             <strong className="text-[#0a0a0f]">24 hours</strong> to confirm the spot and
             walk through fees.
           </p>

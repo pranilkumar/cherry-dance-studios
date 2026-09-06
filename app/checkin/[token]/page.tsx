@@ -118,7 +118,7 @@ export default async function CheckinPage({ params }) {
               color: '#86efac',
               fontWeight: 600,
             }}>
-              ✓ Arrived
+              ✓ Checked in at {checkedInTime}
             </div>
           ) : (
             <form method="POST" action="/api/workshop-checkin">

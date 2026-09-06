@@ -258,7 +258,7 @@ export default function WorkshopForm({ workshop = null, mode = 'create' }) {
         </Card>
 
         <Card title="Packages (pricing)">
-          <Field label="Packages JSON" required hint="array of {id, label, price_cents, desc}" error={errors.packages_json}>
+          <Field label="Packages JSON" required hint='array of {id, label, price_cents, desc, deadline?} — deadline is YYYY-MM-DD; first package whose deadline has not passed is auto-selected' error={errors.packages_json}>
             <textarea value={form.packages_json}
               onChange={(e) => set('packages_json', e.target.value)}
               rows={8} spellCheck={false}

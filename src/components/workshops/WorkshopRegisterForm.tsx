@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 import PhoneInput from 'react-phone-input-2';
 import 'react-phone-input-2/lib/style.css';
 import { GlowButton } from '../ui';
-import { FaArrowRight, FaCheck } from 'react-icons/fa';
+import { FaArrowRight } from 'react-icons/fa';
 import { formatPrice } from '../../lib/workshops';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -39,15 +39,30 @@ function SectionHead({ num, label }) {
   );
 }
 
+// First package whose deadline (YYYY-MM-DD) hasn't passed, or has no deadline.
+// Falls back to the last package if all deadlines are expired.
+function resolveActivePackage(pkgs: any[]) {
+  const today = new Date().toISOString().slice(0, 10);
+  const active = pkgs.find((p) => !p.deadline || p.deadline >= today);
+  return active ?? pkgs[pkgs.length - 1] ?? null;
+}
+
+function formatDeadline(deadline: string) {
+  return new Date(deadline + 'T00:00:00').toLocaleDateString('en-CA', {
+    month: 'short', day: 'numeric', year: 'numeric',
+  });
+}
+
 export default function WorkshopRegisterForm({ workshop }) {
   const router = useRouter();
   const packages = Array.isArray(workshop.packages) ? workshop.packages : [];
+  const activePkg = resolveActivePackage(packages);
 
   const [form, setForm] = useState({
     name: '',
     email: '',
     phone: '',
-    packageId: packages.length === 1 ? packages[0].id : '',
+    packageId: activePkg?.id ?? '',
     dietaryNotes: '',
     heardFrom: '',
   });
@@ -68,7 +83,7 @@ export default function WorkshopRegisterForm({ workshop }) {
     if (!form.email.trim()) e.email = 'Email is required.';
     else if (!EMAIL_RE.test(form.email)) e.email = 'Please enter a valid email address.';
     if (!form.phone || form.phone.length < 7) e.phone = 'A valid phone number is required.';
-    if (packages.length > 0 && !form.packageId) e.packageId = 'Pick a package.';
+    if (packages.length > 0 && !form.packageId) e.packageId = 'No valid package available.';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -212,41 +227,27 @@ export default function WorkshopRegisterForm({ workshop }) {
                 </div>
               </div>
 
-              {/* 02 — Package */}
-              {packages.length > 0 && (
+              {/* 02 — Package (auto-selected by date) */}
+              {packages.length > 0 && activePkg && (
                 <div>
                   <SectionHead num="02" label="Package" />
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {packages.map((pkg) => {
-                      const active = form.packageId === pkg.id;
-                      return (
-                        <button
-                          key={pkg.id}
-                          type="button"
-                          onClick={() => set('packageId', pkg.id)}
-                          className={`relative rounded-2xl border p-5 text-left transition ${
-                            active
-                              ? 'border-[#d1060f] bg-[#d1060f]/[0.04] ring-2 ring-[#d1060f]/20'
-                              : 'border-[#0a0a0f]/12 bg-white hover:border-[#0a0a0f]/25'
-                          }`}
-                        >
-                          <div className="flex items-baseline justify-between gap-2">
-                            <p className={`font-[family-name:var(--font-display)] text-base font-bold tracking-tight ${active ? 'text-[#d1060f]' : 'text-[#0a0a0f]'}`}>
-                              {pkg.label}
-                            </p>
-                            <p className={`font-[family-name:var(--font-display)] text-xl font-bold shrink-0 ${active ? 'text-[#d1060f]' : 'text-[#0a0a0f]'}`}>
-                              {formatPrice(pkg.price_cents)}
-                            </p>
-                          </div>
-                          {pkg.desc && <p className="mt-1 text-xs text-[#0a0a0f]/55">{pkg.desc}</p>}
-                          {active && (
-                            <span className="absolute right-3 top-3 grid h-6 w-6 place-items-center rounded-full bg-[#d1060f] text-[10px] text-white">
-                              <FaCheck />
-                            </span>
-                          )}
-                        </button>
-                      );
-                    })}
+                  <div className="rounded-2xl border border-[#0a0a0f]/10 bg-[#f9f9fc] p-5">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <p className="font-[family-name:var(--font-display)] text-base font-bold tracking-tight text-[#0a0a0f]">
+                        {activePkg.label}
+                      </p>
+                      <p className="font-[family-name:var(--font-display)] text-xl font-bold shrink-0 text-[#d1060f]">
+                        {formatPrice(activePkg.price_cents)}
+                      </p>
+                    </div>
+                    {activePkg.desc && (
+                      <p className="mt-1 text-xs text-[#0a0a0f]/55">{activePkg.desc}</p>
+                    )}
+                    {activePkg.deadline && (
+                      <p className="mt-2 text-xs text-[#0a0a0f]/40">
+                        Early bird pricing · available until {formatDeadline(activePkg.deadline)}
+                      </p>
+                    )}
                   </div>
                   {errors.packageId && (
                     <p className="mt-2 text-xs font-medium text-[#d1060f]">{errors.packageId}</p>

@@ -130,7 +130,7 @@ export default function PortalNotices() {
 
       const { data: students } = await supabase
         .from('students')
-        .select('id, class_batch_id, status')
+        .select('id, student_name, class_batch_id, status')
         .eq('email', user.email);
 
       if (!students?.length || cancelled) { setLoading(false); return; }
@@ -160,7 +160,7 @@ export default function PortalNotices() {
               .gte('class_date', todayStr)
               .lte('class_date', aheadStr)
               .order('class_date', { ascending: true })
-          : { data: [] },
+          : { data: [], error: null },
 
         // Active announcements for this batch or all students
         bIds.length > 0

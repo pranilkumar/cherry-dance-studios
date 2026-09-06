@@ -122,7 +122,7 @@ export default function WorkshopTicket({ booking }) {
             <div className="grid items-center gap-7 p-7 md:grid-cols-[auto_1fr] md:gap-10 md:p-10">
               <div className="grid place-items-center rounded-2xl bg-white p-4 ring-1 ring-[#0a0a0f]/8">
                 <QRCodeSVG
-                  value={qr_token}
+                  value={`https://cherrydancestudios.com/checkin/${qr_token}`}
                   size={144}
                   bgColor="#ffffff"
                   fgColor="#0a0a0f"

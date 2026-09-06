@@ -21,10 +21,17 @@ export default async function CheckinPage({ params }) {
 
   if (!booking) notFound();
 
-  const { parent_name, parent_email, package_label, amount_cents, payment_status, workshop } = booking;
+  const { parent_name, parent_email, package_label, amount_cents, payment_status, checked_in_at, workshop } = booking;
   const status = STATUS_MAP[payment_status] ?? STATUS_MAP.pending;
+  const isCheckedIn = !!checked_in_at;
 
-  const formatAmount = (cents) =>
+  const checkedInTime = isCheckedIn
+    ? new Date(checked_in_at).toLocaleTimeString('en-CA', {
+        hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/Toronto',
+      })
+    : null;
+
+  const formatAmount = (cents: number | null) =>
     cents != null
       ? new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' }).format(cents / 100)
       : null;
@@ -41,13 +48,22 @@ export default async function CheckinPage({ params }) {
     }}>
       <div style={{
         background: '#111118',
-        border: '1px solid rgba(255,255,255,0.1)',
+        border: isCheckedIn ? '1px solid rgba(22,163,74,0.4)' : '1px solid rgba(255,255,255,0.1)',
         borderRadius: '24px',
         width: '100%',
         maxWidth: '420px',
         overflow: 'hidden',
         color: '#fff',
       }}>
+        {/* Check-in status banner */}
+        {isCheckedIn && (
+          <div style={{ background: 'rgba(22,163,74,0.15)', borderBottom: '1px solid rgba(22,163,74,0.25)', padding: '12px 28px', textAlign: 'center' }}>
+            <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#86efac' }}>
+              ✓ Checked in at {checkedInTime}
+            </p>
+          </div>
+        )}
+
         {/* Top section */}
         <div style={{ padding: '28px 28px 0' }}>
           <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#ee2435', margin: 0 }}>
@@ -77,7 +93,7 @@ export default async function CheckinPage({ params }) {
         </div>
 
         {/* Detail rows */}
-        <div style={{ padding: '20px 28px 28px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div style={{ padding: '20px 28px', display: 'flex', flexDirection: 'column', gap: 14 }}>
           {workshop?.starts_at && (
             <Row label="Date" value={formatWorkshopDate(workshop.starts_at)} />
           )}
@@ -85,11 +101,50 @@ export default async function CheckinPage({ params }) {
             <Row label="Venue" value={workshop.venue_address || workshop.venue_name} />
           )}
           {package_label && <Row label="Package" value={package_label} />}
-          {formatAmount(amount_cents) && <Row label="Amount" value={formatAmount(amount_cents)} />}
+          {formatAmount(amount_cents) && <Row label="Amount" value={formatAmount(amount_cents)!} />}
           <Row label="Email" value={parent_email} small />
         </div>
 
-        <p style={{ textAlign: 'center', padding: '0 28px 24px', fontSize: 11, color: 'rgba(255,255,255,0.25)', letterSpacing: '0.08em', margin: 0 }}>
+        {/* Check-in action */}
+        <div style={{ padding: '0 28px 28px' }}>
+          {isCheckedIn ? (
+            <div style={{
+              borderRadius: 12,
+              background: 'rgba(22,163,74,0.12)',
+              border: '1px solid rgba(22,163,74,0.25)',
+              padding: '12px 20px',
+              textAlign: 'center',
+              fontSize: 13,
+              color: '#86efac',
+              fontWeight: 600,
+            }}>
+              ✓ Arrived
+            </div>
+          ) : (
+            <form method="POST" action="/api/workshop-checkin">
+              <input type="hidden" name="token" value={token} />
+              <button
+                type="submit"
+                style={{
+                  width: '100%',
+                  padding: '14px',
+                  borderRadius: 12,
+                  background: 'linear-gradient(135deg, #b00310 0%, #d1060f 50%, #ee2435 100%)',
+                  color: '#fff',
+                  fontSize: 15,
+                  fontWeight: 700,
+                  border: 'none',
+                  cursor: 'pointer',
+                  letterSpacing: '-0.01em',
+                }}
+              >
+                Mark as arrived
+              </button>
+            </form>
+          )}
+        </div>
+
+        <p style={{ textAlign: 'center', padding: '0 28px 20px', fontSize: 11, color: 'rgba(255,255,255,0.25)', letterSpacing: '0.08em', margin: 0 }}>
           cherrydancestudios.com
         </p>
       </div>

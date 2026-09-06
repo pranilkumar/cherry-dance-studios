@@ -255,21 +255,22 @@ export default function WorkshopRegisterForm({ workshop }) {
               {/* 03 — Notes */}
               <div>
                 <SectionHead num={packages.length > 0 ? '03' : '02'} label="Anything else? (optional)" />
-                <Field label="Dietary notes or allergies">
+                <Field label="Anything you'd like us to know?">
                   <textarea
                     value={form.dietaryNotes}
                     onChange={(e) => set('dietaryNotes', e.target.value)}
                     rows={2}
-                    placeholder="e.g. peanut allergy, dairy-free…"
+                    placeholder="e.g. injury, accessibility needs, questions…"
                     className={`${inputBase} resize-none`}
                   />
                 </Field>
                 <div className="mt-5">
                   <Field label="How did you hear about us?">
-                    <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+                    <div className="grid grid-cols-3 gap-2.5">
                       {[
                         { v: 'instagram', label: 'Instagram' },
                         { v: 'whatsapp', label: 'WhatsApp' },
+                        { v: 'google', label: 'Google' },
                         { v: 'friend', label: 'Friend / Family' },
                         { v: 'other', label: 'Other' },
                       ].map((opt) => {

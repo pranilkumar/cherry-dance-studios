@@ -30,6 +30,26 @@ const STATUS_OPTIONS = [
   { v: 'cancelled',  label: 'Cancelled' },
 ];
 
+const emptyPkg = () => ({ id: crypto.randomUUID(), label: '', price: '', desc: '', deadline: '' });
+
+const pkgsFromDb = (dbPkgs: any[]) =>
+  dbPkgs.map((p) => ({
+    id:       p.id ?? crypto.randomUUID(),
+    label:    p.label ?? '',
+    price:    p.price_cents != null ? String(p.price_cents / 100) : '',
+    desc:     p.desc ?? '',
+    deadline: p.deadline ?? '',
+  }));
+
+const pkgsToDb = (pkgs: any[]) =>
+  pkgs.map((p) => ({
+    id:          p.id,
+    label:       p.label.trim(),
+    price_cents: Math.round(parseFloat(p.price) * 100),
+    desc:        p.desc.trim() || undefined,
+    deadline:    p.deadline || undefined,
+  }));
+
 const empty = (existing = null) => ({
   slug:             existing?.slug ?? '',
   title:            existing?.title ?? '',
@@ -45,9 +65,9 @@ const empty = (existing = null) => ({
   waitlist_enabled: existing?.waitlist_enabled ?? false,
   status:           existing?.status ?? 'draft',
   featured:         existing?.featured ?? false,
-  packages_json:    JSON.stringify(existing?.packages ?? [
+  packages:         pkgsFromDb(existing?.packages ?? [
     { id: 'single', label: 'Single', price_cents: 2500, desc: 'One spot' },
-  ], null, 2),
+  ]),
   perks:            (existing?.perks || []).join(', '),
   payment_info:     existing?.payment_info ?? 'E-transfer to cherrydancestudio.cds@gmail.com',
 });
@@ -76,26 +96,19 @@ export default function WorkshopForm({ workshop = null, mode = 'create' }) {
     else if (!/^[a-z0-9-]+$/.test(form.slug)) e.slug = 'Use lowercase, numbers, dashes only.';
     if (!form.starts_at) e.starts_at = 'Required.';
 
-    let parsedPackages = [];
-    try {
-      parsedPackages = JSON.parse(form.packages_json || '[]');
-      if (!Array.isArray(parsedPackages)) throw new Error('Must be an array.');
-      parsedPackages.forEach((p, i) => {
-        if (!p.id) throw new Error(`Package #${i + 1} is missing "id".`);
-        if (!p.label) throw new Error(`Package #${i + 1} is missing "label".`);
-        if (typeof p.price_cents !== 'number') throw new Error(`Package #${i + 1} "price_cents" must be a number.`);
-      });
-    } catch (err) {
-      e.packages_json = err.message;
-    }
+    form.packages.forEach((p, i) => {
+      if (!p.label.trim()) e[`pkg_label_${i}`] = 'Required.';
+      if (!p.price || isNaN(parseFloat(p.price)) || parseFloat(p.price) < 0)
+        e[`pkg_price_${i}`] = 'Enter a valid price.';
+    });
 
     setErrors(e);
-    return { ok: Object.keys(e).length === 0, parsedPackages };
+    return { ok: Object.keys(e).length === 0 };
   };
 
   const handleSubmit = async (ev) => {
     ev.preventDefault();
-    const { ok, parsedPackages } = validate();
+    const { ok } = validate();
     if (!ok) return;
 
     setSaving(true);
@@ -116,7 +129,7 @@ export default function WorkshopForm({ workshop = null, mode = 'create' }) {
       waitlist_enabled: form.waitlist_enabled,
       status:           form.status,
       featured:         form.featured,
-      packages:         parsedPackages,
+      packages:         pkgsToDb(form.packages),
       perks:            form.perks.split(',').map((s) => s.trim()).filter(Boolean),
       payment_info:     form.payment_info.trim() || null,
     };
@@ -258,12 +271,92 @@ export default function WorkshopForm({ workshop = null, mode = 'create' }) {
         </Card>
 
         <Card title="Packages (pricing)">
-          <Field label="Packages JSON" required hint='array of {id, label, price_cents, desc, deadline?} — deadline is YYYY-MM-DD; first package whose deadline has not passed is auto-selected' error={errors.packages_json}>
-            <textarea value={form.packages_json}
-              onChange={(e) => set('packages_json', e.target.value)}
-              rows={8} spellCheck={false}
-              className={`${inputCls(errors.packages_json)} font-mono text-xs resize-none`} />
-          </Field>
+          <div className="space-y-3">
+            <div className="text-xs font-medium text-white/70">Packages</div>
+            {form.packages.map((pkg, i) => (
+              <div key={pkg.id} className="rounded-xl border border-white/10 bg-white/[0.03] p-4 space-y-3">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1 block text-xs text-white/50">Label *</label>
+                    <input
+                      type="text"
+                      value={pkg.label}
+                      onChange={(e) => {
+                        const updated = form.packages.map((p, j) => j === i ? { ...p, label: e.target.value } : p);
+                        set('packages', updated);
+                      }}
+                      placeholder="Early Bird"
+                      className={inputCls(errors[`pkg_label_${i}`])}
+                    />
+                    {errors[`pkg_label_${i}`] && <p className="mt-1 text-xs text-[#ee2435]">{errors[`pkg_label_${i}`]}</p>}
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs text-white/50">Price (CAD) *</label>
+                    <div className="relative">
+                      <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-white/40">$</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={pkg.price}
+                        onChange={(e) => {
+                          const updated = form.packages.map((p, j) => j === i ? { ...p, price: e.target.value } : p);
+                          set('packages', updated);
+                        }}
+                        placeholder="20.00"
+                        className={`${inputCls(errors[`pkg_price_${i}`])} pl-7`}
+                      />
+                    </div>
+                    {errors[`pkg_price_${i}`] && <p className="mt-1 text-xs text-[#ee2435]">{errors[`pkg_price_${i}`]}</p>}
+                  </div>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1 block text-xs text-white/50">Description <span className="text-white/30">(optional)</span></label>
+                    <input
+                      type="text"
+                      value={pkg.desc}
+                      onChange={(e) => {
+                        const updated = form.packages.map((p, j) => j === i ? { ...p, desc: e.target.value } : p);
+                        set('packages', updated);
+                      }}
+                      placeholder="Register early and save"
+                      className={inputCls()}
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs text-white/50">Early bird deadline <span className="text-white/30">(optional)</span></label>
+                    <input
+                      type="date"
+                      value={pkg.deadline}
+                      onChange={(e) => {
+                        const updated = form.packages.map((p, j) => j === i ? { ...p, deadline: e.target.value } : p);
+                        set('packages', updated);
+                      }}
+                      className={`${inputCls()} [color-scheme:dark]`}
+                    />
+                  </div>
+                </div>
+                {form.packages.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => set('packages', form.packages.filter((_, j) => j !== i))}
+                    className="text-xs text-white/35 hover:text-[#ee2435]"
+                  >
+                    Remove package
+                  </button>
+                )}
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() => set('packages', [...form.packages, emptyPkg()])}
+              className="rounded-lg border border-dashed border-white/20 bg-white/[0.02] px-4 py-2 text-xs font-medium text-white/55 hover:border-white/40 hover:text-white/85 w-full"
+            >
+              + Add package
+            </button>
+            <p className="text-xs text-white/35">Packages are shown in order. The first one whose deadline hasn&apos;t passed is auto-selected on the registration form.</p>
+          </div>
 
           <Field label="Perks" hint="comma-separated · shown as included-in chips">
             <input type="text" value={form.perks}

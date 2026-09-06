@@ -6,18 +6,14 @@ import { motion } from 'framer-motion';
 import PhoneInput from 'react-phone-input-2';
 import 'react-phone-input-2/lib/style.css';
 import { GlowButton } from '../ui';
-import { FaArrowRight, FaCheck, FaPlus, FaTimes } from 'react-icons/fa';
+import { FaArrowRight, FaCheck } from 'react-icons/fa';
 import { formatPrice } from '../../lib/workshops';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const AGES = ['Under 1', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, '17+'];
 
 const inputBase =
   'w-full rounded-xl border border-[#0a0a0f]/12 bg-white px-4 py-3.5 text-base text-[#0a0a0f] placeholder:text-[#0a0a0f]/35 transition focus:border-[#d1060f] focus:outline-none focus:ring-4 focus:ring-[#d1060f]/12';
 const inputErr = 'border-[#d1060f] ring-2 ring-[#d1060f]/15';
-const selectChevron =
-  "appearance-none bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%230a0a0f%22 stroke-width=%221.5%22><path d=%22m6 9 6 6 6-6%22/></svg>')] bg-[length:18px] bg-[right_1rem_center] bg-no-repeat pr-10";
-
 function Field({ label, required = false, error = undefined, children }: { label: any; required?: any; error?: any; children: any }) {
   return (
     <div>
@@ -43,17 +39,14 @@ function SectionHead({ num, label }) {
   );
 }
 
-const emptyChild = () => ({ name: '', age: '' });
-
 export default function WorkshopRegisterForm({ workshop }) {
   const router = useRouter();
   const packages = Array.isArray(workshop.packages) ? workshop.packages : [];
 
   const [form, setForm] = useState({
-    parentName: '',
+    name: '',
     email: '',
     phone: '',
-    children: [emptyChild()],
     packageId: packages.length === 1 ? packages[0].id : '',
     dietaryNotes: '',
     heardFrom: '',
@@ -67,49 +60,15 @@ export default function WorkshopRegisterForm({ workshop }) {
     if (errors[field]) setErrors((e) => ({ ...e, [field]: undefined }));
   };
 
-  const setChild = (idx, field, value) => {
-    setForm((f) => ({
-      ...f,
-      children: f.children.map((c, i) => (i === idx ? { ...c, [field]: value } : c)),
-    }));
-    if (errors.children?.[idx]?.[field]) {
-      setErrors((e) => {
-        const children = [...(e.children || [])];
-        children[idx] = { ...children[idx], [field]: undefined };
-        return { ...e, children };
-      });
-    }
-  };
-
-  const addChild = () =>
-    setForm((f) => ({ ...f, children: [...f.children, emptyChild()] }));
-
-  const removeChild = (idx) =>
-    setForm((f) => ({
-      ...f,
-      children: f.children.length === 1 ? f.children : f.children.filter((_, i) => i !== idx),
-    }));
-
   const selectedPkg = packages.find((p) => p.id === form.packageId);
 
   const validate = () => {
     const e: Record<string, any> = {};
-    if (!form.parentName.trim()) e.parentName = 'Your name is required.';
+    if (!form.name.trim()) e.name = 'Your name is required.';
     if (!form.email.trim()) e.email = 'Email is required.';
     else if (!EMAIL_RE.test(form.email)) e.email = 'Please enter a valid email address.';
     if (!form.phone || form.phone.length < 7) e.phone = 'A valid phone number is required.';
     if (packages.length > 0 && !form.packageId) e.packageId = 'Pick a package.';
-
-    const childErrors = form.children.map((c) => {
-      const ce: Record<string, any> = {};
-      if (!c.name.trim()) ce.name = "Child's name is required.";
-      if (!c.age) ce.age = "Age is required.";
-      return ce;
-    });
-    if (childErrors.some((ce) => Object.keys(ce).length > 0)) {
-      e.children = childErrors;
-    }
-
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -130,10 +89,10 @@ export default function WorkshopRegisterForm({ workshop }) {
         body: JSON.stringify({
           workshop_id:   workshop.id,
           package_id:    selectedPkg?.id ?? null,
-          parent_name:   form.parentName.trim(),
+          parent_name:   form.name.trim(),
           parent_email:  form.email.trim(),
           parent_phone:  form.phone,
-          children:      form.children.map((c) => ({ name: c.name.trim(), age: String(c.age) })),
+          children:      [],
           dietary_notes: form.dietaryNotes.trim() || null,
           heard_from:    form.heardFrom || null,
         }),
@@ -158,10 +117,10 @@ export default function WorkshopRegisterForm({ workshop }) {
         body: JSON.stringify({
           type:          'workshop',
           workshopTitle: workshop.title ?? workshop.name ?? 'Workshop',
-          parentName:    form.parentName.trim(),
+          parentName:    form.name.trim(),
           email:         form.email.trim(),
           phone:         form.phone,
-          children:      form.children.map((c) => ({ name: c.name.trim(), age: String(c.age) })),
+          children:      [],
           packageLabel:  selectedPkg?.label ?? null,
           dietaryNotes:  form.dietaryNotes.trim() || null,
         }),
@@ -211,17 +170,17 @@ export default function WorkshopRegisterForm({ workshop }) {
             className="rounded-3xl border border-[#0a0a0f]/8 bg-white p-6 shadow-[0_12px_48px_rgba(10,10,15,0.06)] md:p-10"
           >
             <form onSubmit={handleSubmit} noValidate className="space-y-10">
-              {/* 01 — Parent */}
+              {/* 01 — Your details */}
               <div>
-                <SectionHead num="01" label="Parent / guardian" />
-                <Field label="Full name" required error={errors.parentName}>
+                <SectionHead num="01" label="Your details" />
+                <Field label="Full name" required error={errors.name}>
                   <input
                     type="text"
-                    value={form.parentName}
-                    onChange={(e) => set('parentName', e.target.value)}
+                    value={form.name}
+                    onChange={(e) => set('name', e.target.value)}
                     placeholder="e.g. Sarah Johnson"
                     autoComplete="name"
-                    className={`${inputBase} ${errors.parentName ? inputErr : ''}`}
+                    className={`${inputBase} ${errors.name ? inputErr : ''}`}
                   />
                 </Field>
 
@@ -253,69 +212,10 @@ export default function WorkshopRegisterForm({ workshop }) {
                 </div>
               </div>
 
-              {/* 02 — Children */}
-              <div>
-                <SectionHead num="02" label="Dancers" />
-                <div className="space-y-3">
-                  {form.children.map((child, idx) => (
-                    <div
-                      key={idx}
-                      className="rounded-2xl border border-[#0a0a0f]/8 bg-[#f5f5f8] p-4 md:p-5"
-                    >
-                      <div className="mb-3 flex items-center justify-between">
-                        <p className="text-xs font-semibold uppercase tracking-[0.15em] text-[#0a0a0f]/55">
-                          Dancer {idx + 1}
-                        </p>
-                        {form.children.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => removeChild(idx)}
-                            className="grid h-7 w-7 place-items-center rounded-full border border-[#0a0a0f]/12 text-[#0a0a0f]/55 transition hover:border-[#d1060f] hover:bg-white hover:text-[#d1060f]"
-                            aria-label="Remove dancer"
-                          >
-                            <FaTimes className="text-[10px]" />
-                          </button>
-                        )}
-                      </div>
-                      <div className="grid gap-4 md:grid-cols-2">
-                        <Field label="Name" required error={errors.children?.[idx]?.name}>
-                          <input
-                            type="text"
-                            value={child.name}
-                            onChange={(e) => setChild(idx, 'name', e.target.value)}
-                            placeholder="e.g. Emma"
-                            className={`${inputBase} ${errors.children?.[idx]?.name ? inputErr : ''}`}
-                          />
-                        </Field>
-                        <Field label="Age" required error={errors.children?.[idx]?.age}>
-                          <select
-                            value={child.age}
-                            onChange={(e) => setChild(idx, 'age', e.target.value)}
-                            className={`${inputBase} ${selectChevron} ${errors.children?.[idx]?.age ? inputErr : ''}`}
-                          >
-                            <option value="">Select age</option>
-                            {AGES.map((a) => (
-                              <option key={a}>{a}</option>
-                            ))}
-                          </select>
-                        </Field>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <button
-                  type="button"
-                  onClick={addChild}
-                  className="mt-3 inline-flex items-center gap-2 rounded-full border border-dashed border-[#0a0a0f]/20 px-4 py-2 text-sm font-medium text-[#0a0a0f]/65 transition hover:border-[#d1060f] hover:text-[#d1060f]"
-                >
-                  <FaPlus className="text-[10px]" /> Add another dancer
-                </button>
-              </div>
-
-              {/* 03 — Package */}
+              {/* 02 — Package */}
               {packages.length > 0 && (
                 <div>
-                  <SectionHead num="03" label="Pick your package" />
+                  <SectionHead num="02" label="Pick your package" />
                   <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
                     {packages.map((pkg) => {
                       const active = form.packageId === pkg.id;
@@ -352,9 +252,9 @@ export default function WorkshopRegisterForm({ workshop }) {
                 </div>
               )}
 
-              {/* 04 — Notes */}
+              {/* 03 — Notes */}
               <div>
-                <SectionHead num={packages.length > 0 ? '04' : '03'} label="Anything else? (optional)" />
+                <SectionHead num={packages.length > 0 ? '03' : '02'} label="Anything else? (optional)" />
                 <Field label="Dietary notes or allergies">
                   <textarea
                     value={form.dietaryNotes}

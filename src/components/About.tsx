@@ -14,7 +14,7 @@ const youtubeVideos = [
   { id: 'oVPpJOhOHSA', title: 'Cherry Dance Studios — Performance 7' },
 ];
 
-const highlights = ['Ages 4 & up', 'Bollywood', 'Hip-hop', 'Freestyle', 'Indian'];
+const highlights = ['All ages', 'Bollywood', 'Hip-hop', 'Freestyle', 'Indian'];
 
 export default function About() {
   return (
@@ -39,7 +39,7 @@ export default function About() {
           split="word"
           className="text-[clamp(2.25rem,5.5vw,4rem)] text-[#0a0a0f]"
         >
-          Where Ottawa kids
+          Where Ottawa comes
         </KineticHeading>
         <KineticHeading
           as="h2"
@@ -47,7 +47,7 @@ export default function About() {
           gradient="cherry"
           className="-mt-2 text-[clamp(2.25rem,5.5vw,4rem)]"
         >
-          learn to dance.
+          to dance.
         </KineticHeading>
 
         {/* Body */}
@@ -65,9 +65,9 @@ export default function About() {
             we welcome everyone from curious beginners to seasoned performers.
           </p>
           <p>
-            Our instructors create a warm, inclusive environment where students build
-            confidence, technique, and a genuine love of movement. Whether you&apos;re
-            enrolling your child in weekly classes or stepping onto the stage for a
+            Our instructors create a warm, inclusive environment where students of all
+            ages build confidence, technique, and a genuine love of movement. Whether
+            you&apos;re enrolling in weekly classes or stepping onto the stage for a
             community showcase, Cherry Dance Studios is your home for dance in Ottawa.
           </p>
         </motion.div>

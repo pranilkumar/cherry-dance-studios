@@ -62,7 +62,7 @@ export default function Home() {
           >
             <span className="h-[1px] w-8 bg-[#ee2435]" />
             <span className="text-[11px] font-semibold uppercase tracking-[0.28em] text-white/50">
-              Ottawa · Est. 2018
+              Ottawa · Est. 2024
             </span>
           </motion.div>
 
@@ -215,7 +215,7 @@ export default function Home() {
             aria-hidden
             className="absolute right-5 top-1/2 -translate-y-1/2 -rotate-90 text-[9px] font-semibold uppercase tracking-[0.38em] text-white/18 whitespace-nowrap select-none"
           >
-            Cherry Dance Studios · Barrhaven, Ottawa · Canada
+            Cherry Dance Studios · Est. 2024 · Barrhaven, Ottawa
           </div>
         </div>
       </div>

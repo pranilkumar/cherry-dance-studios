@@ -131,7 +131,7 @@ export default function Home() {
               onClick={scrollToSection('register')}
               icon={<FaArrowRight />}
             >
-              Register your dancer
+              Register now
             </GlowButton>
             <a
               href="#classes"

@@ -288,7 +288,7 @@ export default function Register() {
   if (status === 'success') {
     const firstName = form.childName.split(' ')[0];
     return (
-      <section id="register" className="relative bg-white py-24 text-[#0a0a0f] md:py-32">
+      <section id="register" className="relative bg-[#0a0a0f] py-24 text-white md:py-32">
         <div className="mx-auto max-w-2xl px-6 text-center">
           <motion.div
             initial={{ scale: 0, opacity: 0 }}
@@ -302,14 +302,14 @@ export default function Register() {
           <KineticHeading
             as="h2"
             split="word"
-            className="mt-8 text-[clamp(2rem,5vw,3.5rem)] text-[#0a0a0f]"
+            className="mt-8 text-[clamp(2rem,5vw,3.5rem)] text-white"
           >
             Welcome to the crew{firstName ? `, ${firstName}` : ''}.
           </KineticHeading>
 
-          <p className="mt-5 text-base text-[#0a0a0f]/65 md:text-lg">
+          <p className="mt-5 text-base text-white/65 md:text-lg">
             We&rsquo;ve received your enrolment. We&rsquo;ll be in touch within{' '}
-            <strong className="text-[#0a0a0f]">24 hours</strong> to confirm the spot and
+            <strong className="text-white">24 hours</strong> to confirm the spot and
             walk through fees.
           </p>
 
@@ -340,39 +340,69 @@ export default function Register() {
 
   /* ── Form ── */
   return (
-    <section
-      id="register"
-      className="relative bg-white py-24 text-[#0a0a0f] md:py-32"
-    >
-      <div className="mx-auto max-w-3xl px-6">
+    <section id="register" className="relative bg-[#0a0a0f] text-white">
+
+      {/* White-to-dark diagonal transition from FAQ section above */}
+      <div aria-hidden className="h-16 w-full overflow-hidden bg-white">
+        <svg viewBox="0 0 1440 64" className="block w-full" preserveAspectRatio="none">
+          <polygon points="0,0 1440,64 0,64" fill="#0a0a0f" />
+        </svg>
+      </div>
+
+      <div className="mx-auto max-w-3xl px-6 pb-24 pt-6 md:pb-32 md:pt-8">
         {/* Header */}
-        <div className="mb-12 text-center">
+        <div className="mb-14 text-center">
           <motion.span
             initial={{ opacity: 0, y: 12 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
             viewport={{ once: true }}
-            className="inline-block rounded-full border border-[#0a0a0f]/10 bg-[#0a0a0f]/[0.03] px-4 py-1.5 text-xs font-medium uppercase tracking-[0.18em] text-[#0a0a0f]/65"
+            className="inline-block rounded-full border border-[#ee2435]/30 bg-[#ee2435]/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.25em] text-[#ee2435]"
           >
-            Enrol
+            Join Cherry Dance Studios
           </motion.span>
 
-          <KineticHeading
-            as="h2"
-            split="word"
-            className="mt-6 text-[clamp(2.25rem,5.5vw,4rem)] text-[#0a0a0f]"
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+            viewport={{ once: true }}
+            className="mt-6 font-[family-name:var(--font-display)] font-black leading-[0.95] tracking-[-0.04em] text-white"
+            style={{ fontSize: 'clamp(2.5rem,6vw,4.5rem)' }}
           >
-            Enrol your dancer.
-          </KineticHeading>
+            Enrol your{' '}
+            <span className="bg-gradient-to-r from-[#ee2435] via-[#d1060f] to-[#8f0b16] bg-clip-text text-transparent">
+              dancer.
+            </span>
+          </motion.h2>
+
           <motion.p
             initial={{ opacity: 0, y: 12 }}
             whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
+            transition={{ duration: 0.5, delay: 0.25 }}
             viewport={{ once: true }}
-            className="mt-4 text-base text-[#0a0a0f]/65"
+            className="mx-auto mt-5 max-w-sm text-base text-white/60"
           >
-            Five minutes. We&rsquo;ll be in touch within 24 hours.
+            Five minutes to fill in. We&rsquo;ll confirm your spot and walk through fees within 24 hours.
           </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.38 }}
+            viewport={{ once: true }}
+            className="mt-7 flex flex-wrap justify-center gap-2.5"
+          >
+            {['Spot confirmed in 24 hrs', 'No payment now', 'Limited spots per batch'].map((t) => (
+              <span
+                key={t}
+                className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-medium text-white/60"
+              >
+                <FaCheck className="flex-shrink-0 text-[9px] text-[#ee2435]" />
+                {t}
+              </span>
+            ))}
+          </motion.div>
         </div>
 
         {/* Card */}
@@ -381,7 +411,7 @@ export default function Register() {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.1 }}
           viewport={{ once: true, margin: '-50px' }}
-          className="rounded-3xl border border-[#0a0a0f]/8 bg-white p-6 shadow-[0_12px_48px_rgba(10,10,15,0.06)] md:p-10"
+          className="rounded-3xl border border-white/10 bg-white p-6 shadow-[0_24px_64px_rgba(0,0,0,0.35)] md:p-10"
         >
           <form onSubmit={handleSubmit} noValidate className="space-y-10">
             {/* Honeypot — invisible to humans, bots fill it */}
@@ -821,3 +851,4 @@ export default function Register() {
     </section>
   );
 }
+

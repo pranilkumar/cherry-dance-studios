@@ -14,7 +14,7 @@ const youtubeVideos = [
   { id: 'oVPpJOhOHSA', title: 'Cherry Dance Studios — Performance 7' },
 ];
 
-const highlights = ['All ages', 'Bollywood', 'Hip-hop', 'Freestyle', 'Indian'];
+const highlights = ['All ages', 'Bollywood', 'Hip-hop', 'Freestyle', 'Indian Dance', 'Semi-Classical'];
 
 export default function About() {
   return (
@@ -60,7 +60,7 @@ export default function About() {
         >
           <p>
             Cherry Dance Studios is an Ottawa-based dance school teaching every kind of
-            dance worth knowing — Bollywood, hip-hop, freestyle, and Indian. Founded by
+            dance worth knowing — Bollywood, hip-hop, freestyle, Indian Dance, and semi-classical. Founded by
             Cherry and Pranil with a passion for making movement fun and accessible,
             we welcome everyone from curious beginners to seasoned performers.
           </p>

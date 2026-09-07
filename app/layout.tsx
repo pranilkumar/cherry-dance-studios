@@ -31,11 +31,11 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://cherrydancestudios
 export const metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: 'Cherry Dance Studios — Bollywood, Hip-hop, Freestyle & Indian dance in Ottawa',
+    default: 'Cherry Dance Studios — Bollywood, Hip-hop, Freestyle, Indian Dance & Semi-Classical in Ottawa',
     template: '%s | Cherry Dance Studios',
   },
   description:
-    "Ottawa's home for dance — Bollywood, hip-hop, freestyle, and Indian. We turn first-timers into headliners, one routine at a time. Classes for ages 4 and up in Barrhaven, Ottawa.",
+    "Ottawa's home for dance — Bollywood, hip-hop, freestyle, Indian Dance, and semi-classical. We turn first-timers into headliners, one routine at a time. All ages welcome in Barrhaven, Ottawa.",
   keywords: [
     'Bollywood dance Ottawa',
     'dance classes Ottawa',
@@ -56,7 +56,7 @@ export const metadata = {
     siteName: 'Cherry Dance Studios',
     title: 'Cherry Dance Studios — Dance in Ottawa',
     description:
-      "Bollywood, hip-hop, freestyle, Indian. Classes for all ages — kids and adults. Barrhaven, Ottawa.",
+      "Bollywood, hip-hop, freestyle, Indian Dance &amp; semi-classical. Classes for all ages — kids and adults. Barrhaven, Ottawa.",
     images: [
       {
         url: '/logo.png',
@@ -70,7 +70,7 @@ export const metadata = {
     card: 'summary',
     title: 'Cherry Dance Studios — Dance in Ottawa',
     description:
-      "Bollywood, hip-hop, freestyle, Indian. All ages welcome. Barrhaven, Ottawa.",
+      "Bollywood, hip-hop, freestyle, Indian Dance &amp; semi-classical. All ages welcome. Barrhaven, Ottawa.",
     images: ['/logo.png'],
   },
   alternates: { canonical: SITE_URL },

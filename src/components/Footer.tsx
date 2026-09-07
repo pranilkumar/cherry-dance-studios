@@ -71,7 +71,7 @@ export default function Footer() {
               </span>
             </div>
             <p className="mt-5 max-w-md text-base leading-relaxed text-white/65">
-              Ottawa&apos;s home for dance — Bollywood, hip-hop, freestyle, Indian.
+              Ottawa&apos;s home for dance — Bollywood, hip-hop, freestyle, Indian Dance &amp; semi-classical.
               We turn first-timers into headliners, one routine at a time.
             </p>
 

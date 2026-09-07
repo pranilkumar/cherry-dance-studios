@@ -18,7 +18,7 @@ function scrollToSection(id) {
   };
 }
 
-const TICKER = ['Bollywood', 'Hip-Hop', 'Freestyle', 'Indian Classical'];
+const TICKER = ['Bollywood', 'Hip-Hop', 'Freestyle', 'Indian Dance', 'Semi-Classical'];
 
 export default function Home() {
   return (
@@ -235,7 +235,7 @@ export default function Home() {
               <span className="text-[#ee2435]">✦</span>
               <span className="px-10">Freestyle</span>
               <span className="text-[#ee2435]">✦</span>
-              <span className="px-10">Indian Classical</span>
+              <span className="px-10">Semi-Classical</span>
               <span className="text-[#ee2435]">✦</span>
             </span>
           ))}

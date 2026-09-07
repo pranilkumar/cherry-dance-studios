@@ -151,8 +151,6 @@ export default function Home() {
             className="mt-14 flex items-center gap-8 border-t border-white/10 pt-8 lg:mt-16"
           >
             {[
-              { num: '7+', label: 'Years' },
-              { num: '4', label: 'Dance Styles' },
               { num: 'All', label: 'Ages Welcome' },
             ].map((s) => (
               <div key={s.label}>

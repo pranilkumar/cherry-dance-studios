@@ -38,6 +38,8 @@ export const metadata = {
     "Ottawa's home for dance — Bollywood, hip-hop, freestyle, and Indian. We turn first-timers into headliners, one routine at a time. Classes for ages 4 and up in Barrhaven, Ottawa.",
   keywords: [
     'Bollywood dance Ottawa',
+    'dance classes Ottawa',
+    'adult Bollywood dance Ottawa',
     'kids dance classes Ottawa',
     'hip-hop dance Ottawa',
     'Indian dance Ottawa',
@@ -54,7 +56,7 @@ export const metadata = {
     siteName: 'Cherry Dance Studios',
     title: 'Cherry Dance Studios — Dance in Ottawa',
     description:
-      "Bollywood, hip-hop, freestyle, Indian. We teach whatever moves your kid. Ages 4+ in Barrhaven, Ottawa.",
+      "Bollywood, hip-hop, freestyle, Indian. Classes for all ages — kids and adults. Barrhaven, Ottawa.",
     images: [
       {
         url: '/logo.png',
@@ -68,7 +70,7 @@ export const metadata = {
     card: 'summary',
     title: 'Cherry Dance Studios — Dance in Ottawa',
     description:
-      "Bollywood, hip-hop, freestyle, Indian. Ages 4+ in Barrhaven, Ottawa.",
+      "Bollywood, hip-hop, freestyle, Indian. All ages welcome. Barrhaven, Ottawa.",
     images: ['/logo.png'],
   },
   alternates: { canonical: SITE_URL },

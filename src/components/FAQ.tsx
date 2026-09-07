@@ -24,7 +24,7 @@ const faqData = [
   {
     question: 'What age groups do you teach?',
     answer:
-      "We offer classes for three age groups: Little Stars (Ages 4–7), The Crew (Ages 7–10), and Slay Squad (10+). There's a place for every young dancer at Cherry Dance Studios!",
+      "We offer programs for all ages! Kids' programs: Little Stars (Ages 4–7), The Crew (Ages 7–10), and Slay Squad (10+). We also run Adult Bollywood batches — there's a place for everyone at Cherry Dance Studios.",
   },
   {
     question: 'What are the class timings?',

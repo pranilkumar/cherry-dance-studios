@@ -143,26 +143,6 @@ export default function Home() {
             </a>
           </motion.div>
 
-          {/* Mini stats strip */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1.15, duration: 0.6 }}
-            className="mt-14 flex items-center gap-8 border-t border-white/10 pt-8 lg:mt-16"
-          >
-            {[
-              { num: 'All', label: 'Ages Welcome' },
-            ].map((s) => (
-              <div key={s.label}>
-                <p className="font-[family-name:var(--font-display)] text-2xl font-black tracking-tight text-white">
-                  {s.num}
-                </p>
-                <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/35">
-                  {s.label}
-                </p>
-              </div>
-            ))}
-          </motion.div>
         </div>
 
         {/* Right column — oversized logo */}

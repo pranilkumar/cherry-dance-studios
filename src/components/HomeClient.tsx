@@ -88,7 +88,7 @@ export default function HomeClient() {
         href="https://wa.me/16138903789"
         target="_blank"
         rel="noopener noreferrer"
-        className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-full bg-[#25D366] px-5 py-3.5 text-sm font-semibold text-white shadow-[0_8px_32px_rgba(37,211,102,0.4)] transition hover:bg-[#20bd5a] hover:shadow-[0_12px_40px_rgba(37,211,102,0.5)] active:scale-95"
+        className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-full bg-[#d1060f] px-5 py-3.5 text-sm font-semibold text-white shadow-[0_8px_32px_rgba(209,6,15,0.45)] transition hover:bg-[#b00310] hover:shadow-[0_12px_40px_rgba(209,6,15,0.55)] active:scale-95"
       >
         <FaWhatsapp className="text-xl" />
         <span className="hidden sm:inline">Questions?</span>

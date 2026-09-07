@@ -18,7 +18,7 @@ function scrollToSection(id) {
   };
 }
 
-const TICKER = ['Bollywood', 'Hip-Hop', 'Freestyle', 'Indian Dance', 'Semi-Classical'];
+const TICKER = ['Indian Dance', 'Bollywood', 'Semi-Classical', 'Hip-Hop', 'Freestyle'];
 
 export default function Home() {
   return (

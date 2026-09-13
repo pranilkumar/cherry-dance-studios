@@ -38,13 +38,13 @@ export async function POST(request: Request) {
       <!-- Header -->
       <tr><td style="background:linear-gradient(135deg,#b00310 0%,#d1060f 50%,#ee2435 100%);padding:24px 28px;">
         <p style="margin:0 0 6px;font-size:10px;font-weight:700;letter-spacing:0.25em;text-transform:uppercase;color:rgba(255,255,255,0.75);">Cherry Dance Studios</p>
-        <h1 style="margin:0;font-size:22px;font-weight:800;color:#fff;">Quick reminder 👋</h1>
+        <h1 style="margin:0;font-size:22px;font-weight:800;color:#fff;">Quick reminder</h1>
       </td></tr>
 
       <!-- Body -->
       <tr><td style="padding:28px 28px 24px;">
         <p style="margin:0;font-size:15px;line-height:1.7;color:rgba(255,255,255,0.82);">
-          Hi ${esc(firstName)} 👋 Just a friendly reminder — your spot for <strong style="color:#fff;">${esc(workshopTitle)}</strong>${workshopDate ? ` on <strong style="color:#fff;">${esc(workshopDate)}</strong>` : ''} is reserved but payment is still pending. It&rsquo;s in the Main Hall at Cardel Recreation Complex (free parking right out front). When you get a chance, an e-transfer of${formattedAmount ? ` <strong style="color:#fff;">${esc(formattedAmount)}</strong>` : ' your payment amount'} to <a href="mailto:cherrydancestudio.cds@gmail.com" style="color:#ee2435;text-decoration:none;">cherrydancestudio.cds@gmail.com</a> would lock in your spot. Questions? Just reply here 💃
+          Hi ${esc(firstName)}, just a friendly reminder — your spot for <strong style="color:#fff;">${esc(workshopTitle)}</strong>${workshopDate ? ` on <strong style="color:#fff;">${esc(workshopDate)}</strong>` : ''} is reserved but payment is still pending. It&rsquo;s in the Main Hall at Cardel Recreation Complex (free parking right out front). When you get a chance, an e-transfer of${formattedAmount ? ` <strong style="color:#fff;">${esc(formattedAmount)}</strong>` : ' your payment amount'} to <a href="mailto:cherrydancestudio.cds@gmail.com" style="color:#ee2435;text-decoration:none;">cherrydancestudio.cds@gmail.com</a> would lock in your spot. Questions? Just reply here.
         </p>
       </td></tr>
 
@@ -64,7 +64,7 @@ export async function POST(request: Request) {
       from: FROM,
       reply_to: 'cherrydancestudio.cds@gmail.com',
       to: email,
-      subject: `Quick reminder — ${workshopTitle} 👋`,
+      subject: `Quick reminder — ${workshopTitle}`,
       html,
     }),
   });

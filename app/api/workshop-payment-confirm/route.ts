@@ -65,7 +65,7 @@ export async function POST(request: Request) {
       <!-- Header band -->
       <tr><td style="background:linear-gradient(135deg,#b00310 0%,#d1060f 50%,#ee2435 100%);padding:24px 28px;">
         <p style="margin:0 0 6px;font-size:10px;font-weight:700;letter-spacing:0.25em;text-transform:uppercase;color:rgba(255,255,255,0.75);">Cherry Dance Studios · Payment confirmed</p>
-        <h1 style="margin:0;font-size:24px;font-weight:800;color:#fff;">You&rsquo;re all set, ${esc(firstName)}! ✅</h1>
+        <h1 style="margin:0;font-size:24px;font-weight:800;color:#fff;">You&rsquo;re all set, ${esc(firstName)}!</h1>
       </td></tr>
 
       <!-- Body -->
@@ -108,7 +108,7 @@ export async function POST(request: Request) {
     body: JSON.stringify({
       from: FROM,
       to: email,
-      subject: `Payment confirmed — ${workshopTitle} ✅`,
+      subject: `Payment confirmed — ${workshopTitle}`,
       html,
     }),
   });

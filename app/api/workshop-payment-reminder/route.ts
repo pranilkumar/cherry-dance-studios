@@ -29,11 +29,7 @@ export async function POST(request: Request) {
     ? new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' }).format(amountCents / 100)
     : null;
 
-  const ticketButton = ticketUrl
-    ? `<div style="margin:24px 0;text-align:center;"><a href="${esc(ticketUrl)}" style="display:inline-block;background:linear-gradient(135deg,#b00310 0%,#d1060f 50%,#ee2435 100%);color:#fff;font-size:15px;font-weight:700;text-decoration:none;padding:14px 32px;border-radius:999px;">View my ticket →</a></div>`
-    : '';
-
-  const html = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Just one step left · ${esc(workshopTitle)}</title></head>
+  const html = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Quick reminder · ${esc(workshopTitle)}</title></head>
 <body style="margin:0;padding:0;background:#0a0a0f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#fff;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#0a0a0f;padding:32px 16px;">
   <tr><td align="center">
@@ -42,25 +38,13 @@ export async function POST(request: Request) {
       <!-- Header -->
       <tr><td style="background:linear-gradient(135deg,#b00310 0%,#d1060f 50%,#ee2435 100%);padding:24px 28px;">
         <p style="margin:0 0 6px;font-size:10px;font-weight:700;letter-spacing:0.25em;text-transform:uppercase;color:rgba(255,255,255,0.75);">Cherry Dance Studios</p>
-        <h1 style="margin:0;font-size:24px;font-weight:800;color:#fff;">See you ${workshopDate ? esc(workshopDate) : 'soon'} — just one step left! 🎉</h1>
+        <h1 style="margin:0;font-size:22px;font-weight:800;color:#fff;">Quick reminder 👋</h1>
       </td></tr>
 
       <!-- Body -->
-      <tr><td style="padding:24px 28px;">
-        <p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:rgba(255,255,255,0.75);">
-          Hi ${esc(firstName)}, so excited to have you at <strong style="color:#fff;">${esc(workshopTitle)}</strong>! To confirm your spot, please send${formattedAmount ? ` <strong style="color:#fff;">${esc(formattedAmount)}</strong>` : ' your payment'} via e-transfer to <a href="mailto:cherrydancestudio.cds@gmail.com" style="color:#ee2435;text-decoration:none;">cherrydancestudio.cds@gmail.com</a> with your name in the message.
-        </p>
-
-        ${ticketButton}
-
-        <p style="margin:0 0 8px;font-size:13px;line-height:1.6;color:rgba(255,255,255,0.65);">
-          Feel free to email us at <a href="mailto:cherrydancestudio.cds@gmail.com" style="color:#ee2435;text-decoration:none;">cherrydancestudio.cds@gmail.com</a> or call us at <a href="tel:+16138903789" style="color:#ee2435;text-decoration:none;">613-890-3789</a> if you have any questions.
-        </p>
-
-        <p style="margin:20px 0 0;font-size:13px;color:rgba(255,255,255,0.75);">
-          See you on the dance floor! 💃<br>
-          <strong style="color:#fff;">Cherry &amp; Pranil</strong><br>
-          <span style="color:rgba(255,255,255,0.45);">Cherry Dance Studios</span>
+      <tr><td style="padding:28px 28px 24px;">
+        <p style="margin:0;font-size:15px;line-height:1.7;color:rgba(255,255,255,0.82);">
+          Hi ${esc(firstName)} 👋 Just a friendly reminder — your spot for <strong style="color:#fff;">${esc(workshopTitle)}</strong>${workshopDate ? ` on <strong style="color:#fff;">${esc(workshopDate)}</strong>` : ''} is reserved but payment is still pending. It&rsquo;s in the Main Hall at Cardel Recreation Complex (free parking right out front). Please e-transfer${formattedAmount ? ` <strong style="color:#fff;">${esc(formattedAmount)}</strong>` : ' your payment'} to <a href="mailto:cherrydancestudio.cds@gmail.com" style="color:#ee2435;text-decoration:none;">cherrydancestudio.cds@gmail.com</a> to confirm your spot. Questions? Just reply here 💃
         </p>
       </td></tr>
 
@@ -78,8 +62,9 @@ export async function POST(request: Request) {
     headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       from: FROM,
+      reply_to: 'cherrydancestudio.cds@gmail.com',
       to: email,
-      subject: `Just one step left — ${workshopTitle} 🎉`,
+      subject: `Quick reminder — ${workshopTitle} 👋`,
       html,
     }),
   });

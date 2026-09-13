@@ -44,7 +44,7 @@ export async function POST(request: Request) {
       <!-- Body -->
       <tr><td style="padding:28px 28px 24px;">
         <p style="margin:0;font-size:15px;line-height:1.7;color:rgba(255,255,255,0.82);">
-          Hi ${esc(firstName)} 👋 Just a friendly reminder — your spot for <strong style="color:#fff;">${esc(workshopTitle)}</strong>${workshopDate ? ` on <strong style="color:#fff;">${esc(workshopDate)}</strong>` : ''} is reserved but payment is still pending. It&rsquo;s in the Main Hall at Cardel Recreation Complex (free parking right out front). Please e-transfer${formattedAmount ? ` <strong style="color:#fff;">${esc(formattedAmount)}</strong>` : ' your payment'} to <a href="mailto:cherrydancestudio.cds@gmail.com" style="color:#ee2435;text-decoration:none;">cherrydancestudio.cds@gmail.com</a> to confirm your spot. Questions? Just reply here 💃
+          Hi ${esc(firstName)} 👋 Just a friendly reminder — your spot for <strong style="color:#fff;">${esc(workshopTitle)}</strong>${workshopDate ? ` on <strong style="color:#fff;">${esc(workshopDate)}</strong>` : ''} is reserved but payment is still pending. It&rsquo;s in the Main Hall at Cardel Recreation Complex (free parking right out front). When you get a chance, an e-transfer of${formattedAmount ? ` <strong style="color:#fff;">${esc(formattedAmount)}</strong>` : ' your payment amount'} to <a href="mailto:cherrydancestudio.cds@gmail.com" style="color:#ee2435;text-decoration:none;">cherrydancestudio.cds@gmail.com</a> would lock in your spot. Questions? Just reply here 💃
         </p>
       </td></tr>
 

@@ -24,6 +24,8 @@ export default function WorkshopDetailAdmin({ workshopId }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [actionMsg, setActionMsg] = useState('');
+  const [remindingId, setRemindingId] = useState<string | null>(null);
+  const [remindedIds, setRemindedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     let cancelled = false;
@@ -87,6 +89,7 @@ export default function WorkshopDetailAdmin({ workshopId }) {
 
   const sendPaymentReminder = async (booking) => {
     if (!booking.parent_email || !workshop) return;
+    setRemindingId(booking.id);
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://cherrydancestudios.com';
     const ticketUrl = booking.qr_token ? `${siteUrl}/workshops/${workshop.slug}/ticket/${booking.qr_token}` : null;
     const dateStr = workshop.starts_at
@@ -106,7 +109,14 @@ export default function WorkshopDetailAdmin({ workshopId }) {
         ticketUrl,
       }),
     });
-    flash(res.ok ? `✉️ Reminder sent to ${booking.parent_name}.` : '❌ Failed to send reminder.');
+    setRemindingId(null);
+    if (res.ok) {
+      setRemindedIds((prev) => new Set(prev).add(booking.id));
+      flash(`Reminder sent to ${booking.parent_name}.`);
+      setTimeout(() => setRemindedIds((prev) => { const s = new Set(prev); s.delete(booking.id); return s; }), 4000);
+    } else {
+      flash('Failed to send reminder.');
+    }
   };
 
   const toggleCheckIn = async (booking) => {
@@ -250,9 +260,19 @@ export default function WorkshopDetailAdmin({ workshopId }) {
                               className="text-[11px] font-medium text-white hover:underline">
                               Mark paid
                             </button>
-                            <button type="button" onClick={() => sendPaymentReminder(b)}
-                              className="text-[11px] font-medium text-white/45 hover:underline">
-                              Remind
+                            <button
+                              type="button"
+                              onClick={() => sendPaymentReminder(b)}
+                              disabled={remindingId === b.id}
+                              className={`text-[11px] font-medium transition ${
+                                remindedIds.has(b.id)
+                                  ? 'text-green-400'
+                                  : remindingId === b.id
+                                  ? 'text-white/30 cursor-wait'
+                                  : 'text-white/45 hover:underline'
+                              }`}
+                            >
+                              {remindedIds.has(b.id) ? 'Sent!' : remindingId === b.id ? 'Sending…' : 'Remind'}
                             </button>
                           </>
                         )}

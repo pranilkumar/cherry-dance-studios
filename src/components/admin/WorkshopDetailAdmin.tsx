@@ -85,6 +85,30 @@ export default function WorkshopDetailAdmin({ workshopId }) {
     refresh();
   };
 
+  const sendPaymentReminder = async (booking) => {
+    if (!booking.parent_email || !workshop) return;
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://cherrydancestudios.com';
+    const ticketUrl = booking.qr_token ? `${siteUrl}/workshops/${workshop.slug}/ticket/${booking.qr_token}` : null;
+    const dateStr = workshop.starts_at
+      ? new Date(workshop.starts_at).toLocaleDateString('en-CA', {
+          month: 'long', day: 'numeric', timeZone: 'America/Toronto',
+        })
+      : null;
+    const res = await fetch('/api/workshop-payment-reminder', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email:         booking.parent_email,
+        parentName:    booking.parent_name,
+        workshopTitle: workshop.title,
+        workshopDate:  dateStr,
+        amountCents:   booking.amount_cents || null,
+        ticketUrl,
+      }),
+    });
+    flash(res.ok ? `✉️ Reminder sent to ${booking.parent_name}.` : '❌ Failed to send reminder.');
+  };
+
   const toggleCheckIn = async (booking) => {
     const checkedIn = !!booking.checked_in_at;
     const { error } = await supabase.from('workshop_bookings').update({ checked_in_at: checkedIn ? null : new Date().toISOString() }).eq('id', booking.id);
@@ -221,10 +245,16 @@ export default function WorkshopDetailAdmin({ workshopId }) {
                           {pay.label}
                         </span>
                         {b.payment_status !== 'paid' && (
-                          <button type="button" onClick={() => markPaymentStatus(b, 'paid')}
-                            className="text-[11px] font-medium text-white hover:underline">
-                            Mark paid
-                          </button>
+                          <>
+                            <button type="button" onClick={() => markPaymentStatus(b, 'paid')}
+                              className="text-[11px] font-medium text-white hover:underline">
+                              Mark paid
+                            </button>
+                            <button type="button" onClick={() => sendPaymentReminder(b)}
+                              className="text-[11px] font-medium text-white/45 hover:underline">
+                              Remind
+                            </button>
+                          </>
                         )}
                         {b.payment_status === 'paid' && (
                           <button type="button" onClick={() => markPaymentStatus(b, 'pending')}

@@ -51,7 +51,7 @@ export async function POST(request: Request) {
   const beforeYouCome = [
     'Head to the Main Hall inside Cardel Recreation Complex',
     'Free parking is available in the lot right in front of the recreation centre',
-    'Arrive 15 minutes early for check-in',
+    'Arrive 10 minutes early for check-in',
     'Wear comfortable clothes you can move in',
     'Bring a water bottle',
   ];

@@ -55,6 +55,32 @@ export default function WorkshopDetailAdmin({ workshopId }) {
   const markPaymentStatus = async (booking, newStatus) => {
     const { error } = await supabase.from('workshop_bookings').update({ payment_status: newStatus }).eq('id', booking.id);
     if (error) return flash('❌ ' + error.message);
+
+    if (newStatus === 'paid' && booking.parent_email && workshop) {
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://cherrydancestudios.com';
+      const ticketUrl = booking.qr_token ? `${siteUrl}/workshops/${workshop.slug}/ticket/${booking.qr_token}` : null;
+      const dateStr = workshop.starts_at
+        ? new Date(workshop.starts_at).toLocaleDateString('en-CA', {
+            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+            timeZone: 'America/Toronto',
+          })
+        : null;
+      fetch('/api/workshop-payment-confirm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email:          booking.parent_email,
+          parentName:     booking.parent_name,
+          workshopTitle:  workshop.title,
+          workshopDate:   dateStr,
+          workshopVenue:  workshop.venue_address || workshop.venue_name || null,
+          packageLabel:   booking.package_label  || null,
+          amountCents:    booking.amount_cents   || null,
+          ticketUrl,
+        }),
+      }).catch(() => {});
+    }
+
     flash(`✓ Marked ${booking.parent_name} as ${newStatus}.`);
     refresh();
   };

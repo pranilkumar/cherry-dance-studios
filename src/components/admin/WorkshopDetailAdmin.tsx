@@ -119,6 +119,14 @@ export default function WorkshopDetailAdmin({ workshopId }) {
     }
   };
 
+  const deleteBooking = async (booking) => {
+    if (!window.confirm(`Delete booking for ${booking.parent_name}? This cannot be undone.`)) return;
+    const { error } = await supabase.from('workshop_bookings').delete().eq('id', booking.id);
+    if (error) return flash('❌ ' + error.message);
+    flash(`Deleted booking for ${booking.parent_name}.`);
+    refresh();
+  };
+
   const toggleCheckIn = async (booking) => {
     const checkedIn = !!booking.checked_in_at;
     const { error } = await supabase.from('workshop_bookings').update({ checked_in_at: checkedIn ? null : new Date().toISOString() }).eq('id', booking.id);
@@ -227,6 +235,7 @@ export default function WorkshopDetailAdmin({ workshopId }) {
                 <th className="px-4 py-3 text-right">Amount</th>
                 <th className="px-4 py-3 text-left">Payment</th>
                 <th className="px-4 py-3 text-left">Check-in</th>
+                <th className="px-4 py-3" />
               </tr>
             </thead>
             <tbody className="divide-y divide-white/8">
@@ -293,6 +302,12 @@ export default function WorkshopDetailAdmin({ workshopId }) {
                         }`}
                       >
                         {b.checked_in_at ? '✓ Checked in' : 'Check in'}
+                      </button>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <button type="button" onClick={() => deleteBooking(b)}
+                        className="text-[11px] font-medium text-white/25 transition hover:text-[#ee2435]">
+                        Delete
                       </button>
                     </td>
                   </tr>

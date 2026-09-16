@@ -63,6 +63,8 @@ export default function WorkshopRegisterForm({ workshop }) {
     email: '',
     phone: '',
     packageId: activePkg?.id ?? '',
+    gender: '',
+    songSuggestion: '',
     dietaryNotes: '',
     heardFrom: '',
   });
@@ -102,14 +104,16 @@ export default function WorkshopRegisterForm({ workshop }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          workshop_id:   workshop.id,
-          package_id:    selectedPkg?.id ?? null,
-          parent_name:   form.name.trim(),
-          parent_email:  form.email.trim(),
-          parent_phone:  form.phone,
-          children:      [],
-          dietary_notes: form.dietaryNotes.trim() || null,
-          heard_from:    form.heardFrom || null,
+          workshop_id:     workshop.id,
+          package_id:      selectedPkg?.id ?? null,
+          parent_name:     form.name.trim(),
+          parent_email:    form.email.trim(),
+          parent_phone:    form.phone,
+          children:        [],
+          gender:          form.gender || null,
+          song_suggestion: form.songSuggestion.trim() || null,
+          dietary_notes:   form.dietaryNotes.trim() || null,
+          heard_from:      form.heardFrom || null,
         }),
       });
 
@@ -199,6 +203,35 @@ export default function WorkshopRegisterForm({ workshop }) {
                   />
                 </Field>
 
+                <div className="mt-5">
+                  <Field label="Gender">
+                    <div className="flex flex-wrap gap-2.5">
+                      {[
+                        { v: 'male', label: 'Male' },
+                        { v: 'female', label: 'Female' },
+                        { v: 'other', label: 'Other' },
+                        { v: 'prefer_not', label: 'Prefer not to say' },
+                      ].map((opt) => {
+                        const active = form.gender === opt.v;
+                        return (
+                          <button
+                            key={opt.v}
+                            type="button"
+                            onClick={() => set('gender', active ? '' : opt.v)}
+                            className={`rounded-xl border px-3 py-2.5 text-sm font-medium transition ${
+                              active
+                                ? 'border-[#d1060f] bg-[#d1060f]/[0.04] text-[#d1060f]'
+                                : 'border-[#0a0a0f]/12 bg-white text-[#0a0a0f]/75 hover:border-[#0a0a0f]/25'
+                            }`}
+                          >
+                            {opt.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </Field>
+                </div>
+
                 <div className="mt-5 grid gap-5 md:grid-cols-2">
                   <Field label="WhatsApp / Phone" required error={errors.phone}>
                     <PhoneInput
@@ -258,6 +291,16 @@ export default function WorkshopRegisterForm({ workshop }) {
               {/* 03 — Notes */}
               <div>
                 <SectionHead num={packages.length > 0 ? '03' : '02'} label="Anything else? (optional)" />
+                <Field label="Any song suggestions for the workshop?">
+                  <input
+                    type="text"
+                    value={form.songSuggestion}
+                    onChange={(e) => set('songSuggestion', e.target.value)}
+                    placeholder="e.g. Dilbar, Kala Chashma, Besharam Rang…"
+                    className={inputBase}
+                  />
+                </Field>
+                <div className="mt-5">
                 <Field label="Anything you'd like us to know?">
                   <textarea
                     value={form.dietaryNotes}
@@ -267,6 +310,7 @@ export default function WorkshopRegisterForm({ workshop }) {
                     className={`${inputBase} resize-none`}
                   />
                 </Field>
+                </div>
                 <div className="mt-5">
                   <Field label="How did you hear about us?">
                     <div className="grid grid-cols-3 gap-2.5">

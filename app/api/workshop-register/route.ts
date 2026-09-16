@@ -38,6 +38,8 @@ export async function POST(request: Request) {
     parent_email,
     parent_phone,
     children,
+    gender,
+    song_suggestion,
     dietary_notes,
     heard_from,
   } = body as Record<string, any>;
@@ -128,8 +130,10 @@ export async function POST(request: Request) {
       children:      Array.isArray(children)
         ? children.map((c: any) => ({ name: String(c.name ?? '').trim(), age: String(c.age ?? '') }))
         : [],
-      dietary_notes: dietary_notes ? String(dietary_notes).trim() || null : null,
-      heard_from:    heard_from    ? String(heard_from)            || null : null,
+      gender:          gender          ? String(gender).trim()          || null : null,
+      song_suggestion: song_suggestion ? String(song_suggestion).trim() || null : null,
+      dietary_notes:   dietary_notes   ? String(dietary_notes).trim()   || null : null,
+      heard_from:      heard_from      ? String(heard_from)             || null : null,
       payment_status: 'pending',
     }])
     .select('qr_token')

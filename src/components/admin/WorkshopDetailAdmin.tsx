@@ -245,7 +245,17 @@ export default function WorkshopDetailAdmin({ workshopId }) {
                   <tr key={b.id} className="hover:bg-white/[0.04]">
                     <td className="px-4 py-3">
                       <div className="font-medium text-white">{b.parent_name}</div>
-                      <div className="font-mono text-[10px] text-white/40">{b.qr_token ? `${b.qr_token.slice(0, 8)}…` : '—'}</div>
+                      <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                        {b.gender && (
+                          <span className="text-[10px] text-white/45 capitalize">{b.gender.replace('_', ' ')}</span>
+                        )}
+                        {b.song_suggestion && (
+                          <span className="text-[10px] text-[#ee2435]/70" title={b.song_suggestion}>
+                            ♪ {b.song_suggestion.length > 28 ? b.song_suggestion.slice(0, 28) + '…' : b.song_suggestion}
+                          </span>
+                        )}
+                      </div>
+                      <div className="font-mono text-[10px] text-white/30">{b.qr_token ? `${b.qr_token.slice(0, 8)}…` : '—'}</div>
                     </td>
                     <td className="px-4 py-3 text-xs">
                       <div className="text-white/85">{b.parent_email}</div>

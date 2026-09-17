@@ -118,34 +118,46 @@ export default function WorkshopTicket({ booking }) {
               <div className="border-t border-dashed border-[#0a0a0f]/15 mx-7 md:mx-10" />
             </div>
 
-            {/* QR */}
-            <div className="grid items-center gap-7 p-7 md:grid-cols-[auto_1fr] md:gap-10 md:p-10">
-              <div className="grid place-items-center rounded-2xl bg-white p-4 ring-1 ring-[#0a0a0f]/8">
-                <QRCodeSVG
-                  value={`https://cherrydancestudios.com/checkin/${qr_token}`}
-                  size={144}
-                  bgColor="#ffffff"
-                  fgColor="#0a0a0f"
-                  level="M"
-                  marginSize={0}
-                />
+            {/* QR — only show once payment is confirmed */}
+            {payment_status === 'paid' ? (
+              <div className="grid items-center gap-7 p-7 md:grid-cols-[auto_1fr] md:gap-10 md:p-10">
+                <div className="grid place-items-center rounded-2xl bg-white p-4 ring-1 ring-[#0a0a0f]/8">
+                  <QRCodeSVG
+                    value={`https://cherrydancestudios.com/checkin/${qr_token}`}
+                    size={144}
+                    bgColor="#ffffff"
+                    fgColor="#0a0a0f"
+                    level="M"
+                    marginSize={0}
+                  />
+                </div>
+                <div>
+                  <p className="font-[family-name:var(--font-display)] text-[0.65rem] font-semibold uppercase tracking-[0.3em] text-[#d1060f]">
+                    Check-in code
+                  </p>
+                  <p className="mt-2 font-[family-name:var(--font-display)] text-lg font-bold tracking-tight text-[#0a0a0f]">
+                    Show this at the door.
+                  </p>
+                  <p className="mt-2 text-sm leading-relaxed text-[#0a0a0f]/65">
+                    Save this page or take a screenshot. Our team will scan the QR to check
+                    you in on the day of the workshop.
+                  </p>
+                  <p className="mt-3 font-mono text-[10px] uppercase tracking-wider text-[#0a0a0f]/40">
+                    {qr_token}
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="font-[family-name:var(--font-display)] text-[0.65rem] font-semibold uppercase tracking-[0.3em] text-[#d1060f]">
-                  Check-in code
-                </p>
-                <p className="mt-2 font-[family-name:var(--font-display)] text-lg font-bold tracking-tight text-[#0a0a0f]">
-                  Show this at the door.
-                </p>
-                <p className="mt-2 text-sm leading-relaxed text-[#0a0a0f]/65">
-                  Save this page or take a screenshot. Our team will scan the QR to check
-                  you in on the day of the workshop.
-                </p>
-                <p className="mt-3 font-mono text-[10px] uppercase tracking-wider text-[#0a0a0f]/40">
-                  {qr_token}
+            ) : (
+              <div className="p-7 md:p-10">
+                <p className="text-sm text-[#0a0a0f]/55">
+                  Your QR check-in code will appear here once payment is confirmed — usually within a few seconds.{' '}
+                  <button type="button" onClick={() => window.location.reload()}
+                    className="font-semibold text-[#d1060f] underline">
+                    Refresh
+                  </button>
                 </p>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Payment instructions */}

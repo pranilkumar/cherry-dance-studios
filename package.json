@@ -27,6 +27,7 @@
     "react-phone-input-2": "^2.15.1",
     "recharts": "^2.15.0",
     "server-only": "^0.0.1",
+    "stripe": "^22.6.2",
     "yet-another-react-lightbox": "^3.27.0",
     "zustand": "^5.0.3"
   },

@@ -97,10 +97,7 @@ export default function WorkshopRegisterForm({ workshop }) {
     setSubmitError('');
 
     try {
-      // All validation, capacity enforcement, duplicate checking, and price
-      // resolution happen server-side in /api/workshop-register so the client
-      // cannot tamper with price, bypass capacity, or double-book.
-      const res = await fetch('/api/workshop-register', {
+      const res = await fetch('/api/workshop-checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -125,27 +122,19 @@ export default function WorkshopRegisterForm({ workshop }) {
         return;
       }
 
-      if (!result.qr_token) {
-        throw new Error('No token returned from server.');
+      // Free workshop — go straight to ticket
+      if (result.free && result.ticketUrl) {
+        window.location.href = result.ticketUrl;
+        return;
       }
 
-      // Fire-and-forget admin notification — failure must not affect the user's UX.
-      fetch('/api/notify-admin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type:          'workshop',
-          workshopTitle: workshop.title ?? workshop.name ?? 'Workshop',
-          parentName:    form.name.trim(),
-          email:         form.email.trim(),
-          phone:         form.phone,
-          children:      [],
-          packageLabel:  selectedPkg?.label ?? null,
-          dietaryNotes:  form.dietaryNotes.trim() || null,
-        }),
-      }).catch(() => {});
+      // Paid workshop — redirect to Stripe Checkout
+      if (result.url) {
+        window.location.href = result.url;
+        return;
+      }
 
-      router.push(`/workshops/${workshop.slug}/ticket/${result.qr_token}`);
+      throw new Error('Unexpected response from checkout API.');
     } catch (err) {
       console.error('[workshop register] failed:', err);
       setSubmitError('Something went wrong. Please WhatsApp us at 613-890-3789 to register.');
@@ -374,7 +363,7 @@ export default function WorkshopRegisterForm({ workshop }) {
                   disabled={status === 'submitting'}
                   icon={status === 'submitting' ? null : <FaArrowRight />}
                 >
-                  {status === 'submitting' ? 'Reserving…' : 'Reserve my spot'}
+                  {status === 'submitting' ? 'Redirecting to payment…' : 'Reserve & pay'}
                 </GlowButton>
                 <p className="text-xs text-[#0a0a0f]/55">
                   Need help?{' '}

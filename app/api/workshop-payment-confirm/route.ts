@@ -8,7 +8,9 @@ const esc = (v: any) =>
 
 export async function POST(request: Request) {
   const token = (request as any).cookies?.get?.(ADMIN_COOKIE)?.value;
-  if (!verifyAdminToken(token)) {
+  const internalToken = request.headers.get('x-internal-webhook');
+  const isInternal = internalToken && internalToken === process.env.STRIPE_WEBHOOK_SECRET;
+  if (!isInternal && !verifyAdminToken(token)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

@@ -89,21 +89,29 @@ export async function POST(request: Request) {
   }
 
   // ── Duplicate check ──────────────────────────────────────────────────────────
-  const { data: existing } = await supabaseAdmin
+  const { data: existingPaid } = await supabaseAdmin
     .from('workshop_bookings')
     .select('id')
     .eq('workshop_id', workshop_id)
     .eq('parent_email', email)
-    .neq('payment_status', 'cancelled')
+    .eq('payment_status', 'paid')
     .limit(1)
     .maybeSingle();
 
-  if (existing) {
+  if (existingPaid) {
     return NextResponse.json(
-      { error: 'This email already has a booking for this workshop. Check your inbox for your ticket.' },
+      { error: 'This email already has a confirmed booking for this workshop. Check your inbox for your ticket.' },
       { status: 409 }
     );
   }
+
+  // Cancel any abandoned pending bookings for this email so they can retry
+  await supabaseAdmin
+    .from('workshop_bookings')
+    .update({ payment_status: 'cancelled' })
+    .eq('workshop_id', workshop_id)
+    .eq('parent_email', email)
+    .eq('payment_status', 'pending');
 
   // ── Create pending booking ───────────────────────────────────────────────────
   const { data: booking, error: insertErr } = await supabaseAdmin

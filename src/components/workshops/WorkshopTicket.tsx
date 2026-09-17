@@ -148,9 +148,31 @@ export default function WorkshopTicket({ booking }) {
                 </div>
               </div>
             ) : (
-              <div className="p-7 md:p-10">
+              <div className="p-7 md:p-10 space-y-5">
+                {/* E-Transfer instructions */}
+                {amount_cents != null && amount_cents > 0 && (
+                  <div className="rounded-2xl border border-[#0a0a0f]/8 bg-[#f9f9fc] p-5">
+                    <p className="font-[family-name:var(--font-display)] text-[0.65rem] font-semibold uppercase tracking-[0.3em] text-[#d1060f]">
+                      Complete your payment
+                    </p>
+                    <p className="mt-3 text-sm leading-relaxed text-[#0a0a0f]/75">
+                      Send an Interac e-Transfer to:
+                    </p>
+                    <p className="mt-1 font-semibold text-[#0a0a0f]">cherrydancestudio.cds@gmail.com</p>
+                    <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <p className="text-[#0a0a0f]/50 text-xs">Amount</p>
+                        <p className="font-bold text-[#0a0a0f]">{formatPrice(amount_cents)}</p>
+                      </div>
+                      <div>
+                        <p className="text-[#0a0a0f]/50 text-xs">Reference / message</p>
+                        <p className="font-bold text-[#0a0a0f]">{parent_name}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <p className="text-sm text-[#0a0a0f]/55">
-                  Your QR check-in code will appear here once payment is confirmed — usually within a few seconds.{' '}
+                  Your QR check-in code will appear here once we confirm your payment — usually within a few hours.{' '}
                   <button type="button" onClick={() => window.location.reload()}
                     className="font-semibold text-[#d1060f] underline">
                     Refresh

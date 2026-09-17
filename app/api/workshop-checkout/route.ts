@@ -30,6 +30,7 @@ export async function POST(request: Request) {
     song_suggestion,
     dietary_notes,
     heard_from,
+    payment_method,
   } = body as Record<string, any>;
 
   if (!workshop_id || !parent_name || !parent_email) {
@@ -140,6 +141,31 @@ export async function POST(request: Request) {
   }
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://cherrydancestudios.com';
+
+  // ── E-Transfer — skip Stripe, leave pending, show instructions ──────────────
+  if (payment_method === 'etransfer' && amountCents > 0) {
+    // Notify admin so they know to watch for the transfer
+    fetch(`${siteUrl}/api/notify-admin`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type:          'workshop',
+        workshopTitle: workshop.title,
+        parentName:    String(parent_name).trim(),
+        email,
+        phone:         parent_phone ?? null,
+        children:      [],
+        packageLabel:  resolvedPkg?.label ?? null,
+        dietaryNotes:  dietary_notes ?? null,
+        note:          `Payment method: Interac e-Transfer (pending)`,
+      }),
+    }).catch(() => {});
+
+    return NextResponse.json({
+      etransfer: true,
+      ticketUrl: `${siteUrl}/workshops/${workshop.slug}/ticket/${booking.qr_token}`,
+    });
+  }
 
   // ── Free workshop — skip Stripe, mark paid immediately ──────────────────────
   if (amountCents === 0) {

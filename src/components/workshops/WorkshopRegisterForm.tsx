@@ -69,7 +69,7 @@ export default function WorkshopRegisterForm({ workshop }) {
     heardFrom: '',
   });
   const [errors, setErrors] = useState<Record<string, any>>({});
-  const [status, setStatus] = useState('idle'); // idle | submitting | error
+  const [status, setStatus] = useState('idle'); // idle | submitting-card | submitting-etransfer | error
   const [submitError, setSubmitError] = useState('');
 
   const set = (field, value) => {
@@ -90,10 +90,9 @@ export default function WorkshopRegisterForm({ workshop }) {
     return Object.keys(e).length === 0;
   };
 
-  const handleSubmit = async (ev) => {
-    ev.preventDefault();
+  const handleSubmit = async (paymentMethod: 'card' | 'etransfer') => {
     if (!validate()) return;
-    setStatus('submitting');
+    setStatus(paymentMethod === 'card' ? 'submitting-card' : 'submitting-etransfer');
     setSubmitError('');
 
     try {
@@ -111,6 +110,7 @@ export default function WorkshopRegisterForm({ workshop }) {
           song_suggestion: form.songSuggestion.trim() || null,
           dietary_notes:   form.dietaryNotes.trim() || null,
           heard_from:      form.heardFrom || null,
+          payment_method:  paymentMethod,
         }),
       });
 
@@ -124,6 +124,12 @@ export default function WorkshopRegisterForm({ workshop }) {
 
       // Free workshop — go straight to ticket
       if (result.free && result.ticketUrl) {
+        window.location.href = result.ticketUrl;
+        return;
+      }
+
+      // E-Transfer — go to ticket page showing instructions
+      if (result.etransfer && result.ticketUrl) {
         window.location.href = result.ticketUrl;
         return;
       }
@@ -177,7 +183,7 @@ export default function WorkshopRegisterForm({ workshop }) {
             viewport={{ once: true }}
             className="rounded-3xl border border-[#0a0a0f]/8 bg-white p-6 shadow-[0_12px_48px_rgba(10,10,15,0.06)] md:p-10"
           >
-            <form onSubmit={handleSubmit} noValidate className="space-y-10">
+            <form onSubmit={(e) => e.preventDefault()} noValidate className="space-y-10">
               {/* 01 — Your details */}
               <div>
                 <SectionHead num="01" label="Your details" />
@@ -356,15 +362,27 @@ export default function WorkshopRegisterForm({ workshop }) {
 
               {/* Submit */}
               <div className="flex flex-col items-center gap-3 pt-2">
-                <GlowButton
-                  type="submit"
-                  variant="primary"
-                  size="lg"
-                  disabled={status === 'submitting'}
-                  icon={status === 'submitting' ? null : <FaArrowRight />}
-                >
-                  {status === 'submitting' ? 'Redirecting to payment…' : 'Reserve & pay'}
-                </GlowButton>
+                <div className="w-full space-y-3">
+                  <GlowButton
+                    type="button"
+                    variant="primary"
+                    size="lg"
+                    disabled={status === 'submitting-card' || status === 'submitting-etransfer'}
+                    icon={status === 'submitting-card' ? null : <FaArrowRight />}
+                    onClick={() => handleSubmit('card')}
+                    className="w-full"
+                  >
+                    {status === 'submitting-card' ? 'Redirecting to payment…' : 'Pay by card'}
+                  </GlowButton>
+                  <button
+                    type="button"
+                    disabled={status === 'submitting-card' || status === 'submitting-etransfer'}
+                    onClick={() => handleSubmit('etransfer')}
+                    className="w-full rounded-full border border-[#0a0a0f]/15 bg-white px-6 py-3.5 text-base font-semibold text-[#0a0a0f] transition hover:border-[#0a0a0f]/30 disabled:opacity-50"
+                  >
+                    {status === 'submitting-etransfer' ? 'Reserving your spot…' : 'Pay by Interac e-Transfer'}
+                  </button>
+                </div>
                 <p className="text-xs text-[#0a0a0f]/55">
                   Need help?{' '}
                   <a href="https://wa.me/16138903789" className="font-semibold text-[#d1060f]">

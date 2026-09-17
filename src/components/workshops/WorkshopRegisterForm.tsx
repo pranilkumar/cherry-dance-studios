@@ -71,6 +71,7 @@ export default function WorkshopRegisterForm({ workshop }) {
   const [errors, setErrors] = useState<Record<string, any>>({});
   const [status, setStatus] = useState('idle'); // idle | submitting-card | submitting-etransfer | error
   const [submitError, setSubmitError] = useState('');
+  const [showETransfer, setShowETransfer] = useState(false);
 
   const set = (field, value) => {
     setForm((f) => ({ ...f, [field]: value }));
@@ -360,36 +361,82 @@ export default function WorkshopRegisterForm({ workshop }) {
                 </div>
               )}
 
-              {/* Submit */}
-              <div className="flex flex-col items-center gap-3 pt-2">
-                <div className="w-full space-y-3">
-                  <GlowButton
-                    type="button"
-                    variant="primary"
-                    size="lg"
-                    disabled={status === 'submitting-card' || status === 'submitting-etransfer'}
-                    icon={status === 'submitting-card' ? null : <FaArrowRight />}
-                    onClick={() => handleSubmit('card')}
-                    className="w-full"
-                  >
-                    {status === 'submitting-card' ? 'Redirecting to payment…' : 'Pay by card'}
-                  </GlowButton>
-                  <button
-                    type="button"
-                    disabled={status === 'submitting-card' || status === 'submitting-etransfer'}
-                    onClick={() => handleSubmit('etransfer')}
-                    className="w-full rounded-full border border-[#0a0a0f]/15 bg-white px-6 py-3.5 text-base font-semibold text-[#0a0a0f] transition hover:border-[#0a0a0f]/30 disabled:opacity-50"
-                  >
-                    {status === 'submitting-etransfer' ? 'Reserving your spot…' : 'Pay by Interac e-Transfer'}
-                  </button>
+              {/* E-Transfer inline panel */}
+              {showETransfer && selectedPkg && (
+                <div className="rounded-2xl border border-[#0a0a0f]/10 bg-[#f9f9fc] p-6 space-y-4">
+                  <p className="font-[family-name:var(--font-display)] text-[0.65rem] font-semibold uppercase tracking-[0.3em] text-[#d1060f]">
+                    Pay by Interac e-Transfer
+                  </p>
+                  <p className="text-sm text-[#0a0a0f]/70">
+                    Send the e-Transfer <strong className="text-[#0a0a0f]">before</strong> clicking the button below, then we'll reserve your spot.
+                  </p>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 text-sm">
+                    <div className="rounded-xl border border-[#0a0a0f]/8 bg-white p-3">
+                      <p className="text-[0.65rem] font-semibold uppercase tracking-wider text-[#0a0a0f]/40 mb-1">Send to</p>
+                      <p className="font-semibold text-[#0a0a0f] break-all">cherrydancestudio.cds@gmail.com</p>
+                    </div>
+                    <div className="rounded-xl border border-[#0a0a0f]/8 bg-white p-3">
+                      <p className="text-[0.65rem] font-semibold uppercase tracking-wider text-[#0a0a0f]/40 mb-1">Amount</p>
+                      <p className="font-bold text-[#d1060f] text-lg">{formatPrice(selectedPkg.price_cents)}</p>
+                    </div>
+                    <div className="rounded-xl border border-[#0a0a0f]/8 bg-white p-3">
+                      <p className="text-[0.65rem] font-semibold uppercase tracking-wider text-[#0a0a0f]/40 mb-1">Reference</p>
+                      <p className="font-semibold text-[#0a0a0f]">{form.name.trim() || 'Your name'}</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-2 pt-1">
+                    <GlowButton
+                      type="button"
+                      variant="primary"
+                      size="lg"
+                      disabled={status === 'submitting-etransfer'}
+                      icon={status === 'submitting-etransfer' ? null : <FaArrowRight />}
+                      onClick={() => handleSubmit('etransfer')}
+                    >
+                      {status === 'submitting-etransfer' ? 'Reserving your spot…' : "I've sent the payment — complete my registration"}
+                    </GlowButton>
+                    <button
+                      type="button"
+                      onClick={() => setShowETransfer(false)}
+                      className="text-xs text-[#0a0a0f]/45 hover:text-[#0a0a0f]/70 transition"
+                    >
+                      Go back
+                    </button>
+                  </div>
                 </div>
-                <p className="text-xs text-[#0a0a0f]/55">
-                  Need help?{' '}
-                  <a href="https://wa.me/16138903789" className="font-semibold text-[#d1060f]">
-                    WhatsApp 613-890-3789
-                  </a>
-                </p>
-              </div>
+              )}
+
+              {/* Submit */}
+              {!showETransfer && (
+                <div className="flex flex-col items-center gap-3 pt-2">
+                  <div className="w-full space-y-3">
+                    <GlowButton
+                      type="button"
+                      variant="primary"
+                      size="lg"
+                      disabled={status === 'submitting-card'}
+                      icon={status === 'submitting-card' ? null : <FaArrowRight />}
+                      onClick={() => handleSubmit('card')}
+                      className="w-full"
+                    >
+                      {status === 'submitting-card' ? 'Redirecting to payment…' : 'Pay by card'}
+                    </GlowButton>
+                    <button
+                      type="button"
+                      onClick={() => { if (validate()) setShowETransfer(true); }}
+                      className="w-full rounded-full border border-[#0a0a0f]/15 bg-white px-6 py-3.5 text-base font-semibold text-[#0a0a0f] transition hover:border-[#0a0a0f]/30"
+                    >
+                      Pay by Interac e-Transfer
+                    </button>
+                  </div>
+                  <p className="text-xs text-[#0a0a0f]/55">
+                    Need help?{' '}
+                    <a href="https://wa.me/16138903789" className="font-semibold text-[#d1060f]">
+                      WhatsApp 613-890-3789
+                    </a>
+                  </p>
+                </div>
+              )}
             </form>
           </motion.div>
         </div>

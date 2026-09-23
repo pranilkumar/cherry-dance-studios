@@ -7,6 +7,16 @@ const nextConfig = {
     ],
   },
 
+  async redirects() {
+    return [
+      {
+        source: '/workshops/bollywood-dance-workshop-sept19/:path*',
+        destination: '/workshops/bollywood-dance-workshop-sept26/:path*',
+        permanent: false,
+      },
+    ];
+  },
+
   async headers() {
     return [
       {

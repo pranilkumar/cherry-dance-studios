@@ -130,7 +130,7 @@ export async function POST(request: Request) {
     // Notify admin so they know to watch for the transfer
     fetch(`${siteUrl}/api/notify-admin`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', origin: siteUrl },
       body: JSON.stringify({
         type:          'workshop',
         workshopTitle: workshop.title,

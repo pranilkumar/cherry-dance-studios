@@ -1,10 +1,23 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaTimes, FaArrowLeft, FaArrowRight } from 'react-icons/fa';
 import { GlowButton } from './ui';
+
+// Normalise tags into filter categories
+const TAG_MAP: Record<string, string> = {
+  'Ugadi 2026': 'Ugadi',
+  'Ugadi 2025': 'Ugadi',
+  'Ugadi': 'Ugadi',
+  'Holi': 'Holi',
+  'IFF': 'IFF',
+  'Workshop': 'Workshop',
+  'Performance': 'Performance',
+};
+const FILTER_TABS = ['All', 'Ugadi', 'Holi', 'IFF', 'Workshop', 'Performance'] as const;
+type Filter = typeof FILTER_TABS[number];
 
 import galleryImage1 from '../assets/images/Image1.webp';
 import galleryImage2 from '../assets/images/Image2.webp';
@@ -85,6 +98,16 @@ const HERO_FLOATS = [
 
 export default function FullGallery() {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const [activeFilter, setActiveFilter] = useState<Filter>('All');
+
+  // Indices of images that pass the active filter
+  const filteredIndices = useMemo(() => {
+    if (activeFilter === 'All') return galleryImages.map((_, i) => i);
+    return galleryImages
+      .map((img, i) => ({ img, i }))
+      .filter(({ img }) => TAG_MAP[img.tag] === activeFilter)
+      .map(({ i }) => i);
+  }, [activeFilter]);
 
   const close = useCallback(() => setOpenIndex(null), []);
   const next  = useCallback(() => setOpenIndex((i) => (i === null ? 0 : (i + 1) % galleryImages.length)), []);
@@ -184,6 +207,25 @@ export default function FullGallery() {
 
       {/* ── Editorial grid ──────────────────────────────────────────── */}
       <section className="bg-[#0d0d15] px-2 pb-24 pt-2 md:px-3">
+
+        {/* Filter tabs */}
+        <div className="mb-4 flex flex-wrap items-center gap-2 px-1 md:mb-6">
+          {FILTER_TABS.map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveFilter(tab)}
+              className={`rounded-full px-4 py-1.5 text-xs font-semibold uppercase tracking-wider transition ${
+                activeFilter === tab
+                  ? 'bg-[#d1060f] text-white shadow-[0_4px_16px_rgba(209,6,15,0.4)]'
+                  : 'border border-white/15 text-white/55 hover:border-white/30 hover:text-white'
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+          <span className="ml-2 text-xs text-white/25">{filteredIndices.length} photos</span>
+        </div>
+
         <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
@@ -191,15 +233,15 @@ export default function FullGallery() {
           transition={{ duration: 0.5 }}
           className="grid grid-cols-2 gap-2 md:grid-cols-3 md:gap-3"
         >
-          {galleryImages.map((image, i) => {
+          {filteredIndices.map((i, pos) => {
+            const image = galleryImages[i];
             const { cols, aspect } = GRID_LAYOUT[i] ?? { cols: 1, aspect: '1/1' };
             return (
               <motion.button
                 key={i}
                 initial={{ opacity: 0, y: 16 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: '-40px' }}
-                transition={{ duration: 0.5, delay: (i % 3) * 0.07, ease: [0.16, 1, 0.3, 1] }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: (pos % 3) * 0.06, ease: [0.16, 1, 0.3, 1] }}
                 onClick={() => setOpenIndex(i)}
                 aria-label={`Open ${image.alt}`}
                 className={`group relative overflow-hidden rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-[#d1060f] col-span-1 ${cols === 2 ? 'md:col-span-2' : ''}`}

@@ -6,11 +6,14 @@ import { FaWhatsapp, FaArrowRight } from 'react-icons/fa';
 import NavigationBar from './NavigationBar';
 import Home from './Home';
 import About from './About';
+import WhyCherry from './WhyCherry';
 import Classes from './Classes';
 import Gallery from './Gallery';
+import TestimonialsStrip from './TestimonialsStrip';
 import Instructors from './Instructors';
 import FAQ from './FAQ';
 import Contact from './Contact';
+import CTABand from './CTABand';
 import Register from './Register';
 import Footer from './Footer';
 
@@ -48,6 +51,7 @@ export default function HomeClient() {
       <main>
         <Home />
         <About />
+        <WhyCherry />
         <Classes />
 
         {/* ── Adult Bollywood Batch Banner ── */}
@@ -76,9 +80,11 @@ export default function HomeClient() {
         </section>
 
         <Gallery />
+        <TestimonialsStrip />
         <Instructors />
         <FAQ />
         <Contact />
+        <CTABand />
         <Register />
       </main>
       <Footer />

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaTimes, FaArrowLeft, FaArrowRight } from 'react-icons/fa';
-import { GlowButton, KineticHeading } from './ui';
+import { GlowButton } from './ui';
 
 import galleryImage1 from '../assets/images/Image1.webp';
 import galleryImage2 from '../assets/images/Image2.webp';
@@ -48,149 +48,192 @@ const galleryImages = [
   { src: galleryImage8.src, alt: 'Dance Performance 8', tag: 'Performance' },
 ];
 
+// Editorial grid layout: 3-col desktop, each item's column span and aspect ratio
+const GRID_LAYOUT = [
+  { cols: 2, aspect: '16/9' },
+  { cols: 1, aspect: '3/4'  },
+  { cols: 1, aspect: '1/1'  },
+  { cols: 1, aspect: '1/1'  },
+  { cols: 1, aspect: '1/1'  },
+  { cols: 1, aspect: '3/4'  },
+  { cols: 2, aspect: '16/9' },
+  { cols: 1, aspect: '1/1'  },
+  { cols: 1, aspect: '1/1'  },
+  { cols: 1, aspect: '1/1'  },
+  { cols: 2, aspect: '16/9' },
+  { cols: 1, aspect: '3/4'  },
+  { cols: 1, aspect: '1/1'  },
+  { cols: 1, aspect: '1/1'  },
+  { cols: 1, aspect: '1/1'  },
+  { cols: 1, aspect: '3/4'  },
+  { cols: 2, aspect: '16/9' },
+  { cols: 1, aspect: '1/1'  },
+  { cols: 2, aspect: '16/9' },
+];
+
+// Positions for scattered hero photos
+const HERO_FLOATS = [
+  { idx: 0,  className: 'top-[10%] left-[-1%] w-[260px]',  rotate: '-2.5deg' },
+  { idx: 1,  className: 'top-[5%] right-[-1%] w-[205px]',  rotate: '2deg'    },
+  { idx: 2,  className: 'top-[42%] left-[0%] w-[225px] -translate-y-1/2', rotate: '2deg' },
+  { idx: 3,  className: 'top-[38%] right-[0%] w-[185px] -translate-y-1/2', rotate: '-2deg' },
+  { idx: 4,  className: 'bottom-[10%] left-[5%] w-[235px]', rotate: '1.5deg' },
+  { idx: 5,  className: 'bottom-[6%] right-[3%] w-[210px]', rotate: '-1.5deg' },
+  { idx: 8,  className: 'top-[3%] left-[25%] w-[130px]',   rotate: '1.5deg'  },
+  { idx: 10, className: 'bottom-[12%] right-[20%] w-[140px]', rotate: '-2deg' },
+];
+
 export default function FullGallery() {
-  const [openIndex, setOpenIndex] = useState(null);
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   const close = useCallback(() => setOpenIndex(null), []);
-  const next = useCallback(() => {
-    setOpenIndex((i) => (i === null ? 0 : (i + 1) % galleryImages.length));
-  }, []);
-  const prev = useCallback(() => {
-    setOpenIndex((i) =>
-      i === null ? 0 : (i - 1 + galleryImages.length) % galleryImages.length
-    );
-  }, []);
+  const next  = useCallback(() => setOpenIndex((i) => (i === null ? 0 : (i + 1) % galleryImages.length)), []);
+  const prev  = useCallback(() => setOpenIndex((i) => (i === null ? 0 : (i - 1 + galleryImages.length) % galleryImages.length)), []);
 
   useEffect(() => {
     if (openIndex === null) return;
-    const onKey = (e) => {
+    const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') close();
       if (e.key === 'ArrowRight') next();
       if (e.key === 'ArrowLeft') prev();
     };
     window.addEventListener('keydown', onKey);
     document.body.style.overflow = 'hidden';
-    return () => {
-      window.removeEventListener('keydown', onKey);
-      document.body.style.overflow = '';
-    };
+    return () => { window.removeEventListener('keydown', onKey); document.body.style.overflow = ''; };
   }, [openIndex, close, next, prev]);
 
   return (
-    <main className="min-h-screen bg-[#f5f5f8]">
-      {/* Hero header */}
-      <section className="relative overflow-hidden bg-[#0a0a0f] pb-16 pt-32 text-white md:pb-20 md:pt-40">
-        {/* Red glow */}
+    <main className="min-h-screen bg-[#0a0a0f]">
+
+      {/* ── Scattered-photo hero ────────────────────────────────────── */}
+      <section className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#0a0a0f]">
+
+        {/* Red ambient glow */}
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0"
-          style={{
-            background:
-              'radial-gradient(ellipse at 50% 0%, rgba(209,6,15,0.2) 0%, transparent 60%)',
-          }}
+          style={{ background: 'radial-gradient(ellipse at 50% 50%, rgba(209,6,15,0.14) 0%, transparent 65%)' }}
         />
 
-        <div className="relative mx-auto max-w-5xl px-6 text-center">
+        {/* Floating photos — desktop only */}
+        {HERO_FLOATS.map(({ idx, className, rotate }, i) => (
+          <motion.button
+            key={idx}
+            initial={{ opacity: 0, scale: 0.92 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.08 * i, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            onClick={() => setOpenIndex(idx)}
+            aria-label={`Open ${galleryImages[idx].alt}`}
+            className={`absolute hidden overflow-hidden rounded-2xl shadow-[0_24px_70px_rgba(0,0,0,0.65)] transition duration-500 hover:z-20 hover:scale-[1.04] focus:outline-none xl:block ${className}`}
+            style={{ transform: `rotate(${rotate})` }}
+          >
+            <img
+              src={galleryImages[idx].src}
+              alt={galleryImages[idx].alt}
+              className="block h-full w-full object-cover"
+            />
+            {/* Subtle dark vignette */}
+            <div className="absolute inset-0 bg-[#0a0a0f]/20" />
+          </motion.button>
+        ))}
+
+        {/* Central text */}
+        <div className="relative z-10 px-6 py-40 text-center">
           <motion.span
-            initial={{ opacity: 0, y: -6 }}
+            initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="inline-block font-[family-name:var(--font-display)] text-xs font-semibold uppercase tracking-[0.4em] text-white/65"
+            className="inline-block font-[family-name:var(--font-display)] text-[0.65rem] font-semibold uppercase tracking-[0.4em] text-white/50"
           >
             Cherry{' '}
-            <span className="bg-gradient-to-r from-[#d1060f] to-[#ee2435] bg-clip-text text-transparent">
-              Dance Studios
-            </span>
+            <span className="text-[#ee2435]">Dance Studios</span>
           </motion.span>
 
-          <KineticHeading
-            as="h1"
-            split="word"
-            className="mt-5 text-[clamp(2.5rem,7vw,5rem)] text-white"
+          <motion.h1
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+            className="mt-5 font-[family-name:var(--font-display)] font-bold leading-[0.9] tracking-[-0.04em] text-[clamp(3rem,9vw,6.5rem)] text-white"
           >
-            The full
-          </KineticHeading>
-          <KineticHeading
-            as="h1"
-            split="word"
-            gradient="cherry"
-            className="-mt-2 text-[clamp(2.5rem,7vw,5rem)]"
-          >
-            gallery.
-          </KineticHeading>
+            The full<br />
+            <span className="bg-gradient-to-r from-[#d1060f] to-[#ee2435] bg-clip-text text-transparent">
+              gallery.
+            </span>
+          </motion.h1>
 
           <motion.p
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, duration: 0.6 }}
-            className="mt-6 text-base text-white/65 md:text-lg"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.35, duration: 0.6 }}
+            className="mt-6 text-sm text-white/45 md:text-base"
           >
-            Performances, festivals, workshops — every moment from the studio.
-            <span className="ml-2 font-mono text-sm text-white/50">
-              {galleryImages.length} photos
-            </span>
+            Performances, festivals, workshops — every moment from the studio.{' '}
+            <span className="font-mono text-white/30">{galleryImages.length} photos</span>
+          </motion.p>
+
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.55, duration: 0.6 }}
+            className="mt-10 text-[10px] uppercase tracking-[0.35em] text-white/25"
+          >
+            ↓ scroll to browse
           </motion.p>
         </div>
       </section>
 
-      {/* Masonry grid */}
-      <section className="py-16 md:py-20">
-        <div className="mx-auto max-w-7xl px-6">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: '-50px' }}
-            variants={{
-              hidden: { opacity: 0 },
-              visible: { opacity: 1, transition: { staggerChildren: 0.03 } },
-            }}
-            className="columns-2 gap-3 md:columns-3 md:gap-4 lg:columns-4 xl:columns-5"
-          >
-            {galleryImages.map((image, i) => (
+      {/* ── Editorial grid ──────────────────────────────────────────── */}
+      <section className="bg-[#0d0d15] px-2 pb-24 pt-2 md:px-3">
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="grid grid-cols-2 gap-2 md:grid-cols-3 md:gap-3"
+        >
+          {galleryImages.map((image, i) => {
+            const { cols, aspect } = GRID_LAYOUT[i] ?? { cols: 1, aspect: '1/1' };
+            return (
               <motion.button
                 key={i}
-                variants={{
-                  hidden: { y: 16, opacity: 0 },
-                  visible: {
-                    y: 0,
-                    opacity: 1,
-                    transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] },
-                  },
-                }}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-40px' }}
+                transition={{ duration: 0.5, delay: (i % 3) * 0.07, ease: [0.16, 1, 0.3, 1] }}
                 onClick={() => setOpenIndex(i)}
-                className="group relative mb-3 block w-full overflow-hidden rounded-2xl bg-[#0a0a0f]/[0.04] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#d1060f] md:mb-4"
-                style={{ breakInside: 'avoid' }}
                 aria-label={`Open ${image.alt}`}
+                className={`group relative overflow-hidden rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-[#d1060f] col-span-1 ${cols === 2 ? 'md:col-span-2' : ''}`}
+                style={{ aspectRatio: aspect }}
               >
                 <img
                   src={image.src}
                   alt={image.alt}
                   loading="lazy"
-                  className="block w-full transition duration-700 ease-out group-hover:scale-[1.03]"
+                  className="absolute inset-0 h-full w-full object-cover transition duration-700 ease-out group-hover:scale-[1.05]"
                 />
-                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0a0a0f]/70 via-transparent to-transparent opacity-0 transition group-hover:opacity-100" />
-                <span className="pointer-events-none absolute bottom-3 left-3 translate-y-2 rounded-full bg-[#d1060f] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-white opacity-0 transition group-hover:translate-y-0 group-hover:opacity-100">
+                {/* Hover overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0f]/75 via-[#0a0a0f]/10 to-transparent opacity-0 transition duration-300 group-hover:opacity-100" />
+                {/* Tag pill */}
+                <span className="absolute bottom-3 left-3 translate-y-2 rounded-full bg-[#d1060f] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white opacity-0 transition duration-300 group-hover:translate-y-0 group-hover:opacity-100">
                   {image.tag}
                 </span>
               </motion.button>
-            ))}
-          </motion.div>
+            );
+          })}
+        </motion.div>
 
-          {/* Back to home */}
-          <div className="mt-16 flex flex-col items-center gap-3 text-center">
-            <p className="text-sm text-[#0a0a0f]/55">
-              That&apos;s the lot. Want to see them in motion?
-            </p>
-            <Link href="/" passHref legacyBehavior>
-              <GlowButton variant="ghost" size="md" icon={<FaArrowLeft />} iconPosition="left">
-                Back to home
-              </GlowButton>
-            </Link>
-          </div>
+        {/* Footer CTA */}
+        <div className="mt-20 flex flex-col items-center gap-4 text-center">
+          <p className="text-sm text-white/35">That&apos;s the lot.</p>
+          <Link href="/" passHref legacyBehavior>
+            <GlowButton variant="ghost" size="md" icon={<FaArrowLeft />} iconPosition="left">
+              Back to home
+            </GlowButton>
+          </Link>
         </div>
       </section>
 
-      {/* Lightbox */}
+      {/* ── Lightbox ────────────────────────────────────────────────── */}
       <AnimatePresence>
         {openIndex !== null && (
           <motion.div
@@ -212,29 +255,18 @@ export default function FullGallery() {
               onClick={(e) => e.stopPropagation()}
             />
 
-            <button
-              aria-label="Close"
-              onClick={close}
-              className="absolute right-4 top-4 grid h-12 w-12 place-items-center rounded-full border border-white/15 bg-white/5 text-white backdrop-blur-md transition hover:bg-white/10"
-            >
+            <button aria-label="Close" onClick={close}
+              className="absolute right-4 top-4 grid h-12 w-12 place-items-center rounded-full border border-white/15 bg-white/5 text-white backdrop-blur-md transition hover:bg-white/10">
               <FaTimes />
             </button>
-
-            <button
-              aria-label="Previous"
-              onClick={(e) => { e.stopPropagation(); prev(); }}
-              className="absolute left-4 top-1/2 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full border border-white/15 bg-white/5 text-white backdrop-blur-md transition hover:bg-white/10"
-            >
+            <button aria-label="Previous" onClick={(e) => { e.stopPropagation(); prev(); }}
+              className="absolute left-4 top-1/2 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full border border-white/15 bg-white/5 text-white backdrop-blur-md transition hover:bg-white/10">
               <FaArrowLeft />
             </button>
-            <button
-              aria-label="Next"
-              onClick={(e) => { e.stopPropagation(); next(); }}
-              className="absolute right-4 top-1/2 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full border border-white/15 bg-white/5 text-white backdrop-blur-md transition hover:bg-white/10"
-            >
+            <button aria-label="Next" onClick={(e) => { e.stopPropagation(); next(); }}
+              className="absolute right-4 top-1/2 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full border border-white/15 bg-white/5 text-white backdrop-blur-md transition hover:bg-white/10">
               <FaArrowRight />
             </button>
-
             <div
               className="absolute bottom-5 left-1/2 -translate-x-1/2 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-xs font-medium text-white/85 backdrop-blur-md"
               onClick={(e) => e.stopPropagation()}

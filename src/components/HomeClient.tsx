@@ -9,7 +9,7 @@ import About from './About';
 import WhyCherry from './WhyCherry';
 import Classes from './Classes';
 import Gallery from './Gallery';
-import TestimonialsStrip from './TestimonialsStrip';
+import LeaveReview from './LeaveReview';
 import Instructors from './Instructors';
 import FAQ from './FAQ';
 import Contact from './Contact';
@@ -80,7 +80,7 @@ export default function HomeClient() {
         </section>
 
         <Gallery />
-        <TestimonialsStrip />
+        <LeaveReview />
         <Instructors />
         <FAQ />
         <Contact />

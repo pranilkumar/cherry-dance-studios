@@ -2,8 +2,24 @@
 
 import { motion } from 'framer-motion';
 import { FaArrowRight } from 'react-icons/fa';
-import logo from '../assets/icons/logo.png';
 import { GlowButton } from './ui';
+
+import ugadiOTA2026   from '../assets/images/Ugadi OTA 2026.jpg';
+import ugadiOTA20262  from '../assets/images/Ugadi OTA 2026 2.JPG';
+import holiImage1     from '../assets/images/holi1.jpg';
+import holiImage3     from '../assets/images/holi3.jpg';
+import mothersDayWorkshop from '../assets/images/Mothers day workshop.jpg';
+import ugadiKids      from '../assets/images/ugadi kids.jpg';
+
+// Floating photo cards for the hero right column
+const HERO_PHOTOS = [
+  { src: ugadiOTA2026.src,          alt: 'Ugadi OTA 2026',         top: '6%',   left: '4%',   width: '54%', rotate: '-2.5deg' },
+  { src: ugadiOTA20262.src,         alt: 'Ugadi OTA 2026 — Group', top: '3%',   right: '2%',  width: '38%', rotate: '2deg'    },
+  { src: holiImage3.src,            alt: 'Holi Festival',          top: '38%',  left: '6%',   width: '44%', rotate: '1.5deg'  },
+  { src: mothersDayWorkshop.src,    alt: "Mother's Day Workshop",  bottom: '8%',right: '4%',  width: '46%', rotate: '-2deg'   },
+  { src: ugadiKids.src,             alt: 'Ugadi Kids',             bottom: '6%',left: '22%',  width: '34%', rotate: '1deg'    },
+  { src: holiImage1.src,            alt: 'Holi Celebration',       top: '50%',  right: '3%',  width: '32%', rotate: '-1.5deg' },
+];
 
 function scrollToSection(id) {
   return (e) => {
@@ -145,53 +161,41 @@ export default function Home() {
 
         </div>
 
-        {/* Right column — oversized logo */}
-        <div className="relative hidden overflow-hidden lg:flex lg:w-[42%] lg:items-center lg:justify-center">
+        {/* Right column — scattered floating photos */}
+        <div className="relative hidden overflow-hidden lg:block lg:w-[42%]">
           {/* Red atmospheric glow */}
           <div
             aria-hidden
-            className="absolute inset-0"
+            className="pointer-events-none absolute inset-0"
             style={{
               background:
-                'radial-gradient(ellipse at 55% 50%, rgba(209,6,15,0.22) 0%, transparent 65%)',
+                'radial-gradient(ellipse at 50% 50%, rgba(209,6,15,0.18) 0%, transparent 68%)',
             }}
           />
 
-          {/* Decorative concentric rings */}
-          {[520, 680, 840].map((size, i) => (
+          {HERO_PHOTOS.map(({ src, alt, width, rotate, ...pos }, i) => (
             <motion.div
-              key={size}
+              key={i}
               aria-hidden
-              initial={{ opacity: 0, scale: 0.6 }}
+              initial={{ opacity: 0, scale: 0.88 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{
-                delay: 0.3 + i * 0.15,
-                duration: 1.4,
-                ease: [0.16, 1, 0.3, 1],
-              }}
-              className="absolute rounded-full border"
-              style={{
-                width: size,
-                height: size,
-                borderColor: `rgba(209,6,15,${0.14 - i * 0.04})`,
-              }}
-            />
+              transition={{ delay: 0.15 + i * 0.1, duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+              className="absolute overflow-hidden rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.6)]"
+              style={{ width, rotate, ...pos } as React.CSSProperties}
+            >
+              <img
+                src={src}
+                alt={alt}
+                className="block h-full w-full object-cover"
+              />
+              <div className="absolute inset-0 bg-[#0a0a0f]/15" />
+            </motion.div>
           ))}
-
-          {/* Logo — big, centred, glowing */}
-          <motion.img
-            src={logo.src}
-            alt="Cherry Dance Studios"
-            initial={{ opacity: 0, scale: 0.65 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.2, duration: 1.1, ease: [0.16, 1, 0.3, 1] }}
-            className="relative z-10 h-auto w-[68%] max-w-xs drop-shadow-[0_0_100px_rgba(209,6,15,0.55)] xl:max-w-sm"
-          />
 
           {/* Vertical text accent along right edge */}
           <div
             aria-hidden
-            className="absolute right-5 top-1/2 -translate-y-1/2 -rotate-90 text-[9px] font-semibold uppercase tracking-[0.38em] text-white/18 whitespace-nowrap select-none"
+            className="absolute right-5 top-1/2 z-10 -translate-y-1/2 -rotate-90 select-none whitespace-nowrap text-[9px] font-semibold uppercase tracking-[0.38em] text-white/18"
           >
             Cherry Dance Studios · Est. 2024 · Barrhaven, Ottawa
           </div>

@@ -13,17 +13,21 @@ import mothersDayWorkshop  from '../assets/images/Mothers day workshop.jpg';
 import ugadiKids           from '../assets/images/ugadi kids.jpg';
 import ugadiDhamaka        from '../assets/images/ugadi dhamaka.jpg';
 
-// Photos scattered around the hero — absolute positions relative to full section
+// Positions are percentages inside a 150vw-wide, full-height stageInner div.
+// stageInner left edge = -25% of viewport. viewport starts at ~16.7% of stage.
+// viewport right = 100% + 25% of viewport = ~83.3% of stage (at 1440px: stageW=2160px)
+// Left-side photos bleed off left edge but stay partially visible (35–55% showing).
+// y: '-50%' vertically centres photo around its top anchor
 const HERO_FLOATS = [
-  { src: ugadiOTA2026.src,       alt: 'Ugadi OTA 2026',       className: 'top-[8%]    left-[-1%]   w-[240px]',                    rotate: '-2.5deg' },
-  { src: ugadiOTA20262.src,      alt: 'Ugadi OTA 2026 Group', className: 'top-[4%]    right-[-1%]  w-[200px]',                    rotate:  '2deg'   },
-  { src: holiImage3.src,         alt: 'Holi Festival',        className: 'top-[42%]   left-[-1%]   w-[220px] -translate-y-1/2',   rotate:  '2deg'   },
-  { src: mothersDayWorkshop.src, alt: "Mother's Day Workshop", className: 'top-[40%]   right-[-1%]  w-[190px] -translate-y-1/2',  rotate: '-1.5deg' },
-  { src: ugadiKids.src,          alt: 'Ugadi Kids',           className: 'bottom-[9%]  left-[4%]    w-[230px]',                   rotate:  '1.5deg' },
-  { src: holiImage4.src,         alt: 'Holi Team',            className: 'bottom-[6%]  right-[3%]   w-[215px]',                   rotate: '-1.5deg' },
-  { src: ugadiDhamaka.src,       alt: 'Ugadi Dhamaka',        className: 'top-[3%]    left-[24%]   w-[130px]',                   rotate:  '2deg'   },
-  { src: holiImage1.src,         alt: 'Holi Celebration',     className: 'bottom-[12%] right-[20%]  w-[140px]',                   rotate: '-2deg'   },
-];
+  { src: ugadiOTA2026.src,       alt: 'Ugadi OTA 2026',        left: '7%',  top: '5%',  width: '18%',                rotate: '-3deg'  },
+  { src: ugadiOTA20262.src,      alt: 'Ugadi OTA 2026 Group',  left: '73%', top: '2%',  width: '22%',                rotate:  '2deg'  },
+  { src: holiImage3.src,         alt: 'Holi Festival',         left: '5%',  top: '42%', width: '16%', y: '-50%',     rotate:  '2deg'  },
+  { src: mothersDayWorkshop.src, alt: "Mother's Day Workshop",  left: '77%', top: '40%', width: '14%', y: '-50%',     rotate: '-2deg'  },
+  { src: ugadiKids.src,          alt: 'Ugadi Kids',            left: '8%',  top: '72%', width: '17%',                rotate:  '1.5deg'},
+  { src: holiImage4.src,         alt: 'Holi Team',             left: '66%', top: '75%', width: '15%',                rotate: '-1.5deg'},
+  { src: ugadiDhamaka.src,       alt: 'Ugadi Dhamaka',         left: '25%', top: '8%',  width: '10%',                rotate:  '2.5deg'},
+  { src: holiImage1.src,         alt: 'Holi Celebration',      left: '56%', top: '76%', width: '9%',                 rotate: '-2.5deg'},
+] as const;
 
 const TICKER = ['Indian Dance', 'Bollywood', 'Semi-Classical', 'Hip-Hop', 'Freestyle'];
 
@@ -39,9 +43,12 @@ function scrollToSection(id: string) {
 
 export default function Home() {
   return (
+    // overflow: clip (not hidden) — lets absolutely-positioned children bleed
+    // beyond the section edge without creating scrollbars
     <section
       id="home"
-      className="relative flex min-h-[100svh] flex-col overflow-hidden bg-[#0a0a0f] text-white"
+      className="relative flex min-h-[100svh] flex-col bg-[#0a0a0f] text-white"
+      style={{ overflow: 'clip' }}
     >
       {/* Film grain */}
       <div
@@ -73,26 +80,49 @@ export default function Home() {
         }}
       />
 
-      {/* ── Floating photos — xl screens only ── */}
-      {HERO_FLOATS.map(({ src, alt, className, rotate }, i) => (
-        <motion.div
-          key={i}
-          aria-hidden
-          className={`absolute hidden overflow-hidden rounded-2xl shadow-[0_20px_64px_rgba(0,0,0,0.7)] xl:block ${className}`}
-          initial={{ opacity: 0, scale: 0.88 }}
-          animate={{ opacity: 1, scale: 1 }}
-          whileHover={{ scale: 1.06, zIndex: 20 }}
-          transition={{ delay: 0.08 * i, duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
-          style={{ rotate }}
+      {/* ── Photo stage — xl screens only ── */}
+      {/*
+        Outer wrapper fills the section.
+        stageInner is 150% wide and centered so photos can bleed off both edges.
+      */}
+      <div className="pointer-events-none absolute inset-0 hidden xl:block" aria-hidden style={{ zIndex: 0 }}>
+        <div
+          style={{
+            position: 'absolute',
+            width: '150%',
+            maxWidth: '2500px',
+            height: '100%',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+          }}
         >
-          <img src={src} alt={alt} className="block h-full w-full object-cover" loading="eager" />
-          {/* subtle dark vignette */}
-          <div className="absolute inset-0 bg-[#0a0a0f]/18 transition duration-300 group-hover:opacity-0" />
-        </motion.div>
-      ))}
+          {HERO_FLOATS.map(({ src, alt, left, top, width, rotate, y }, i) => (
+            // Outer div: entrance animation only
+            <motion.div
+              key={i}
+              className="absolute"
+              style={{ left, top, width, aspectRatio: '16/9', rotate, y: y ?? '0%' }}
+              initial={{ opacity: 0, scale: 0.88 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.08 * i, duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
+            >
+              {/* Inner div: hover scale only — fast separate transition */}
+              <motion.div
+                className="pointer-events-auto h-full w-full overflow-hidden rounded-2xl shadow-[0_20px_64px_rgba(0,0,0,0.7)]"
+                whileHover={{ scale: 1.06 }}
+                transition={{ duration: 0.18, ease: 'easeOut' }}
+              >
+                <img src={src} alt={alt} className="block h-full w-full object-cover" loading="eager" />
+                <div className="absolute inset-0 bg-[#0a0a0f]/15" />
+              </motion.div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
 
       {/* ── Centred text content ── */}
-      <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 pb-16 pt-28 text-center lg:pt-36 xl:px-80">
+      <div className="relative flex flex-1 flex-col items-center justify-center px-6 pb-16 pt-28 text-center lg:pt-36 xl:px-80" style={{ zIndex: 10 }}>
 
         {/* Eyebrow */}
         <motion.div
@@ -187,7 +217,7 @@ export default function Home() {
       </div>
 
       {/* ── Ticker strip ── */}
-      <div className="relative z-10 overflow-hidden border-t border-white/8 bg-[#0a0a0f]">
+      <div className="relative overflow-hidden border-t border-white/8 bg-[#0a0a0f]" style={{ zIndex: 10 }}>
         <motion.div
           className="flex w-max items-center gap-0 py-3.5 font-[family-name:var(--font-display)] text-[11px] font-bold uppercase tracking-[0.28em] text-white/25"
           animate={{ x: ['0%', '-50%'] }}
@@ -209,7 +239,7 @@ export default function Home() {
       </div>
 
       {/* Diagonal SVG cut */}
-      <div aria-hidden className="relative z-10 h-16 w-full overflow-hidden bg-[#0a0a0f]">
+      <div aria-hidden className="relative h-16 w-full overflow-hidden bg-[#0a0a0f]" style={{ zIndex: 10 }}>
         <svg
           viewBox="0 0 1440 64"
           className="absolute bottom-0 left-0 w-full"

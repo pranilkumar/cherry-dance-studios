@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { signAdminToken, cookieOptions, ADMIN_COOKIE } from '../../../../src/lib/adminAuth';
+import { signAdminToken, cookieOptions, ADMIN_COOKIE, TOKEN_MAX_AGE_LONG } from '../../../../src/lib/adminAuth';
 
 /**
  * Admin credential check.
@@ -83,7 +83,7 @@ export async function POST(request) {
     return NextResponse.json({ ok: false, error: 'Invalid request body.' }, { status: 400 });
   }
 
-  const { email, password } = body || {};
+  const { email, password, rememberMe } = body || {};
   if (!email || !password) {
     return NextResponse.json({ ok: false, error: 'Email and password are required.' }, { status: 400 });
   }
@@ -96,8 +96,9 @@ export async function POST(request) {
   const passwordMatch = safeEqual(password, validPassword);
 
   if (emailMatch && passwordMatch) {
-    const token = signAdminToken(validEmail);
-    const opts  = cookieOptions();
+    const ttl   = rememberMe ? TOKEN_MAX_AGE_LONG : undefined; // undefined → default 8 h
+    const token = signAdminToken(validEmail, ttl);
+    const opts  = cookieOptions(ttl);
     const res   = NextResponse.json({ ok: true, email: validEmail });
 
     res.cookies.set(ADMIN_COOKIE, token, {

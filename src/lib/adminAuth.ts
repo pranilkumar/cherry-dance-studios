@@ -15,8 +15,9 @@
 
 import crypto from 'crypto';
 
-export const ADMIN_COOKIE   = 'cds_admin_token';
-export const TOKEN_MAX_AGE  = 8 * 60 * 60; // 8 hours in seconds
+export const ADMIN_COOKIE        = 'cds_admin_token';
+export const TOKEN_MAX_AGE       = 8  * 60 * 60;           // 8 hours  (default)
+export const TOKEN_MAX_AGE_LONG  = 365 * 24 * 60 * 60;     // 365 days (remember me)
 
 function getSecret(): string {
   const s = process.env.ADMIN_JWT_SECRET;
@@ -37,9 +38,9 @@ function getSecret(): string {
  * @param {string} email
  * @returns {string}
  */
-export function signAdminToken(email) {
+export function signAdminToken(email, maxAge = TOKEN_MAX_AGE) {
   const iat = Math.floor(Date.now() / 1000);
-  const exp = iat + TOKEN_MAX_AGE;
+  const exp = iat + maxAge;
   const payload = Buffer.from(JSON.stringify({ email, iat, exp })).toString('base64url');
   const sig = crypto.createHmac('sha256', getSecret()).update(payload).digest('base64url');
   return `${payload}.${sig}`;

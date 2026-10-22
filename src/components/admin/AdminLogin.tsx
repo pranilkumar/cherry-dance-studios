@@ -13,6 +13,7 @@ import { FaLock, FaUser, FaArrowRight } from 'react-icons/fa';
 export default function AdminLogin() {
   const router = useRouter();
   const [credentials, setCredentials] = useState({ email: '', password: '' });
+  const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -25,7 +26,7 @@ export default function AdminLogin() {
       const res = await fetch('/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(credentials),
+        body: JSON.stringify({ ...credentials, rememberMe }),
       });
       const data = await res.json().catch(() => ({}));
 
@@ -117,6 +118,17 @@ export default function AdminLogin() {
                 className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-base text-white placeholder:text-white/30 transition focus:border-[#ee2435] focus:bg-white/[0.06] focus:outline-none focus:ring-4 focus:ring-[#d1060f]/20"
               />
             </div>
+
+            {/* Keep me signed in */}
+            <label className="flex cursor-pointer items-center gap-3">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="h-4 w-4 cursor-pointer accent-[#d1060f]"
+              />
+              <span className="text-sm text-white/65">Keep me signed in for 1 year</span>
+            </label>
 
             {error && (
               <div className="rounded-xl border border-[#d1060f]/30 bg-[#d1060f]/10 px-4 py-3 text-sm text-[#ee2435]">

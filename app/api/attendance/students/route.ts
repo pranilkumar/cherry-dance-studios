@@ -3,6 +3,7 @@ import { supabaseAdmin } from '../../../../src/lib/supabaseAdmin';
 import { verifyAdminToken } from '../../../../src/lib/adminAuth';
 
 // GET — public, used by iPad kiosk. Pass ?classId=<uuid>
+// Reads from the existing students table
 export async function GET(req: NextRequest) {
   if (!supabaseAdmin) return NextResponse.json({ error: 'DB unavailable' }, { status: 503 });
 
@@ -10,45 +11,25 @@ export async function GET(req: NextRequest) {
   if (!classId) return NextResponse.json({ error: 'classId required' }, { status: 400 });
 
   const { data, error } = await supabaseAdmin
-    .from('attendance_students')
-    .select('id, name')
-    .eq('class_id', classId)
-    .eq('active', true)
-    .order('name');
+    .from('students')
+    .select('id, student_name')
+    .eq('class_batch_id', classId)
+    .eq('status', 'active')
+    .order('student_name');
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ students: data });
+
+  const students = (data || []).map(s => ({ id: s.id, name: s.student_name }));
+  return NextResponse.json({ students });
 }
 
-// POST — admin only, add a student
+// Student management is handled in /admin/students
 export async function POST(req: NextRequest) {
   if (!verifyAdminToken(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  if (!supabaseAdmin) return NextResponse.json({ error: 'DB unavailable' }, { status: 503 });
-
-  const { classId, name } = await req.json();
-  if (!classId || !name?.trim()) return NextResponse.json({ error: 'classId and name required' }, { status: 400 });
-
-  const { data, error } = await supabaseAdmin
-    .from('attendance_students')
-    .insert({ class_id: classId, name: name.trim() })
-    .select()
-    .single();
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ student: data });
+  return NextResponse.json({ error: 'Manage students via /admin/students' }, { status: 400 });
 }
 
-// DELETE — admin only, deactivate a student
 export async function DELETE(req: NextRequest) {
   if (!verifyAdminToken(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  if (!supabaseAdmin) return NextResponse.json({ error: 'DB unavailable' }, { status: 503 });
-
-  const { id } = await req.json();
-  const { error } = await supabaseAdmin
-    .from('attendance_students')
-    .update({ active: false })
-    .eq('id', id);
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ error: 'Manage students via /admin/students' }, { status: 400 });
 }

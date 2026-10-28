@@ -14,8 +14,8 @@ export async function GET(req: NextRequest) {
     .from('attendance_records')
     .select(`
       id, date, marked_at,
-      student:attendance_students(id, name),
-      class:attendance_classes(id, name)
+      student:students(id, student_name),
+      class:class_batches(id, name)
     `)
     .order('date', { ascending: false })
     .order('marked_at', { ascending: true });
@@ -25,5 +25,12 @@ export async function GET(req: NextRequest) {
 
   const { data, error } = await query;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ records: data });
+
+  // Normalize student_name → name for the frontend
+  const records = (data || []).map((r: any) => ({
+    ...r,
+    student: r.student ? { id: r.student.id, name: r.student.student_name } : null,
+  }));
+
+  return NextResponse.json({ records });
 }

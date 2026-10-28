@@ -19,6 +19,7 @@ import {
   FaCalendarAlt,
   FaBullhorn,
   FaStar,
+  FaRuler,
 } from 'react-icons/fa';
 import logo from '../../assets/icons/logo.png';
 
@@ -44,6 +45,7 @@ const NAV = [
   { href: '/admin/audio',           icon: FaMusic,         label: 'Audio' },
   { href: '/admin/announcements',   icon: FaBullhorn,      label: 'Announcements' },
   { href: '/admin/events',          icon: FaStar,          label: 'Events' },
+  { href: '/admin/events/measurements', icon: FaRuler,     label: 'Measurements' },
 ];
 
 export default function AdminLayoutWrapper({

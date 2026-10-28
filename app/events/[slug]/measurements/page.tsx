@@ -37,7 +37,7 @@ export default async function MeasurementsPage({ params }: { params: Promise<{ s
         style={{ background: 'radial-gradient(circle,rgba(209,6,15,0.22) 0%,transparent 65%)' }}
       />
 
-      <div className="relative mx-auto max-w-lg">
+      <div className="relative mx-auto max-w-2xl">
         {/* Header */}
         <div className="mb-8 text-center">
           <p className="mb-2 font-[family-name:var(--font-display)] text-[10px] font-semibold uppercase tracking-[0.25em] text-[#d1060f]">

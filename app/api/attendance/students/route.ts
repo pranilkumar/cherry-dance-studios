@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
 
   let query = supabaseAdmin
     .from('students')
-    .select('id, student_name')
+    .select('id, student_name, profile_photo_url')
     .eq('status', 'active')
     .order('student_name');
 
@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  const students = (data || []).map(s => ({ id: s.id, name: s.student_name }));
+  const students = (data || []).map(s => ({ id: s.id, name: s.student_name, photoUrl: s.profile_photo_url || null }));
   return NextResponse.json({ students });
 }
 

@@ -6,14 +6,14 @@ export async function POST(req: NextRequest) {
   if (!supabaseAdmin) return NextResponse.json({ error: 'DB unavailable' }, { status: 503 });
 
   const { studentId, classId } = await req.json();
-  if (!studentId || !classId) return NextResponse.json({ error: 'studentId and classId required' }, { status: 400 });
+  if (!studentId) return NextResponse.json({ error: 'studentId required' }, { status: 400 });
 
   const today = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD in local time
 
   const { error } = await supabaseAdmin
     .from('attendance_records')
     .upsert(
-      { student_id: studentId, class_id: classId, date: today },
+      { student_id: studentId, class_id: classId || null, date: today },
       { onConflict: 'student_id,date', ignoreDuplicates: true }
     );
 

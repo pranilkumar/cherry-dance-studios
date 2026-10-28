@@ -10,12 +10,15 @@ export async function GET(req: NextRequest) {
   const classId = req.nextUrl.searchParams.get('classId');
   if (!classId) return NextResponse.json({ error: 'classId required' }, { status: 400 });
 
-  const { data, error } = await supabaseAdmin
+  let query = supabaseAdmin
     .from('students')
     .select('id, student_name')
-    .eq('class_batch_id', classId)
     .eq('status', 'active')
     .order('student_name');
+
+  if (classId !== 'all') query = query.eq('class_batch_id', classId);
+
+  const { data, error } = await query;
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 

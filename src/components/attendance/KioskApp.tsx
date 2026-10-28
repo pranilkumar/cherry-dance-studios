@@ -18,6 +18,8 @@ export default function KioskApp() {
   const [justMarked, setJustMarked] = useState<string | null>(null); // for tap animation
   const resetTimer                  = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const ALL_STUDENTS: AttendanceClass = { id: 'all', name: 'All Students', schedule: 'Special practice / event' };
+
   // Load classes on mount
   useEffect(() => {
     fetch('/api/attendance/classes')
@@ -43,7 +45,9 @@ export default function KioskApp() {
 
     const [studRes, todayRes] = await Promise.all([
       fetch(`/api/attendance/students?classId=${cls.id}`).then(r => r.json()),
-      fetch(`/api/attendance/today?classId=${cls.id}`).then(r => r.json()),
+      cls.id !== 'all'
+        ? fetch(`/api/attendance/today?classId=${cls.id}`).then(r => r.json())
+        : Promise.resolve({ present: [] }),
     ]);
 
     setStudents(studRes.students || []);
@@ -72,7 +76,7 @@ export default function KioskApp() {
     await fetch('/api/attendance/mark', {
       method,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ studentId: student.id, classId: selected.id }),
+      body: JSON.stringify({ studentId: student.id, classId: selected.id === 'all' ? null : selected.id }),
     });
   };
 
@@ -113,6 +117,17 @@ export default function KioskApp() {
         )}
 
         <div className="mx-auto grid w-full max-w-2xl grid-cols-1 gap-4 sm:grid-cols-2">
+          {/* All Students option always at top */}
+          <button
+            key="all"
+            onClick={() => openClass(ALL_STUDENTS)}
+            className="rounded-2xl border border-[#d1060f]/40 bg-[#d1060f]/10 px-6 py-7 text-left transition active:scale-[0.97] sm:col-span-2"
+            style={{ WebkitTapHighlightColor: 'transparent' }}
+          >
+            <span className="block text-lg font-semibold text-white">All Students</span>
+            <span className="mt-1 block text-sm text-white/40">Special practice / event</span>
+          </button>
+
           {classes.map(cls => (
             <button
               key={cls.id}

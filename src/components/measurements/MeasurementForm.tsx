@@ -29,6 +29,47 @@ const EMPTY: FormState = {
   blouseSleeve: '', blouseArmhole: '', blouseFront: '', blouseBack: '',
 };
 
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-xl">
+      <h2 className="mb-5 flex items-center gap-2.5 font-[family-name:var(--font-display)] text-base font-semibold text-[#ee2435]">
+        <span className="h-[18px] w-[3px] rounded-full bg-[#d1060f]" />
+        {title}
+      </h2>
+      {children}
+    </div>
+  );
+}
+
+function FieldInput({
+  id, label, hint, numeric, value, error, onChange,
+}: {
+  id: string; label: string; hint?: string; numeric?: boolean;
+  value: string; error: boolean; onChange: (val: string) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label htmlFor={`mf-${id}`} className="text-[10px] font-semibold uppercase tracking-[0.1em] text-white/45">
+        {label} *
+      </label>
+      <input
+        id={`mf-${id}`}
+        type={numeric ? 'number' : 'text'}
+        inputMode={numeric ? 'decimal' : 'text'}
+        min={numeric ? 0 : undefined}
+        step={numeric ? 0.25 : undefined}
+        placeholder={numeric ? 'e.g. 24' : undefined}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        className={`rounded-xl border px-3.5 py-2.5 text-sm text-white bg-white/[0.04] placeholder:text-white/25 transition focus:outline-none focus:ring-2 focus:ring-[#d1060f]/40 ${
+          error ? 'border-[#ee2435]/60' : 'border-white/10 focus:border-[#ee2435]'
+        }`}
+      />
+      {hint && <span className="text-[10px] text-white/35">{hint}</span>}
+    </div>
+  );
+}
+
 export default function MeasurementForm({ eventSlug }: { eventSlug: string }) {
   const [form, setForm]       = useState<FormState>(EMPTY);
   const [errors, setErrors]   = useState<Record<string, boolean>>({});
@@ -95,42 +136,6 @@ export default function MeasurementForm({ eventSlug }: { eventSlug: string }) {
     );
   }
 
-  function FieldInput({ id, label, hint, numeric }: { id: string; label: string; hint?: string; numeric?: boolean }) {
-    return (
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor={`mf-${id}`} className="text-[10px] font-semibold uppercase tracking-[0.1em] text-white/45">
-          {label} *
-        </label>
-        <input
-          id={`mf-${id}`}
-          type={numeric ? 'number' : 'text'}
-          inputMode={numeric ? 'decimal' : 'text'}
-          min={numeric ? 0 : undefined}
-          step={numeric ? 0.25 : undefined}
-          placeholder={numeric ? 'e.g. 24' : undefined}
-          value={form[id]}
-          onChange={e => set(id, e.target.value)}
-          className={`rounded-xl border px-3.5 py-2.5 text-sm text-white bg-white/[0.04] placeholder:text-white/25 transition focus:outline-none focus:ring-2 focus:ring-[#d1060f]/40 ${
-            errors[id] ? 'border-[#ee2435]/60' : 'border-white/10 focus:border-[#ee2435]'
-          }`}
-        />
-        {hint && <span className="text-[10px] text-white/35">{hint}</span>}
-      </div>
-    );
-  }
-
-  function Section({ title, children }: { title: string; children: React.ReactNode }) {
-    return (
-      <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-xl">
-        <h2 className="mb-5 flex items-center gap-2.5 font-[family-name:var(--font-display)] text-base font-semibold text-[#ee2435]">
-          <span className="h-[18px] w-[3px] rounded-full bg-[#d1060f]" />
-          {title}
-        </h2>
-        {children}
-      </div>
-    );
-  }
-
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-5">
       {errMsg && (
@@ -141,11 +146,11 @@ export default function MeasurementForm({ eventSlug }: { eventSlug: string }) {
 
       <Section title="About Your Child">
         <div className="mb-4">
-          <FieldInput id="childName" label="Child's Name" />
+          <FieldInput id="childName" label="Child's Name" value={form.childName} error={errors.childName} onChange={v => set('childName', v)} />
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <FieldInput id="parentName" label="Parent's Name" />
-          <FieldInput id="phone" label="Phone Number" />
+          <FieldInput id="parentName" label="Parent's Name" value={form.parentName} error={errors.parentName} onChange={v => set('parentName', v)} />
+          <FieldInput id="phone" label="Phone Number" value={form.phone} error={errors.phone} onChange={v => set('phone', v)} />
         </div>
       </Section>
 
@@ -159,7 +164,8 @@ export default function MeasurementForm({ eventSlug }: { eventSlug: string }) {
         </div>
         <div className="grid grid-cols-2 gap-4">
           {LEHENGA_FIELDS.map(f => (
-            <FieldInput key={f.id} id={f.id} label={f.label} hint={f.hint} numeric />
+            <FieldInput key={f.id} id={f.id} label={f.label} hint={f.hint} numeric
+              value={form[f.id]} error={errors[f.id]} onChange={v => set(f.id, v)} />
           ))}
         </div>
       </Section>
@@ -183,7 +189,8 @@ export default function MeasurementForm({ eventSlug }: { eventSlug: string }) {
         </div>
         <div className="grid grid-cols-2 gap-4">
           {BLOUSE_FIELDS.map(f => (
-            <FieldInput key={f.id} id={f.id} label={f.label} hint={f.hint} numeric />
+            <FieldInput key={f.id} id={f.id} label={f.label} hint={f.hint} numeric
+              value={form[f.id]} error={errors[f.id]} onChange={v => set(f.id, v)} />
           ))}
         </div>
       </Section>

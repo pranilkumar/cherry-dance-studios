@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 
 type AttendanceClass = { id: string; name: string; schedule: string | null };
 type Student = { id: string; name: string };
-type Record = {
+type AttendanceRecord = {
   id: string; date: string; marked_at: string;
   student: { id: string; name: string };
   class: { id: string; name: string };
@@ -48,7 +48,7 @@ function RecordsView() {
   const [classes, setClasses]   = useState<AttendanceClass[]>([]);
   const [classId, setClassId]   = useState('');
   const [date, setDate]         = useState(new Date().toLocaleDateString('en-CA'));
-  const [records, setRecords]   = useState<Record[]>([]);
+  const [records, setRecords]   = useState<AttendanceRecord[]>([]);
   const [loading, setLoading]   = useState(false);
 
   useEffect(() => {
@@ -71,7 +71,7 @@ function RecordsView() {
   useEffect(() => { load(); }, [load]);
 
   // group by date
-  const byDate: Record<string, Record[]> = {};
+  const byDate: { [date: string]: AttendanceRecord[] } = {};
   records.forEach(r => { (byDate[r.date] = byDate[r.date] || []).push(r); });
 
   return (
@@ -103,7 +103,7 @@ function RecordsView() {
         <p className="text-sm text-white/40">No attendance records found.</p>
       )}
 
-      {Object.entries(byDate).map(([d, recs]) => (
+      {(Object.entries(byDate) as [string, AttendanceRecord[]][]).map(([d, recs]) => (
         <div key={d} className="rounded-xl border border-white/10 bg-white/[0.03] p-5">
           <h3 className="mb-3 text-sm font-semibold text-white/70">
             {new Date(d + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}

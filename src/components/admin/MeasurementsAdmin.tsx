@@ -11,14 +11,14 @@ type Measurement = {
   phone: string;
   lehenga_waist: number;
   lehenga_length: number;
-  blouse_chest: number;
-  blouse_lower_bust: number;
-  blouse_waist: number;
+  blouse_upper_chest: number;
+  blouse_full_chest: number;
+  blouse_length: number;
+  blouse_hem_round: number;
   blouse_shoulder: number;
   blouse_sleeve: number;
-  blouse_armhole: number;
-  blouse_front: number;
-  blouse_back: number;
+  blouse_arm_round: number;
+  blouse_hip_round: number;
   submitted_at: string;
 };
 
@@ -37,11 +37,11 @@ function generateTailorMessage(slug: string, items: Measurement[]) {
     msg += `\n${i + 1}. Child: ${m.child_name}\n`;
     msg += `   Parent: ${m.parent_name} | ${m.phone}\n\n`;
     msg += `   LEHENGA\n`;
-    msg += `   Waist: ${m.lehenga_waist}" | Length: ${m.lehenga_length}"\n\n`;
+    msg += `   Waist Round: ${m.lehenga_waist}" | Waist to Floor: ${m.lehenga_length}"\n\n`;
     msg += `   BLOUSE\n`;
-    msg += `   Chest: ${m.blouse_chest}" | Lower Bust: ${m.blouse_lower_bust}" | Waist: ${m.blouse_waist}"\n`;
-    msg += `   Shoulder: ${m.blouse_shoulder}" | Sleeve: ${m.blouse_sleeve}" | Armhole: ${m.blouse_armhole}"\n`;
-    msg += `   Front Length: ${m.blouse_front}" | Back Length: ${m.blouse_back}"`;
+    msg += `   Upper Chest: ${m.blouse_upper_chest}" | Full Chest: ${m.blouse_full_chest}" | Hem Round: ${m.blouse_hem_round}"\n`;
+    msg += `   Shoulder Width: ${m.blouse_shoulder}" | Sleeve Length: ${m.blouse_sleeve}" | Arm Round: ${m.blouse_arm_round}"\n`;
+    msg += `   Blouse Length: ${m.blouse_length}" | Hip Round: ${m.blouse_hip_round}"`;
     if (i < items.length - 1) msg += '\n\n---';
   });
   return msg;
@@ -185,21 +185,21 @@ function EventPanel({ slug, siteUrl }: { slug: string; siteUrl: string }) {
                     <div>
                       <p className="mb-1 text-[9px] font-bold uppercase tracking-widest text-[#B8872A]">Lehenga</p>
                       <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-white/55">
-                        <span><b className="text-white/80">Waist</b> {m.lehenga_waist}"</span>
-                        <span><b className="text-white/80">Length</b> {m.lehenga_length}"</span>
+                        <span><b className="text-white/80">Waist Round</b> {m.lehenga_waist}"</span>
+                        <span><b className="text-white/80">Waist to Floor</b> {m.lehenga_length}"</span>
                       </div>
                     </div>
                     <div>
                       <p className="mb-1 text-[9px] font-bold uppercase tracking-widest text-[#B8872A]">Blouse</p>
                       <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-white/55">
-                        <span><b className="text-white/80">Chest</b> {m.blouse_chest}"</span>
-                        <span><b className="text-white/80">Lower Bust</b> {m.blouse_lower_bust}"</span>
-                        <span><b className="text-white/80">Waist</b> {m.blouse_waist}"</span>
-                        <span><b className="text-white/80">Shoulder</b> {m.blouse_shoulder}"</span>
+                        <span><b className="text-white/80">Upper Chest</b> {m.blouse_upper_chest}"</span>
+                        <span><b className="text-white/80">Full Chest</b> {m.blouse_full_chest}"</span>
+                        <span><b className="text-white/80">Blouse Length</b> {m.blouse_length}"</span>
+                        <span><b className="text-white/80">Hem Round</b> {m.blouse_hem_round}"</span>
+                        <span><b className="text-white/80">Shoulder Width</b> {m.blouse_shoulder}"</span>
                         <span><b className="text-white/80">Sleeve</b> {m.blouse_sleeve}"</span>
-                        <span><b className="text-white/80">Armhole</b> {m.blouse_armhole}"</span>
-                        <span><b className="text-white/80">Front</b> {m.blouse_front}"</span>
-                        <span><b className="text-white/80">Back</b> {m.blouse_back}"</span>
+                        <span><b className="text-white/80">Arm Round</b> {m.blouse_arm_round}"</span>
+                        <span><b className="text-white/80">Hip Round</b> {m.blouse_hip_round}"</span>
                       </div>
                     </div>
                   </div>

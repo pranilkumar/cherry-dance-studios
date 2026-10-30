@@ -36,9 +36,8 @@ export async function POST(request: Request) {
   const {
     eventSlug, childName, parentName, phone,
     lehengaWaist, lehengaLength,
-    blouseChest, blouseLowerBust, blouseWaist,
-    blouseShoulder, blouseSleeve, blouseArmhole,
-    blouseFront, blouseBack,
+    blouseUpperChest, blouseFullChest, blouseLength, blouseHemRound,
+    blouseShoulder, blouseSleeve, blouseArmRound, blouseHipRound,
   } = body;
 
   const slug = String(eventSlug || '').trim().toLowerCase().replace(/[^a-z0-9-_]/g, '');
@@ -51,16 +50,16 @@ export async function POST(request: Request) {
   }
 
   const numFields = {
-    lehenga_waist:     num(lehengaWaist),
-    lehenga_length:    num(lehengaLength),
-    blouse_chest:      num(blouseChest),
-    blouse_lower_bust: num(blouseLowerBust),
-    blouse_waist:      num(blouseWaist),
-    blouse_shoulder:   num(blouseShoulder),
-    blouse_sleeve:     num(blouseSleeve),
-    blouse_armhole:    num(blouseArmhole),
-    blouse_front:      num(blouseFront),
-    blouse_back:       num(blouseBack),
+    lehenga_waist:        num(lehengaWaist),
+    lehenga_length:       num(lehengaLength),
+    blouse_upper_chest:   num(blouseUpperChest),
+    blouse_full_chest:    num(blouseFullChest),
+    blouse_length:        num(blouseLength),
+    blouse_hem_round:     num(blouseHemRound),
+    blouse_shoulder:      num(blouseShoulder),
+    blouse_sleeve:        num(blouseSleeve),
+    blouse_arm_round:     num(blouseArmRound),
+    blouse_hip_round:     num(blouseHipRound),
   };
 
   if (Object.values(numFields).some(v => v === null)) {

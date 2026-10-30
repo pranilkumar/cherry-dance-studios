@@ -5,19 +5,19 @@ import { useState } from 'react';
 type Field = { id: string; label: string; hint?: string };
 
 const LEHENGA_FIELDS: Field[] = [
-  { id: 'lehengaWaist',  label: 'Waist',  hint: 'inches' },
-  { id: 'lehengaLength', label: 'Length', hint: 'waist to hem, inches' },
+  { id: 'lehengaWaist',  label: 'Waist Round',   hint: 'around where lehenga will be tied, inches' },
+  { id: 'lehengaLength', label: 'Waist to Floor', hint: 'from waistband to floor, inches' },
 ];
 
 const BLOUSE_FIELDS: Field[] = [
-  { id: 'blouseChest',     label: 'Chest',        hint: 'inches' },
-  { id: 'blouseLowerBust', label: 'Lower Bust',   hint: 'inches' },
-  { id: 'blouseWaist',     label: 'Waist',        hint: 'inches' },
-  { id: 'blouseShoulder',  label: 'Shoulder',     hint: 'inches' },
-  { id: 'blouseSleeve',    label: 'Sleeve Length', hint: 'inches' },
-  { id: 'blouseArmhole',   label: 'Armhole',      hint: 'inches' },
-  { id: 'blouseFront',     label: 'Front Length', hint: 'inches' },
-  { id: 'blouseBack',      label: 'Back Length',  hint: 'inches' },
+  { id: 'blouseUpperChest', label: 'Upper Chest',             hint: 'around upper chest, under arms, inches' },
+  { id: 'blouseFullChest',  label: 'Full Chest',              hint: 'around fullest part, tape level, inches' },
+  { id: 'blouseLength',     label: 'Blouse Length',           hint: 'shoulder beside neck to blouse hem, inches' },
+  { id: 'blouseHemRound',   label: 'Hem Round',               hint: 'around body where blouse will end, inches' },
+  { id: 'blouseShoulder',   label: 'Shoulder Width',          hint: 'shoulder point to shoulder point (back), inches' },
+  { id: 'blouseSleeve',     label: 'Sleeve Length',           hint: 'shoulder tip to sleeve end, inches' },
+  { id: 'blouseArmRound',   label: 'Arm Round at Sleeve End', hint: 'around arm where sleeve will end, inches' },
+  { id: 'blouseHipRound',   label: 'Hip Round',               hint: 'around fullest part of hips, inches' },
 ];
 
 type FormState = Record<string, string>;
@@ -25,8 +25,8 @@ type FormState = Record<string, string>;
 const EMPTY: FormState = {
   childName: '', parentName: '', phone: '',
   lehengaWaist: '', lehengaLength: '',
-  blouseChest: '', blouseLowerBust: '', blouseWaist: '', blouseShoulder: '',
-  blouseSleeve: '', blouseArmhole: '', blouseFront: '', blouseBack: '',
+  blouseUpperChest: '', blouseFullChest: '', blouseLength: '', blouseHemRound: '',
+  blouseShoulder: '', blouseSleeve: '', blouseArmRound: '', blouseHipRound: '',
 };
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
